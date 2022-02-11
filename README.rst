@@ -3,7 +3,7 @@
 AUSWAHL
 ============================================================
 
-AUSWAHL (**AU**tomatic **S**election of **WA**velengt**H** **L**ibrary) is a python module
+AUSWAHL (**AU**\tomatic **S**\election of **WA**\velengt\ **H** **L**\ibrary) is a python module
 that provides a collection of Feature Selection Methods for Near-Infrared Spectroscopy.
 
 Scope
