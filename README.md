@@ -1,4 +1,6 @@
-# nirSelect
+# AUSWAHL
+**AU**tomatic **S**election of **WA**velengt**H** **L**ibrary
+
 Collection of Feature Selection Methods for Near-Infrared Spectroscopy
 
 ## Scope
@@ -17,12 +19,12 @@ The following methods are implemented:
 ## Installation
 
 ```
-pip install nirSelect
+pip install auswahl
 ```
 
 ## Usage
 ```python
-from nirSelect import CARS
+from auswahl import CARS
 
 cars = CARS(n_features=20, random_state=42)
 cars.fit(my_spectra, my_targets)
