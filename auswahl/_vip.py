@@ -1,7 +1,7 @@
 from typing import Union, Dict
 
 import numpy as np
-from sklearn.cross_decomposition import PLSCanonical
+from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
 
 from auswahl._base import PointSelector
@@ -17,11 +17,11 @@ class VIP(PointSelector):
     n_features_to_select: int or float, default=None
         Number of features to select
     pls_kwargs: dictionary
-        keyword arguments that are passed to :py:class:`PLSCanonical <sklearn.cross_decomposition.PLSCanonical>`
+        keyword arguments that are passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>`
 
     Attributes
     ----------
-    pls_estimator_: PLSCanonical instance
+    pls_estimator_: PLSRegression instance
         The fitted PLS estimator used to calculate the vip scores
     vips_: ndarray of shape (n_features,)
         Calculated VIP scores
@@ -54,7 +54,7 @@ class VIP(PointSelector):
 
     def _fit(self, X, y, n_features_to_select):
         pls_kwargs = dict() if self.pls_kwargs is None else self.pls_kwargs
-        self.pls_estimator_ = PLSCanonical(**pls_kwargs)
+        self.pls_estimator_ = PLSRegression(**pls_kwargs)
         self.pls_estimator_.fit(X, y)
         self.vips_ = self._calculate_vip_scores(X)
 
