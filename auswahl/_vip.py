@@ -8,6 +8,44 @@ from auswahl._base import PointSelector
 
 
 class VIP(PointSelector):
+    """Feature Selection with Variable Importance in Projection.
+
+    The VIP scores are computed according to Favilla et al. [1]_
+
+    Parameters
+    ----------
+    n_features_to_select: int or float, default=None
+        Number of features to select
+    pls_kwargs: dictionary
+        keyword arguments that are passed to :py:class:`PLSCanonical <sklearn.cross_decomposition.PLSCanonical>`
+
+    Attributes
+    ----------
+    pls_estimator_: PLSCanonical instance
+        The fitted PLS estimator used to calculate the vip scores
+    vips_: ndarray of shape (n_features,)
+        Calculated VIP scores
+    support_ : ndarray of shape (n_features,)
+        The mask of selected features.
+
+    References
+    ----------
+    .. [1] Stefania Favilla, Caterina Durante, Mario Li Vigni, Marina Cocchi,
+           "Assessing feature relevance in NPLS models by VIP",
+           Chemometrics and Intelligent Laboratory Systems, 129, 76--86, 2013
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from auswahl import VIP
+    >>> X = np.random.randn(100, 10)
+    >>> y = 5 * X[:,0] - 2 * X[:,5]  # y only depends on two features
+    >>> selector = VIP(n_features_to_select=2)
+    >>> selector.fit(X, y)
+    >>> selector.get_support()
+    array([True, False, False, False, False, True, False, False, False, False])
+    """
+
     def __init__(self,
                  n_features_to_select: Union[int, float] = None,
                  pls_kwargs: Dict = None):
