@@ -39,7 +39,7 @@ class VIP(PointSelector):
     >>> import numpy as np
     >>> from auswahl import VIP
     >>> X = np.random.randn(100, 10)
-    >>> y = 5 * X[:,0] - 2 * X[:,5]  # y only depends on two features
+    >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
     >>> selector = VIP(n_features_to_select=2)
     >>> selector.fit(X, y)
     >>> selector.get_support()
@@ -65,7 +65,7 @@ class VIP(PointSelector):
         return self
 
     def _calculate_vip_scores(self, X):
-        x_scores = np.dot(X, self.pls_estimator_.x_rotations_)
+        x_scores = self.pls_estimator_.transform(X)
         x_weights = self.pls_estimator_.x_weights_
         y_loadings = self.pls_estimator_.y_loadings_
 
