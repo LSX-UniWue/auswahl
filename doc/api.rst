@@ -1,6 +1,6 @@
-###########
+===========
 AUSWAHL API
-###########
+===========
 
 .. currentmodule:: auswahl
 

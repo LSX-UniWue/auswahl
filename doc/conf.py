@@ -56,7 +56,10 @@ if LooseVersion(sphinx.__version__) < LooseVersion('1.4'):
 else:
     extensions.append('sphinx.ext.imgmath')
 
-autodoc_default_flags = ['members', 'inherited-members']
+autodoc_default_options = {
+    'members': True,
+    'inherited-members': True
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -234,8 +237,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    ('index', 'project-template.tex', u'project-template Documentation',
-     u'Vighnesh Birodkar', 'manual'),
+    ('index', 'auswahl.tex', u'AUSWAHL Documentation',
+     u'Florian Buckermann', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -264,8 +267,8 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'project-template', u'project-template Documentation',
-     [u'Vighnesh Birodkar'], 1)
+    ('index', 'auswahl', u'AUSWAHL Documentation',
+     [u'Florian Buckermann'], 1)
 ]
 
 # If true, show URL addresses after external links.
@@ -278,8 +281,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    ('index', 'project-template', u'project-template Documentation',
-     u'Vighnesh Birodkar', 'project-template', 'One line description of project.',
+    ('index', 'auswahl', u'AUSWAHL Documentation',
+     u'Florian Buckermann', 'auswahl', 'Feature Selection Methods for Near-Infrared Spectroscopy.',
      'Miscellaneous'),
 ]
 
