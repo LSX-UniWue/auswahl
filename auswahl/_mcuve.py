@@ -17,23 +17,29 @@ class MCUVE(PointSelector):
 
     Parameters
     ----------
-    n_features_to_select: int or float, default=None
+    n_features_to_select : int or float, default=None
         Number of features to select.
-    n_subsets: int
+
+    n_subsets : int, default=100
         Number of random subsets to create.
-    n_samples_per_subset: int or float, default=None
+
+    n_samples_per_subset : int or float, default=None
         Number of samples used for each random subset.
-    pls_kwargs: dictionary
+
+    pls_kwargs : dictionary, default=None
         Keyword arguments that are passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>`.
-    random_state: int or numpy.random.RandomState, default=None
+
+    random_state : int or numpy.random.RandomState, default=None
         Seed for the random subset sampling. Pass an int for reproducible output across function calls.
 
     Attributes
     ----------
-    coefs_: ndarray of shape (n_subsets, n_features)
+    coefs_ : ndarray of shape (n_subsets, n_features)
         Fitted regression coefficients of the <n_subsets> PLS models.
-    stability_: ndarray of shape (n_features,)
+
+    stability_ : ndarray of shape (n_features,)
         Computed stability score of the absolute regression coefficients.
+
     support_ : ndarray of shape (n_features,)
         Mask of selected features.
 

@@ -14,17 +14,20 @@ class VIP(PointSelector):
 
     Parameters
     ----------
-    n_features_to_select: int or float, default=None
+    n_features_to_select : int or float, default=None
         Number of features to select.
-    pls_kwargs: dictionary
+
+    pls_kwargs : dictionary, default=None
         Keyword arguments that are passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>`.
 
     Attributes
     ----------
-    pls_estimator_: PLSRegression instance
+    pls_estimator_ : PLSRegression instance
         Fitted PLS estimator used to calculate the vip scores.
-    vips_: ndarray of shape (n_features,)
+
+    vips_ : ndarray of shape (n_features,)
         Calculated VIP scores.
+
     support_ : ndarray of shape (n_features,)
         Mask of selected features.
 

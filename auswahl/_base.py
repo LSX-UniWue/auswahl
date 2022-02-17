@@ -10,7 +10,7 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
     Parameters
     ----------
-    n_features_to_select: int or float, default=None
+    n_features_to_select : int or float, default=None
         Number of features to select
     """
 
@@ -22,14 +22,15 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
         Parameters
         ----------
-        X: array-like of shape (n_samples, n_features)
+        X : array-like of shape (n_samples, n_features)
             The input samples.
-        y: array-like of shape (n_samples,)
+
+        y : array-like of shape (n_samples,)
             The target values.
 
         Returns
         -------
-        self: object
+        self : object
             Returns the instance itself.
         """
         X, y = self._validate_data(X, y, accept_sparse=False, ensure_min_samples=2, ensure_min_features=2)
