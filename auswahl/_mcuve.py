@@ -9,6 +9,53 @@ from auswahl._base import PointSelector
 
 
 class MCUVE(PointSelector):
+    """Feature selection with Monte Carlo Uninformative Variable Elimination.
+
+    The stability for each feature is computed according to Cai et al. [1]_.
+    While not stated in the original publication, we use the absolute values of the regression coefficients for
+    computing the stability values.
+
+    Parameters
+    ----------
+    n_features_to_select: int or float, default=None
+        Number of features to select.
+    n_subsets: int
+        Number of random subsets to create.
+    n_samples_per_subset: int or float, default=None
+        Number of samples used for each random subset.
+    pls_kwargs: dictionary
+        Keyword arguments that are passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>`.
+    random_state: int or numpy.random.RandomState, default=None
+        Seed for the random subset sampling. Pass an int for reproducible output across function calls.
+
+    Attributes
+    ----------
+    coefs_: ndarray of shape (n_subsets, n_features)
+        Fitted regression coefficients of the <n_subsets> PLS models.
+    stability_: ndarray of shape (n_features,)
+        Computed stability score of the absolute regression coefficients.
+    support_ : ndarray of shape (n_features,)
+        Mask of selected features.
+
+    References
+    ----------
+    .. [1] Stefania Favilla, Caterina Durante, Mario Li Vigni, Marina Cocchi,
+           'A variable selection method based on uninformative variable elimination for
+           multivariate calibration of near-infrared spectra',
+           Chemometrics and Intelligent Laboratory Systems, 90, 188-194, 2008.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from auswahl import MCUVE
+    >>> X = np.random.randn(100, 10)
+    >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
+    >>> selector = MCUVE(n_features_to_select=2)
+    >>> selector.fit(X, y)
+    >>> selector.get_support()
+    array([True, False, False, False, False, True, False, False, False, False])
+    """
+
     def __init__(self,
                  n_features_to_select: Union[int, float] = None,
                  n_subsets: int = 100,
