@@ -10,29 +10,29 @@ from auswahl._base import PointSelector
 class VIP(PointSelector):
     """Feature Selection with Variable Importance in Projection.
 
-    The VIP scores are computed according to Favilla et al. [1]_
+    The VIP scores are computed according to Favilla et al. [1]_.
 
     Parameters
     ----------
     n_features_to_select: int or float, default=None
-        Number of features to select
+        Number of features to select.
     pls_kwargs: dictionary
-        keyword arguments that are passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>`
+        Keyword arguments that are passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>`.
 
     Attributes
     ----------
     pls_estimator_: PLSRegression instance
-        The fitted PLS estimator used to calculate the vip scores
+        Fitted PLS estimator used to calculate the vip scores.
     vips_: ndarray of shape (n_features,)
-        Calculated VIP scores
+        Calculated VIP scores.
     support_ : ndarray of shape (n_features,)
-        The mask of selected features.
+        Mask of selected features.
 
     References
     ----------
     .. [1] Stefania Favilla, Caterina Durante, Mario Li Vigni, Marina Cocchi,
-           "Assessing feature relevance in NPLS models by VIP",
-           Chemometrics and Intelligent Laboratory Systems, 129, 76--86, 2013
+           'Assessing feature relevance in NPLS models by VIP',
+           Chemometrics and Intelligent Laboratory Systems, 129, 76--86, 2013.
 
     Examples
     --------
