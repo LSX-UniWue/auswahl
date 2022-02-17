@@ -32,8 +32,7 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
         self: object
             Returns the instance itself.
         """
-
-        X, y = self._validate_data(X, y, accept_sparse=False, ensure_min_features=2)
+        X, y = self._validate_data(X, y, accept_sparse=False, ensure_min_samples=2, ensure_min_features=2)
         n_features_to_select = self._check_n_features_to_select(X)
         self._fit(X, y, n_features_to_select)
         return self
@@ -44,16 +43,16 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
     def _check_n_features_to_select(self, X):
         n_features = X.shape[1]
+        n_features_to_select = self.n_features_to_select
 
-        if self.n_features_to_select is None:
+        if n_features_to_select is None:
             n_features_to_select = n_features // 2
-        elif self.n_features_to_select < 0:
-            raise ValueError('n_feature_to_select has to be an integer or float > 0!')
-        elif isinstance(self.n_features_to_select, int):
-            n_features_to_select = self.n_features_to_select
-        elif self.n_features_to_select > 1.0:
-            raise ValueError('If n_features_to_select is a float, it has to be in (0, 1]')
-        else:
-            n_features_to_select = int(n_features * self.n_features_to_select)
+        if 0 < n_features_to_select < 1:
+            n_features_to_select = int(n_features_to_select * n_features)
+
+        if (n_features_to_select <= 0) or (n_features_to_select >= n_features):
+            raise ValueError('n_features_to_select has to be either an int in {1, ..., n_features-1}'
+                             'or a float in (0, 1) with (n_features_to_select*n_features) >= 1; '
+                             f'got {self.n_features_to_select}')
 
         return n_features_to_select
