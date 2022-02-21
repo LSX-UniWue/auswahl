@@ -45,7 +45,7 @@ class MCUVE(PointSelector):
 
     References
     ----------
-    .. [1] Stefania Favilla, Caterina Durante, Mario Li Vigni, Marina Cocchi,
+    .. [1] Wensheng Cai, Yankun Li and Xueguang Shao,
            'A variable selection method based on uninformative variable elimination for
            multivariate calibration of near-infrared spectra',
            Chemometrics and Intelligent Laboratory Systems, 90, 188-194, 2008.
