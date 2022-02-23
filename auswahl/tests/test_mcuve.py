@@ -29,10 +29,20 @@ def test_mcuve(data):
 def test_reproducible_run(data):
     X, y = data
 
-    selector1 = MCUVE(n_features_to_select=2, random_state=42)
-    selector2 = MCUVE(n_features_to_select=2, random_state=42)
+    # Passing an int for the random state has to result in the same outcome for each call of the fit method
+    selector = MCUVE(n_features_to_select=2, random_state=42)
+    stability1 = selector.fit(X, y).stability_.copy()
+    stability2 = selector.fit(X, y).stability_
+    assert_array_almost_equal(stability1, stability2)
+
+    # If a RandomState is used, two selectors with the same RandomState compute the same outcome after each run
+    selector1 = MCUVE(n_features_to_select=2, random_state=np.random.RandomState(42))
+    selector2 = MCUVE(n_features_to_select=2, random_state=np.random.RandomState(42))
 
     selector1.fit(X, y)
     selector2.fit(X, y)
+    assert_array_almost_equal(selector1.stability_, selector2.stability_)
 
+    selector1.fit(X, y)
+    selector2.fit(X, y)
     assert_array_almost_equal(selector1.stability_, selector2.stability_)
