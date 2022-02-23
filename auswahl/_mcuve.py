@@ -3,7 +3,7 @@ from typing import Union, Dict
 import numpy as np
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import check_is_fitted, check_scalar
 
 from auswahl._base import PointSelector
 
@@ -103,8 +103,7 @@ class MCUVE(PointSelector):
         return self.support_
 
     def _check_n_subsets(self):
-        if self.n_subsets < 2:
-            raise ValueError(f'n_subsets has to be a positive integer >= 2; got {self.n_subsets}')
+        check_scalar(x=self.n_subsets, name='n_subsets', target_type=int, min_val=2)
 
     def _check_n_samples_per_subset(self, X):
         n_samples = X.shape[0]
