@@ -12,6 +12,8 @@ Wavelength Point Selection
     :template: class.rst
 
     PointSelector
-    VIP
-    MCUVE
     CARS
+    MCUVE
+    RandomFrog
+    VIP
+
