@@ -14,3 +14,4 @@ Wavelength Point Selection
     PointSelector
     VIP
     MCUVE
+    CARS
