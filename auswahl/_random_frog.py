@@ -175,7 +175,9 @@ class RandomFrog(PointSelector):
         if 0 < n_initial_features < 1:
             n_initial_features = max(1, int(n_initial_features * n_features))
 
-        check_scalar(n_initial_features, name='n_initial_features', target_type=int, max_val=n_features)
+        if (n_initial_features < 1) or (n_initial_features > n_features):
+            raise ValueError('n_initial_features has to be either an int in {1, ..., n_features}'
+                             f'or a float in (0, 1); got {self.n_initial_features}')
 
         return n_initial_features
 
