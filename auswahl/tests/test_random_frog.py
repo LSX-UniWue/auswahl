@@ -14,12 +14,14 @@ def data():
 
 def test_random_frog(data):
     X, y = data
+    n_iterations = 1000
 
-    rf = RandomFrog(n_features_to_select=2, n_iterations=1000)
+    rf = RandomFrog(n_features_to_select=2, n_iterations=n_iterations)
 
     rf.fit(X, y)
     assert len(rf.support_) == X.shape[1]
     assert sum(rf.support_) == 2
+    assert all(rf.frequencies_ <= n_iterations)
     assert_array_equal(rf.support_, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0])
 
     X_t = rf.transform(X)

@@ -101,38 +101,46 @@ class RandomFrog(PointSelector):
         n_features = X.shape[1]
 
         # Perform parameter checks
+        self._check_n_iterations()
+        self._check_subset_expansion_factor()
+        self._check_acceptance_factor()
+
         n_initial_features = self._check_n_initial_features(X)
         variance_factor = self._check_variance_factor()
-        self._check_subset_expansion_factor()
-        pls = PLSRegression() if self.pls is None else self.pls
         random_state = check_random_state(self.random_state)
 
+        # Initialize estimator, feature sets and frequency counter
+        pls = PLSRegression() if self.pls is None else self.pls
         all_features = np.arange(n_features)
-        self.frequencies_ = np.zeros(n_features)
         selected_features = random_state.choice(n_features, n_initial_features, replace=False)
+        self.frequencies_ = np.zeros(n_features)
+
+        # Random Frog Iteration
         for i in range(self.n_iterations):
             n_selected_features = len(selected_features)
             n_candidate_features = random_state.normal(n_selected_features, n_selected_features * variance_factor)
             n_candidate_features = np.clip(round(n_candidate_features), pls.n_components, n_features)
 
-            n_diff = abs(n_candidate_features - n_selected_features)
-            candidate_features = selected_features
-
             if n_candidate_features < n_selected_features:
-                pls.fit(X[:, selected_features], y)
-                absolute_coefficients = abs(pls.coef_.flatten())
-                selection_idx = np.argsort(absolute_coefficients)[n_diff:]
-                candidate_features = selected_features[selection_idx]
+                # Reduction step
+                features_to_explore = selected_features
             elif n_candidate_features > n_selected_features:
+                # Expansion step
+                n_diff = n_candidate_features - n_selected_features
                 non_selected_features = np.setdiff1d(all_features, selected_features)
                 n_features_to_explore = min(self.subset_expansion_factor * n_diff, len(non_selected_features))
                 additional_features = random_state.choice(non_selected_features, n_features_to_explore, replace=False)
                 features_to_explore = np.union1d(selected_features, additional_features)
+            else:
+                # Skip step
+                self.frequencies_[selected_features] += 1
+                continue
 
-                pls.fit(X[:, features_to_explore], y)
-                absolute_coefficients = abs(pls.coef_.flatten())
-                selection_idx = np.argsort(absolute_coefficients)[-n_candidate_features:]
-                candidate_features = features_to_explore[selection_idx]
+            pls.fit(X[:, features_to_explore], y)
+            absolute_coefficients = abs(pls.coef_.flatten())
+            selection_idx = np.argsort(absolute_coefficients)[-n_candidate_features:]
+            candidate_features = features_to_explore[selection_idx]
+
             cv_split = KFold(n_splits=5, shuffle=False)
             selected_features_score = cross_val_score(pls, X[:, selected_features], y,
                                                       scoring='neg_root_mean_squared_error', cv=cv_split).mean()
@@ -141,7 +149,7 @@ class RandomFrog(PointSelector):
 
             if candidate_features_score >= selected_features_score:
                 selected_features = candidate_features
-            elif random_state.random() <= self.acceptance_factor * (selected_features_score / candidate_features_score):
+            elif random_state.random() < self.acceptance_factor * (selected_features_score / candidate_features_score):
                 selected_features = candidate_features
             self.frequencies_[selected_features] += 1
 
@@ -155,6 +163,9 @@ class RandomFrog(PointSelector):
         check_is_fitted(self)
         return self.support_
 
+    def _check_n_iterations(self):
+        check_scalar(self.n_iterations, name='n_iterations', target_type=int, min_val=1)
+
     def _check_n_initial_features(self, X):
         n_features = X.shape[1]
         n_initial_features = self.n_initial_features
@@ -164,9 +175,7 @@ class RandomFrog(PointSelector):
         if 0 < n_initial_features < 1:
             n_initial_features = max(1, int(n_initial_features * n_features))
 
-        if n_initial_features > n_features:
-            raise ValueError('n_initial_variables has to be an integer in {1, ..., n_features}; '
-                             f'got {self.n_initial_features}')
+        check_scalar(n_initial_features, name='n_initial_features', target_type=int, max_val=n_features)
 
         return n_initial_features
 
@@ -179,3 +188,6 @@ class RandomFrog(PointSelector):
 
     def _check_subset_expansion_factor(self):
         check_scalar(self.subset_expansion_factor, name='subset_expansion_factor', target_type=(int, float), min_val=1)
+
+    def _check_acceptance_factor(self):
+        check_scalar(self.acceptance_factor, name='acceptance_factor', target_type=(int, float), min_val=0, max_val=1)
