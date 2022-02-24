@@ -112,11 +112,10 @@ class MCUVE(PointSelector):
         if n_samples_per_subset is None:
             n_samples_per_subset = n_samples // 2
         elif 0 < n_samples_per_subset < 1:
-            n_samples_per_subset = int(n_samples_per_subset * n_samples)
+            n_samples_per_subset = max(1, int(n_samples_per_subset * n_samples))
 
         if (n_samples_per_subset <= 0) or (n_samples_per_subset >= n_samples):
             raise ValueError('n_samples_per_subset has to be either an int in {1, ..., n_samples-1}'
-                             'or a float in (0, 1) with (n_samples_per_subset*n_samples) >= 1; '
-                             f'got {self.n_samples_per_subset}')
+                             f'or a float in (0, 1); got {self.n_samples_per_subset}')
 
         return n_samples_per_subset
