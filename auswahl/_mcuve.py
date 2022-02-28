@@ -1,6 +1,7 @@
-from typing import Union, Dict
+from typing import Union
 
 import numpy as np
+from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_is_fitted, check_scalar
@@ -26,8 +27,9 @@ class MCUVE(PointSelector):
     n_samples_per_subset : int or float, default=None
         Number of samples used for each random subset.
 
-    pls_kwargs : dictionary, default=None
-        Keyword arguments that are passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>`.
+    pls : PLSRegression, default=None
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
+        Use this to adjust the hyperparameters of the PLS method.
 
     random_state : int or numpy.random.RandomState, default=None
         Seed for the random subset sampling. Pass an int for reproducible output across function calls.
@@ -66,16 +68,16 @@ class MCUVE(PointSelector):
                  n_features_to_select: Union[int, float] = None,
                  n_subsets: int = 100,
                  n_samples_per_subset: Union[int, float] = None,
-                 pls_kwargs: Dict = None,
+                 pls: PLSRegression = None,
                  random_state: Union[int, np.random.RandomState] = None):
         super().__init__(n_features_to_select)
         self.n_subsets = n_subsets
         self.n_samples_per_subset = n_samples_per_subset
-        self.pls_kwargs = pls_kwargs
+        self.pls = pls
         self.random_state = random_state
 
     def _fit(self, X, y, n_features_to_select):
-        pls_kwargs = dict() if self.pls_kwargs is None else self.pls_kwargs
+        pls = PLSRegression() if self.pls is None else clone(self.pls)
         random_state = check_random_state(self.random_state)
         self._check_n_subsets()
         n_samples_per_subset = self._check_n_samples_per_subset(X)
@@ -86,9 +88,8 @@ class MCUVE(PointSelector):
             idx = random_state.permutation(n_samples)[:n_samples_per_subset]
             X_i, y_i = X[idx], y[idx]
 
-            pls_i = PLSRegression(**pls_kwargs)
-            pls_i.fit(X_i, y_i)
-            coefs.append(abs(pls_i.coef_.flatten()))
+            pls.fit(X_i, y_i)
+            coefs.append(abs(pls.coef_.squeeze()))
         self.coefs_ = np.array(coefs)
         self.stability_ = self.coefs_.mean(axis=0) / self.coefs_.std(axis=0)
 
