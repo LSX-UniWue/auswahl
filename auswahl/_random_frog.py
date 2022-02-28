@@ -2,6 +2,7 @@ from typing import Union
 from warnings import warn
 
 import numpy as np
+from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.model_selection import cross_val_score, KFold
 from sklearn.utils.validation import check_is_fitted, check_random_state, check_scalar
@@ -110,7 +111,7 @@ class RandomFrog(PointSelector):
         random_state = check_random_state(self.random_state)
 
         # Initialize estimator, feature sets and frequency counter
-        pls = PLSRegression() if self.pls is None else self.pls
+        pls = PLSRegression() if self.pls is None else clone(self.pls)
         all_features = np.arange(n_features)
         selected_features = random_state.choice(n_features, n_initial_features, replace=False)
         self.frequencies_ = np.zeros(n_features)
@@ -137,7 +138,7 @@ class RandomFrog(PointSelector):
                 continue
 
             pls.fit(X[:, features_to_explore], y)
-            absolute_coefficients = abs(pls.coef_.flatten())
+            absolute_coefficients = abs(pls.coef_.squeeze())
             selection_idx = np.argsort(absolute_coefficients)[-n_candidate_features:]
             candidate_features = features_to_explore[selection_idx]
 
