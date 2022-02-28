@@ -17,31 +17,31 @@ class RandomFrog(PointSelector):
 
     Parameters
     ----------
-    n_features_to_select: int or float, default=None
+    n_features_to_select : int or float, default=None
         Number of features to select.
 
-    n_iterations: int, default=10000
+    n_iterations : int, default=10000
         Number of variable selection iterations.
         This variable is called N in the original publication.
 
-    n_initial_features: int or float, default=0.1
+    n_initial_features : int or float, default=0.1
         Number of features in the initial  feature subset. If `None`, 10 % of the features are used. If integer, the
         parameter is the size of the initial subset. If float between 0 and 1, it is the fraction of features to use.
         This variable is called Q in the original publication.
 
-    variance_factor: float, default=0.3
+    variance_factor : float, default=0.3
         Variance of the normal distribution which samples determine the amount of features that are added or removed
         to the candidate set in each iteration.
         This variable is called θ in the original publication.
 
-    subset_expansion_factor: float, default=3
+    subset_expansion_factor : float, default=3
         Multiple of the number of features that are explored if the candidate subset is expanded. If the current feature
         subset is n and m new features have to be added to the new feature subset, m*subset_expansion_factors features
         are added to a candidate set. After fitting a PLS model, only the n+m features with the highest coefficients are
         kept.
         This variable is called ω in the original publication.
 
-    acceptance_factor: float, default=0.1
+    acceptance_factor : float, default=0.1
         The factor is used to calculate the probability that a feature subset is selected even though it leads to a
         worse cross-validation performance of a fitted PLS model. The probability is computed by multiplying the
         acceptance_factor with the relative decrease of the cross-validated performance score.
@@ -56,7 +56,7 @@ class RandomFrog(PointSelector):
 
     Attributes
     ----------
-    frequencies_: ndarray of shape (n_features,)
+    frequencies_ : ndarray of shape (n_features,)
         Number of times each feature has been selected after all iterations
     support_ : ndarray of shape (n_features,)
         Mask of selected features.
