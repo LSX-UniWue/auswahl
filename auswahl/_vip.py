@@ -1,6 +1,7 @@
 from typing import Union, Dict
 
 import numpy as np
+from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
 
@@ -17,13 +18,14 @@ class VIP(PointSelector):
     n_features_to_select : int or float, default=None
         Number of features to select.
 
-    pls_kwargs : dictionary, default=None
-        Keyword arguments that are passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>`.
+    pls : PLSRegression, default=None
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
+        Use this to adjust the hyperparameters of the PLS method.
 
     Attributes
     ----------
-    pls_estimator_ : PLSRegression instance
-        Fitted PLS estimator used to calculate the vip scores.
+    pls_ : PLSRegression instance
+        Fitted PLS estimator used to calculate the VIP scores.
 
     vips_ : ndarray of shape (n_features,)
         Calculated VIP scores.
@@ -51,14 +53,13 @@ class VIP(PointSelector):
 
     def __init__(self,
                  n_features_to_select: Union[int, float] = None,
-                 pls_kwargs: Dict = None):
+                 pls: PLSRegression = None):
         super().__init__(n_features_to_select)
-        self.pls_kwargs = pls_kwargs
+        self.pls = pls
 
     def _fit(self, X, y, n_features_to_select):
-        pls_kwargs = dict() if self.pls_kwargs is None else self.pls_kwargs
-        self.pls_estimator_ = PLSRegression(**pls_kwargs)
-        self.pls_estimator_.fit(X, y)
+        self.pls_ = PLSRegression() if self.pls is None else clone(self.pls)
+        self.pls_.fit(X, y)
         self.vips_ = self._calculate_vip_scores(X)
 
         selected_idx = np.argsort(self.vips_)[-n_features_to_select:]
@@ -68,9 +69,9 @@ class VIP(PointSelector):
         return self
 
     def _calculate_vip_scores(self, X):
-        x_scores = self.pls_estimator_.transform(X)
-        x_weights = self.pls_estimator_.x_weights_
-        y_loadings = self.pls_estimator_.y_loadings_
+        x_scores = self.pls_.transform(X)
+        x_weights = self.pls_.x_weights_
+        y_loadings = self.pls_.y_loadings_
 
         num_features = X.shape[1]
         total_explained_variance = np.diag((x_scores.T @ x_scores) @ (y_loadings.T @ y_loadings))[:, None]
