@@ -17,3 +17,11 @@ Wavelength Point Selection
     RandomFrog
     VIP
 
+Wavelength Interval Selection
+=============================
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    IntervalSelector
