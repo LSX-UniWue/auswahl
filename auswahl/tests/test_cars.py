@@ -2,6 +2,9 @@ import numpy as np
 import pytest
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
+from sklearn.cross_decomposition import PLSRegression
+
+
 from auswahl import CARS
 
 
@@ -15,7 +18,7 @@ def data() :
 def test_cars(data):
     
     X, y = data
-    selector = CARS(n_features_to_select=2,pls_kwargs={'n_components' : 1})
+    selector = CARS(n_features_to_select=2, pls = PLSRegression(n_components=1))
 
     selector.fit(X, y)
     assert len(selector.support_) == X.shape[1]

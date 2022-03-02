@@ -8,6 +8,9 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import mean_squared_error,make_scorer
 
+from sklearn import clone
+
+
 from auswahl._base import PointSelector
 
 
@@ -36,8 +39,9 @@ class CARS(PointSelector) :
             Number of cross validation folds used in the evaluation of feature sets.
               
         
-        pls_kwargs : dictionary, default = {}
-            Keyword arguments passed to :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>
+        pls : PLSRegression, default=None
+            Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
+            Use this to adjust the hyperparameters of the PLS method.
             
         random_state : int or numpy.random.RandomState, default=None
             Seed for the random subset sampling. Pass an int for reproducible output across function calls.  
@@ -64,7 +68,7 @@ class CARS(PointSelector) :
         >>> from auswahl import CARS
         >>> X = np.random.randn(100, 15)
         >>> y = 5 * X[:, -2] - 2 * X[:, -1]  # y only depends on two features
-        >>> selector = CARS(n_features_to_select=2,n_sample_runs = 100, pls_kwargs={'n_components' : 1})
+        >>> selector = CARS(n_features_to_select=2,n_sample_runs = 100)
         >>> selector.fit(X, y)
         >>> selector.get_support()
         array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
@@ -76,12 +80,12 @@ class CARS(PointSelector) :
                  n_sample_runs : int = 100,
                  fit_samples_ratio : float = 0.9,
                  n_cv_folds : int = 5,
-                 pls_kwargs : Dict = dict(),
+                 pls : PLSRegression = None,
                  random_state: Union[int, np.random.RandomState] = None) :
         
         super().__init__(n_features_to_select)
         
-        self.pls_kwargs = pls_kwargs
+        self.pls = pls
         self.n_sample_runs = n_sample_runs
         self.fit_samples_ratio = fit_samples_ratio
         self.n_cv_folds = n_cv_folds
@@ -97,16 +101,15 @@ class CARS(PointSelector) :
         
         return (selection_ratios * n_wavelengths + 1e-10).astype('int')
     
-    def _get_wavelength_weights(self, X, y, n_fit_samples, wavelengths) :
+    def _get_wavelength_weights(self, X, y, n_fit_samples, wavelengths, pls, random_state) :
         
-        fitting_samples = self.random_state.choice(X.shape[0],
-                                                   n_fit_samples,
-                                                   replace = False)
+        fitting_samples = random_state.choice(X.shape[0],
+                                              n_fit_samples,
+                                              replace = False)
         
         X_pls_fit = X[fitting_samples,:][:,wavelengths]
         y_pls_fit = y[fitting_samples]
         
-        pls = PLSRegression(**self.pls_kwargs)
         pls.fit(X_pls_fit, y_pls_fit)
             
         weights = np.abs(pls.coef_).flatten()
@@ -116,10 +119,9 @@ class CARS(PointSelector) :
         
         return wavelength_weights
     
-    def _evaluate(self,X, y, wavelengths) :
+    def _evaluate(self,X, y, wavelengths,pls) :
         
-        pls_model = PLSRegression(**self.pls_kwargs)
-        cv_scores = cross_val_score(pls_model,
+        cv_scores = cross_val_score(pls,
                                     X[:,wavelengths], 
                                     y, 
                                     cv=self.n_cv_folds, 
@@ -132,7 +134,10 @@ class CARS(PointSelector) :
         
     def _fit(self, X, y, n_features_to_select) :
         
-        self.random_state = check_random_state(self.random_state)
+        pls = PLSRegression() if self.pls is None else clone(self.pls)
+
+        random_state = check_random_state(self.random_state)
+        
         self._check_n_sample_runs()
         self._check_fit_samples_ratio()
         
@@ -148,7 +153,9 @@ class CARS(PointSelector) :
             weights = self._get_wavelength_weights(X, 
                                                    y, 
                                                    n_fit_samples,
-                                                   wavelengths
+                                                   wavelengths,
+                                                   pls,
+                                                   random_state
                                                   )
             
             wavelengths = np.argsort(-weights)[:edf_schedule[i]]
@@ -157,7 +164,7 @@ class CARS(PointSelector) :
             wavelength_probs = weights[wavelengths] / np.sum(weights[wavelengths])
             
             #draw wavelengths according to their weight with replacement
-            wavelengths = self.random_state.choice(wavelengths,
+            wavelengths = random_state.choice(wavelengths,
                                            edf_schedule[i],
                                            replace=True,
                                            p=wavelength_probs)
@@ -165,7 +172,7 @@ class CARS(PointSelector) :
             wavelengths = np.unique(wavelengths)
 
             if wavelengths.shape[0] <= n_features_to_select :
-                score = self._evaluate(X,y,wavelengths)
+                score = self._evaluate(X,y,wavelengths,pls)
                 candidate_feature_sets.append((wavelengths,score)) #no copying required
         
         best_feature_set = sorted(candidate_feature_sets, key=lambda x : x[1])[0][0]
