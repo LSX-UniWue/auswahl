@@ -1,17 +1,21 @@
-.. title:: User guid : contents
+.. title:: User guide : contents
 
 .. _user_guide:
 
-======================================================
-User guide: Create your own feature selection pipeline
-======================================================
+==========
+User guide
+==========
 
 Wavelength Point Selection
 --------------------------
 
-TODO
+.. toctree::
+    :numbered:
+    :maxdepth: 2
+
+    point_selection.rst
 
 Wavelength Interval Selection
 -----------------------------
 
-TODO
+Work in progress
