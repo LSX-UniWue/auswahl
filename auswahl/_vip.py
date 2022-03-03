@@ -1,4 +1,5 @@
 from typing import Union
+from warnings import warn
 
 import numpy as np
 from sklearn import clone
@@ -85,3 +86,28 @@ class VIP(PointSelector):
     def _get_support_mask(self):
         check_is_fitted(self)
         return self.support_
+
+    def get_support_for_threshold(self, threshold: float = 1, indices: bool = False):
+        """Select a set of features whose VIP values are above a given threshold.
+
+        Parameters
+        ----------
+        threshold : float, default=1
+            Lower bound that has to be exceeded by the VIP value of a feature so that it is selected.
+
+        indices : bool, default=False
+            If True, the return value will be an array of integers, rather than a boolean mask.
+
+        Returns
+        -------
+        selection : ndarray of shape (n_features,)
+            Boolean mask of selected features, or array of indices if indices=True.
+        """
+        check_is_fitted(self)
+        mask = self.vips_ > threshold
+        if not np.any(mask):
+            warn(f'No VIP score is higher than the given threshold of {threshold}. '
+                 f'Only the most important feature will be selected with a VIP value of {self.vips_.max()}')
+            mask[np.argmax(self.vips_)] = 1
+
+        return mask if not indices else np.where(mask)[0]

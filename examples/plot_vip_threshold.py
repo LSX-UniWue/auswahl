@@ -12,9 +12,9 @@ select the most important features.
 
 The example below uses a synthetic dataset with 10 standard normally distributed features.
 The target values only depend on three features: #0, #5 and #8.
-If we examine the VIP values instead of using the binary support mask, we can select features by using a threshold for
-the VIP scores.
-A common threshold is 1 which leads to the correct selection of the three important features.
+We can use the :func:`get_support_for_threshold <auswahl.VIP.get_support_for_threshold>` method to select features
+whose VIP values are higher than a given threshold.
+A common threshold is 1 which leads to the correct selection of the three important features in this case.
 
 .. note::
     See also :ref:`sphx_glr_auto_examples_plot_vip_two_features.py`
@@ -32,7 +32,7 @@ y = X[:, 0] - X[:, 5] + X[:, 8]
 vip = VIP()
 vip.fit(X, y)
 
-selection = vip.vips_ > 1
+selection = vip.get_support_for_threshold(threshold=1)
 colors = np.full(X.shape[1], fill_value='C00')
 colors[selection] = 'C01'
 
