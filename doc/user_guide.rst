@@ -2,10 +2,6 @@
 
 .. _user_guide:
 
-==========
-User guide
-==========
-
 Wavelength Point Selection
 --------------------------
 

@@ -1,7 +1,3 @@
-===========
-AUSWAHL API
-===========
-
 .. currentmodule:: auswahl
 
 Wavelength Point Selection
@@ -15,11 +11,11 @@ Wavelength Point Selection
     CARS
     MCUVE
     RandomFrog
+    SPA
     VIP
 
 Wavelength Interval Selection
 =============================
-
 .. autosummary::
     :toctree: generated/
     :template: class.rst

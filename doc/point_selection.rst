@@ -2,10 +2,6 @@
 
 .. _base.PointSelector:
 
-==========================
-Wavelength Point Selection
-==========================
-
 All classes that extend the :class:`auswahl.PointSelector` can be used to perform wavelength point selection,
 i.e. the independent selection of informative wavelengths without taking spatial information into account.
 
