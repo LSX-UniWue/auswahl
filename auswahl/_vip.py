@@ -13,6 +13,8 @@ class VIP(PointSelector):
 
     The VIP scores are computed according to Favilla et al. [1]_.
 
+    Read more in the :ref:`User Guide <vip>`.
+
     Parameters
     ----------
     n_features_to_select : int or float, default=None
