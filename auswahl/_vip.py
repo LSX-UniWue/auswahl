@@ -1,4 +1,4 @@
-from typing import Union, Dict
+from typing import Union
 
 import numpy as np
 from sklearn import clone
@@ -70,15 +70,13 @@ class VIP(PointSelector):
 
     def _calculate_vip_scores(self, X):
         x_scores = self.pls_.transform(X)
-        x_weights = self.pls_.x_weights_
+        x_weights = self.pls_.x_weights_  # already normalized
         y_loadings = self.pls_.y_loadings_
 
         num_features = X.shape[1]
-        total_explained_variance = np.diag((x_scores.T @ x_scores) @ (y_loadings.T @ y_loadings))[:, None]
-
-        x_weights_normalized = (x_weights / np.linalg.norm(x_weights, axis=0, keepdims=True)) ** 2
-        explained_variance = x_weights_normalized @ total_explained_variance
-        vips = np.sqrt((num_features * explained_variance) / total_explained_variance.sum())
+        explained_variance = (y_loadings ** 2) @ (x_scores.T @ x_scores)
+        weighted_explained_variance = (x_weights ** 2) @ explained_variance.T
+        vips = np.sqrt((num_features * weighted_explained_variance) / explained_variance.sum())
 
         return vips.flatten()
 
