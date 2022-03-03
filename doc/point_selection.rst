@@ -37,7 +37,9 @@ Note that the above equation uses a 1-dimensional target vector.
 
 .. topic:: Examples
 
-    TODO
+    * :ref:`sphx_glr_auto_examples_plot_vip_two_features.py`: A VIP example usage for a synthetic regression task
+    * :ref:`sphx_glr_auto_examples_plot_vip_threshold.py`: A VIP example that examines the calculated VIP scores to
+      determine the number of features to select
 
 .. topic:: References:
 
