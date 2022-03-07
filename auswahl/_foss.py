@@ -1,12 +1,12 @@
+from typing import Union, Dict
+
 import numpy as np
 from numba import jit
-from typing import Union, Dict
 from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_random_state
 from sklearn.model_selection import cross_val_score
-
 
 from auswahl._base import IntervalSelector
 
@@ -67,8 +67,6 @@ class FOSS(IntervalSelector):
         pls.fit(x_pls_fit, y)
         weights = pls.coef_.flatten()# no absolute value
         return weights
-
-        return wavelength_weights
 
     def _weight_blocks(self, variable_weights, split_points):
 
