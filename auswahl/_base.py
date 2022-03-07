@@ -102,7 +102,7 @@ class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
         return self
 
     @abstractmethod
-    def _fit(self, X, y, n_features_to_select, interval_width):
+    def _fit(self, X, y, n_intervals_to_select, interval_width):
         pass
 
     def _check_n_intervals_to_select(self):

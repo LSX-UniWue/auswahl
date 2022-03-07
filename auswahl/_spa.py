@@ -10,7 +10,7 @@ from sklearn.model_selection import cross_val_score
 from auswahl._base import PointSelector
 
 
-class SPA(PointSelector) :
+class SPA(PointSelector):
 
     """Feature selection with the Successive Projection Algorithm (SPA).
     
