@@ -12,7 +12,7 @@ def data():
     return X, y
 
 
-def test_vip(data):
+def test_spa(data):
     X, y = data
 
     vip = SPA(n_features_to_select=2)
