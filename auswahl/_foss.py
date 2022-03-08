@@ -11,6 +11,39 @@ from sklearn.model_selection import cross_val_score
 from auswahl._base import IntervalSelector
 
 
+@jit(nopython=True)
+def _cost(data: np.array, left_bound, right_bound):
+    return np.var(data[left_bound: right_bound + 1]) / (right_bound - left_bound + 1)
+
+
+@jit(nopython=True)
+def _build_result(split_points: np.array, n_groups: int):
+    res = [split_points[n_groups - 1, -1]]
+    index = res[0] - 1
+    for i in range(n_groups - 2, 0, -1):
+        res = [split_points[i, index]] + res
+        index = res[0] - 1
+    return res
+
+
+@jit(nopython=True)
+def _fisher_optimal_partitioning(data: np.array, n_groups: int):
+    table = np.zeros((n_groups + 1, data.shape[0]), dtype='float')
+    split_points = np.zeros_like(table, dtype='int')
+
+    for i in range(table.shape[1]):
+        group_range = min(i + 1, n_groups - 1 if (i != table.shape[1] - 1) else n_groups)
+
+        table[0, i] = _cost(data, 0, i)
+        for j in range(1, group_range):
+            costs = np.array([table[j - 1, z - 1] + _cost(data, z, i) for z in range(j - 1, i + 1)])
+            z_raw = np.argmin(costs)
+            table[j, i] = costs[z_raw]
+            split_points[j, i] = z_raw + (j - 1)
+
+    return table[n_groups - 1, -1], _build_result(split_points, n_groups)
+
+
 class FOSS(IntervalSelector):
 
     """
@@ -31,36 +64,6 @@ class FOSS(IntervalSelector):
         self.pls = pls
         self.n_cv_folds = n_cv_folds
         self.random_state = random_state
-
-    @jit(nopython=True)
-    def _cost(self, data: np.array, left_bound, right_bound):
-        return np.var(data[left_bound: right_bound + 1])
-
-    @jit(nopython=True)
-    def _build_result(self, split_points: np.array, n_groups: int):
-        res = [split_points[n_groups - 1, -1]]
-        index = res[0] - 1
-        for i in range(n_groups - 2, 0, -1):
-            res = [split_points[i, index]] + res
-            index = res[0] - 1
-        return res
-
-    @jit(nopython=True)
-    def _fisher_optimal_partitioning(self, data: np.array, n_groups: int):
-        table = np.zeros((n_groups + 1, data.shape[0]), dtype='float')
-        split_points = np.zeros_like(table, dtype='int')
-
-        for i in range(table.shape[1]):
-            group_range = min(i + 1, n_groups - 1 if (i != table.shape[1] - 1) else n_groups)
-
-            table[0, i] = self._cost(data, 0, i)
-            for j in range(1, group_range):
-                costs = np.array([table[j - 1, z - 1] + self._cost(data, z, i) for z in range(j - 1, i + 1)])
-                z_raw = np.argmin(costs)
-                table[j, i] = costs[z_raw]
-                split_points[j, i] = z_raw + (j - 1)
-
-        return table[n_groups - 1, -1], self._build_result(split_points, n_groups)
 
     def _weight_variables(self, X, y, wavelengths, pls):
         x_pls_fit = X[:, wavelengths]
@@ -96,11 +99,11 @@ class FOSS(IntervalSelector):
         for i in range(100):# TODO: devise a reasaonable concept here
 
             weights = self._weight_variables(X, y, wavelengths, pls)
-            _, split_points = self._fisher_optimal_partitioning(weights, 10)# TODO: devise a reasonable concept here
+            _, split_points = _fisher_optimal_partitioning(weights, 10)# TODO: devise a reasonable concept here
             block_weights = self._weight_blocks(weights, split_points)
             wavelength_blocks = np.split(wavelengths, split_points)
 
-            sampled_blocks = random_state.choice(np.arange(len(block_weights)),
+            sampled_blocks = random_state.choice(np.arange(block_weights.shape[0]),
                                                  10,# TODO: devisa a reasaonable concept here
                                                  replace=True,
                                                  p=block_weights)
