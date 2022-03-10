@@ -81,18 +81,12 @@ class IPLS(IntervalSelector):
         wavelengths = np.arange(X.shape[1], dtype='int')
 
         candidates = []
-        for i in range(interval_width):  # no cyclic intervals
-            split_points = [interval_width*(j+1) for j in range((X.shape[1] - i) // interval_width)]
-            intervals = np.split(wavelengths[i:], split_points)
-            if (X.shape[1] - i) % interval_width != 0:
-                intervals = intervals[:-1]  # remainder intervals are not considered
+        for i in range(X.shape[1] - interval_width):
+            candidates.append((self._evaluate_selection(X, y, wavelengths[i:i + interval_width], pls), i))
 
-            for j, interval in enumerate(intervals):
-                candidates.append((self._evaluate_selection(X, y, interval, pls), i, j))
-
-        self.score_, offset, index = max(candidates, key=lambda tup: tup[0])
+        self.score_, offset = max(candidates, key=lambda tup: tup[0])
         self.support_ = np.zeros(X.shape[1]).astype('bool')
-        self.support_[offset + interval_width*index:offset + interval_width*(index + 1)] = True
+        self.support_[offset:offset + interval_width] = True
 
     def _get_support_mask(self):
         check_is_fitted(self)
