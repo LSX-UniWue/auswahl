@@ -55,7 +55,7 @@ class FOSS(IntervalSelector):
     def __init__(self,
                  n_intervals_to_select: int = None,
                  interval_width: Union[int, float] = None,
-                 n_cv_folds : int = 10,
+                 n_cv_folds: int = 10,
                  pls: PLSRegression = None,
                  random_state: Union[int, np.random.RandomState] = None):
 
@@ -77,7 +77,7 @@ class FOSS(IntervalSelector):
         block_weights = []
         for block in blocks:
             block_weights.append(np.sum(block))
-        return np.linalg.norm(block_weights, ord=1)# convert to probability distribution
+        return np.linalg.norm(block_weights, ord=1)  # convert to probability distribution
 
     def _evaluate_selection(self, X, y, wavelengths, pls):
         cv_scores = cross_val_score(pls,
@@ -99,12 +99,12 @@ class FOSS(IntervalSelector):
         for i in range(100):# TODO: devise a reasaonable concept here
 
             weights = self._weight_variables(X, y, wavelengths, pls)
-            _, split_points = _fisher_optimal_partitioning(weights, 10)# TODO: devise a reasonable concept here
+            _, split_points = _fisher_optimal_partitioning(weights, 10)  # TODO: devise a reasonable concept here
             block_weights = self._weight_blocks(weights, split_points)
             wavelength_blocks = np.split(wavelengths, split_points)
 
             sampled_blocks = random_state.choice(np.arange(block_weights.shape[0]),
-                                                 10,# TODO: devisa a reasaonable concept here
+                                                 10,  # TODO: devisa a reasaonable concept here
                                                  replace=True,
                                                  p=block_weights)
             selected_blocks = np.sort(np.unique(sampled_blocks))
