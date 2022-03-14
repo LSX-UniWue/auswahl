@@ -16,11 +16,7 @@ class SPA(PointSelector):
     
     
         The Successive Projections Algorithm conducts feature selection according to Araújo et al. [1]_.
-        The algorithm aims to find a set of features with minimal collinearity among the selected features.
-        The algorithm proceeds, by an iterative forward selection of wavelengths, which are the least collinear with the already 
-        selected wavelengths. Note here, that the algorithm therefore selects wavelengths solely with regard to a numerical criterion:
-        If N wavelengths are given, the algorithm constructs N candidate feature sets. While the quality of the sets is assessed via cross-validation w.r.t to
-        the calibration problem, it is not used to guide the selection process itself.
+        The algorithm aims to find a set of features exhibiting minimal collinearity.
         
         Parameters
         ----------

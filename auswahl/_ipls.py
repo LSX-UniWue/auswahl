@@ -8,6 +8,8 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_random_state
 from sklearn.model_selection import cross_val_score
 
+from joblib import Parallel
+
 from auswahl._base import IntervalSelector
 
 
@@ -60,12 +62,14 @@ class IPLS(IntervalSelector):
                  interval_width: Union[int, float] = None,
                  n_cv_folds: int = 10,
                  pls: PLSRegression = None,
+                 n_jobs: int = 1,
                  random_state: Union[int, np.random.RandomState] = None):
 
         super().__init__(1, interval_width)
 
         self.pls = pls
         self.n_cv_folds = n_cv_folds
+        self.n_jobs = n_jobs
         self.random_state = random_state
 
     def _evaluate_selection(self, X, y, wavelengths, pls):
@@ -83,6 +87,7 @@ class IPLS(IntervalSelector):
         candidates = []
         for i in range(X.shape[1] - interval_width):
             candidates.append((self._evaluate_selection(X, y, wavelengths[i:i + interval_width], pls), i))
+        #candiates = Parallel(n_jobs=self.n_jobs)((self._evaluate_selection(X, y, wavelengths[i:i + interval_width], clone(pls)),i)for i in range(X.shape[1] - interval_width))
 
         self.score_, offset = max(candidates, key=lambda tup: tup[0])
         self.support_ = np.zeros(X.shape[1]).astype('bool')
