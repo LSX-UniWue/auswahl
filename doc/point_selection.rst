@@ -48,7 +48,16 @@ Note that the above equation uses a 1-dimensional target vector.
 Monte-Carlo Uninformative Variable Elimination
 ==============================================
 
-Monte-Carlo Uninformative Variable Elimination (MC-UVE) is available in :class:`MCUVE`.
+Monte-Carlo Uninformative Variable Elimination (MC-UVE) uses random sampling to determine the stability of features.
+Performing MC-UVE is possible by using the :class:`MCUVE` selection method.
+The method generates a large number of random subsets of the training data and fits a PLS model to each subset.
+Afterwards, the importance of each feature is determined by computing the stability of the PLS' regression coefficients.
+If μ and σ are the mean and standard deviation of the regression coefficients,
+the stability for the i-th feature is defined as:
+
+.. math:: s_i = \frac{\mu_i}{\sigma_i}
+
+The features with the highest **absolute** stability values are selected.
 
 .. _rf:
 
