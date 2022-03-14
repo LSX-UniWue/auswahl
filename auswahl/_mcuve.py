@@ -13,8 +13,8 @@ class MCUVE(PointSelector):
     """Feature selection with Monte Carlo Uninformative Variable Elimination.
 
     The stability for each feature is computed according to Cai et al. [1]_.
-    While not stated in the original publication, we use the absolute values of the regression coefficients for
-    computing the stability values.
+
+    Note that the **absolute** stability values are used to determine the most important features.
 
     Parameters
     ----------
@@ -40,7 +40,8 @@ class MCUVE(PointSelector):
         Fitted regression coefficients of the <n_subsets> PLS models.
 
     stability_ : ndarray of shape (n_features,)
-        Computed stability score of the absolute regression coefficients.
+        Computed stability value for each feature. While these attribute contains the signed stability values,
+        MC-UVE uses the absolute values to select the most important features.
 
     support_ : ndarray of shape (n_features,)
         Mask of selected features.
@@ -89,11 +90,11 @@ class MCUVE(PointSelector):
             X_i, y_i = X[idx], y[idx]
 
             pls.fit(X_i, y_i)
-            coefs.append(abs(pls.coef_.squeeze()))
+            coefs.append(pls.coef_.squeeze())
         self.coefs_ = np.array(coefs)
         self.stability_ = self.coefs_.mean(axis=0) / self.coefs_.std(axis=0)
 
-        selected_idx = np.argsort(self.stability_)[-n_features_to_select:]
+        selected_idx = np.argsort(abs(self.stability_))[-n_features_to_select:]
         self.support_ = np.zeros(X.shape[1], dtype=bool)
         self.support_[selected_idx] = 1
 
