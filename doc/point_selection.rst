@@ -14,7 +14,7 @@ Use the methods available in :mod:`sklearn.model_selection` to determine a suita
 Variable Importance in Projection
 =================================
 
-Calculating the Variable Importance in Projection [v]_ (VIP) is possible by using the :class:`VIP` selection method.
+Calculating the Variable Importance in Projection (VIP) is possible by using the :class:`VIP` selection method.
 This method uses the coefficients of a fitted Partial Least Squares (PLS) model to calculate the importance of each
 wavelength (=variable). To calculate the VIPs, the X-score matrix T, the y-loading vector q and the normalized X-weight
 matrix W are used. They are defined as:
@@ -39,9 +39,9 @@ Note that the above equation uses a 1-dimensional target vector.
 
 .. topic:: References:
 
-   .. [v] Stefania Favilla, Caterina Durante, Mario Li Vigni, Marina Cocchi,
-      'Assessing feature relevance in NPLS models by VIP',
-      Chemometrics and Intelligent Laboratory Systems, 129, 76--86, 2013.
+   * Stefania Favilla, Caterina Durante, Mario Li Vigni, Marina Cocchi,
+     'Assessing feature relevance in NPLS models by VIP',
+     Chemometrics and Intelligent Laboratory Systems, 129, 76--86, 2013.
 
 .. _mcuve:
 
@@ -59,12 +59,26 @@ the stability for the i-th feature is defined as:
 
 The features with the highest **absolute** stability values are selected.
 
+.. topic:: References:
+
+    * Wensheng Cai, Yankun Li and Xueguang Shao,
+      'A variable selection method based on uninformative variable elimination for multivariate calibration of
+      near-infrared spectra',
+      Chemometrics and Intelligent Laboratory Systems, 90, 188-194, 2008.
+
 .. _rf:
 
 Random Frog
 ===========
 
 Random Frog (RF) is available in :class:`RandomFrog`.
+
+.. topic:: References:
+
+    * Hong-Dong Li and Qing-Song Xu and Yi-Zeng Liang,
+      'Random frog: An efficient reversible jump Markov Chain Monte Carlo-like approach for variable selection with
+      applications to gene selection and disease classification',
+      Analytica Chimica Acta, 740, 20-26, 2012
 
 .. _cars:
 
@@ -86,9 +100,9 @@ drawn is determined by the EDF.
 
 .. topic:: References:
 
-    .. [v] Hongdong Li,Yizeng Liang, Qingsong Xu and Dongsheng Cao,
-           'Key wavelengths screening using competitive adaptive reweighted sampling method for multivariate calibration',
-           Analytica Chimica Acta, 648, 77-84, 2009
+    * Hongdong Li,Yizeng Liang, Qingsong Xu and Dongsheng Cao,
+      'Key wavelengths screening using competitive adaptive reweighted sampling method for multivariate calibration',
+      Analytica Chimica Acta, 648, 77-84, 2009
 
 .. _spa:
 
@@ -114,7 +128,7 @@ the target quantity regression is only considered during the CV optimization of 
 
 .. topic:: References:
 
-    .. [v] Mário César Ugulino Araújo,Teresa Cristina Bezerra Saldanha, Roberto Kawakami Harrop Galvao,
-       Takashi Yoneyama, Henrique Caldas Chame and Valeria Visani,
-       'The successive projections algorithm for variable selection in spectroscopic multicomponent analysis',
-       Chemometrics and Intelligent Laboratory Systems, 57, 65-73, 2001
+    * Mário César Ugulino Araújo,Teresa Cristina Bezerra Saldanha, Roberto Kawakami Harrop Galvao,
+      Takashi Yoneyama, Henrique Caldas Chame and Valeria Visani,
+      'The successive projections algorithm for variable selection in spectroscopic multicomponent analysis',
+      Chemometrics and Intelligent Laboratory Systems, 57, 65-73, 2001

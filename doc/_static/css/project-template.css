@@ -14,3 +14,11 @@
 .deprecated p span.versionmodified {
     font-weight: bold;
 }
+
+div.topic {
+  padding: 0.5rem;
+  background-color: #eee;
+  margin-bottom: 1rem;
+  border-radius: 0.25rem;
+  border: 1px solid #CCC;
+}
