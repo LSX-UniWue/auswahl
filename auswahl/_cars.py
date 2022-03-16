@@ -58,9 +58,6 @@ class CARS(PointSelector):
         support_ : ndarray of shape (n_features,)
             Mask of selected features
 
-        selection_count_ : ndarray of shape (n_features,)
-            Indicating the number of times a wavelength has been selected during CARS sample runs
-        
     
         References
         ----------
@@ -175,21 +172,17 @@ class CARS(PointSelector):
 
             if wavelengths.shape[0] == n_features_to_select:
                 break
-        
-        return wavelengths
+        score = self._evaluate(X, y, wavelengths, pls)
+        return score, wavelengths
 
     def _fit(self, X, y, n_features_to_select):
         candidates = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_cars)(X,
                                                                           y,
                                                                           n_features_to_select,
                                                                           self.pls) for i in range(self.n_cars_runs))
-        selection_counter = np.zeros(X.shape[1])
-        for prop in candidates:
-            selection_counter[prop] = selection_counter[prop] + 1
-
-        self.selection_count_ = selection_counter
+        score, opt_wavelengths = max(candidates, key=lambda x: x[0])
         self.support_ = np.zeros(X.shape[1]).astype('bool')
-        self.support_[np.argsort(-selection_counter)[:n_features_to_select]] = True
+        self.support_[opt_wavelengths] = True
 
     def _get_support_mask(self):
         check_is_fitted(self)
