@@ -9,23 +9,22 @@ from auswahl import CARS
 
 
 @pytest.fixture
-def data() :
-    
-    X = np.random.randn(100, 10)
-    y = 5 * X[:, 1] - 2 * X[:, 5]
+def data():
+    # high sample count to avoid random correlation for testing purposes
+    X = np.random.randn(200, 10)
+    y = 10 * X[:, 1] - 10 * X[:, 5]
     return X, y
     
 def test_cars(data):
     
     X, y = data
-    selector = CARS(n_features_to_select=2, pls = PLSRegression(n_components=1))
+    selector = CARS(n_features_to_select=2, n_jobs=2, n_cars_runs=20, pls=PLSRegression(n_components=1))
 
     selector.fit(X, y)
     assert len(selector.support_) == X.shape[1]
-    assert sum(selector.support_) <= 2
-    #TODO: fix operating principle of cars
-    #assert_array_equal(selector.support_, [0, 1, 0, 0, 0, 1, 0, 0, 0, 0])
+    assert sum(selector.support_) == 2
+    assert_array_equal(selector.support_, [0, 1, 0, 0, 0, 1, 0, 0, 0, 0])
 
-    #X_t = selector.transform(X)
-    #assert X_t.shape[1] == 2
-    #assert_array_almost_equal(X[:, [0, 5]], X_t)
+    X_t = selector.transform(X)
+    assert X_t.shape[1] == 2
+    assert_array_almost_equal(X[:, [1, 5]], X_t)
