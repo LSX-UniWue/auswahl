@@ -86,8 +86,7 @@ class SPA(PointSelector):
         cv_scores = cross_val_score(pls, X[:, wavelengths],
                                     y, cv=self.n_cv_folds,
                                     scoring='neg_mean_squared_error')
-        print(cv_scores)
-        return np.mean(cv_scores)
+        return np.nanmean(cv_scores)
 
     def _fit_spa(self,
                  X,

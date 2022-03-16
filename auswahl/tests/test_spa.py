@@ -7,19 +7,36 @@ from auswahl import SPA
 
 @pytest.fixture
 def data():
-    X = np.array([[1, 0, 0, 3, 0],
-                  [0, 1, 0, 0, 2],
-                  [0, 0, 1, 0, 2]])
-    y = 5 * X[:, 3] - 2 * X[:, 2]
+    X = np.random.rand(15, 100)
+    y = 15 * X[:, 10] - 2 * X[:, 20]
+    return X, y
+
+@pytest.fixture
+def ortho_data():
+    X = np.array([[1, 0, 0, 1, 0],
+                  [0, 1, 0, 1, 0],
+                  [0, 1, 1, 0, 0],
+                  [0, 0, 0, 0, 1]])
+    X = X / np.linalg.norm(X, ord=2, axis=0)
+    y = np.random.rand(4)
     return X, y
 
 
 def test_spa(data):
     X, y = data
-
     spa = SPA(n_features_to_select=2, n_cv_folds=2)
-
     spa.fit(X, y)
     assert len(spa.support_) == X.shape[1]
     assert sum(spa.support_) == 2
-    #assert (spa.support_[3] == 1 and spa.support_[0] == 0)
+    assert spa.support_[10]
+
+
+def test_orthogonality(ortho_data):
+    X, y = ortho_data
+    spa = SPA(n_features_to_select=3,n_cv_folds=2)
+
+    spa.fit(X, y)
+    assert len(spa.support_) == X.shape[1]
+    assert sum(spa.support_) == 3
+    selected = np.compress(spa.support_, X, axis=1)
+    assert_array_almost_equal(np.transpose(selected) @ selected, np.eye(sum(spa.support_), dtype='float'))
