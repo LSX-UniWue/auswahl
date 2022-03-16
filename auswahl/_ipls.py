@@ -8,7 +8,7 @@ from sklearn.utils.validation import check_is_fitted
 from sklearn.utils import check_random_state
 from sklearn.model_selection import cross_val_score
 
-from joblib import Parallel
+from joblib import Parallel, delayed
 
 from auswahl._base import IntervalSelector
 
@@ -80,18 +80,23 @@ class IPLS(IntervalSelector):
                                     scoring='neg_mean_squared_error')
         return np.mean(cv_scores)
 
+    def _fit_ipls(self, X, y, interval_width, pls, start):
+        pls = PLSRegression() if pls is None else clone(pls)
+        score = self._evaluate_selection(X,
+                                         y,
+                                         np.arange(start, start + interval_width, dtype='int'),
+                                         pls)
+        return score, start
+
     def _fit(self, X, y, n_intervals_to_select, interval_width):
-        pls = PLSRegression() if self.pls is None else clone(self.pls)
-        wavelengths = np.arange(X.shape[1], dtype='int')
-
-        candidates = []
-        for i in range(X.shape[1] - interval_width):
-            candidates.append((self._evaluate_selection(X, y, wavelengths[i:i + interval_width], pls), i))
-        #candiates = Parallel(n_jobs=self.n_jobs)((self._evaluate_selection(X, y, wavelengths[i:i + interval_width], clone(pls)),i)for i in range(X.shape[1] - interval_width))
-
-        self.score_, offset = max(candidates, key=lambda tup: tup[0])
+        candidates = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_ipls)(X,
+                                                                          y,
+                                                                          interval_width,
+                                                                          self.pls,
+                                                                          i) for i in range(X.shape[-1]-interval_width+1))
+        score, start = max(candidates, key=lambda x: x[0])
         self.support_ = np.zeros(X.shape[1]).astype('bool')
-        self.support_[offset:offset + interval_width] = True
+        self.support_[start:start + interval_width] = True
 
     def _get_support_mask(self):
         check_is_fitted(self)
