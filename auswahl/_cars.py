@@ -132,11 +132,10 @@ class CARS(PointSelector):
                                     scoring='neg_mean_squared_error')
         return np.mean(cv_scores)
         
-    def _fit_cars(self, X, y, n_features_to_select, pls, seed):
+    def _fit_cars(self, X, y, n_features_to_select, edf_schedule, pls, seed):
         pls = PLSRegression() if pls is None else clone(pls)
         random_state = check_random_state(seed)
 
-        edf_schedule = self._prepare_edf_schedule(X.shape[1])
         n_fit_samples = int(X.shape[0] * self.fit_samples_ratio)
 
         wavelengths = np.arange(X.shape[1])
@@ -166,6 +165,7 @@ class CARS(PointSelector):
 
             if wavelengths.shape[0] == n_features_to_select:
                 break
+
         score = self._evaluate(X, y, wavelengths, pls)
         return score, wavelengths
 
@@ -176,9 +176,12 @@ class CARS(PointSelector):
         random_state = check_random_state(self.random_state)
         seeds = random_state.random_integers(0, 1000000, self.n_cars_runs)
 
+        edf_schedule = self._prepare_edf_schedule(X.shape[1])
+
         candidates = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_cars)(X,
                                                                           y,
                                                                           n_features_to_select,
+                                                                          edf_schedule,
                                                                           self.pls,
                                                                           seeds[i]) for i in range(self.n_cars_runs))
         score, opt_wavelengths = max(candidates, key=lambda x: x[0])

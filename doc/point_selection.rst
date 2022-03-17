@@ -86,16 +86,19 @@ Competitive Adaptive Reweighted Sampling
 ========================================
 
 Competitive Adaptive Reweighted Sampling (CARS) is available in :class:`CARS`.
-CARS is an iterative algorithm, producing a candidate feature set for each iteration. The best feature set is
-determined among the candiate sets of required size using Cross Validation.
+CARS is an iterative algorithm, producing a candidate feature set with monotonly decreasing size in each iteration.
+For **Auswahl**, the algorithm has been adapted to the use case of producing feature sets of a prespecified size, by modifying
+the shrinkage approach to eventually produce a set of the requested size.
+The space of appropriately sized sets is explored through repeated runs of the CARS algorithm, exploiting the
+competitive sampling of th algorithm:
 
 The CARS algorithm combines a competitive sampling of features with a scheduled shrinkage of the number of features
 selected:
 
-CARS considers an EDF (Exponential Decreasing function) to produce the upper bounds of features selected for the candiate set in each iteration, starting
-with all features in the first and terminating with only 2 features in the final iteration.
-The importance of features is quantified using their absolute regression weights in a fitted Partial Least Squares (PLS) model. The importance is subsequently
-used as fitness in a competitive sampling procedure, in which the set of features is generated through sampling with replacement. The number of samples
+CARS considers an EDF (Exponential Decreasing function) to produce the upper bounds of features selected for the
+candidate set in each iteration. The importance of features is quantified using their absolute regression weights
+in a fitted Partial Least Squares (PLS) model. The importance is subsequently used as fitness in a competitive
+sampling procedure, in which the set of features is generated through sampling with replacement. The number of samples
 drawn is determined by the EDF.
 
 .. topic:: References:
@@ -113,17 +116,17 @@ Successive Projection Algorithm (SPA) is available in :class:`SPA`.
 The SPA algorithm addresses the frequent problem of high collinearity in spectroscopic data:
 
 If N is the number of samples and M the number of features, the algorithm considers the features as M
-points in an N-dimensional vector space and conducts an iterative selection, by choosing features with
+points in an N-dimensional vector space and conducts an iterative selection, by choosing the features with
 minimal lengths of projections onto the so far selected features. As a result, SPA constructs sets with minimum
 collinearity.
 Note, that SPA can only meaningfully construct sets of at most N features, which is the upper bound
 of linearly independent features.
 
-The iterative scheme of the algorithm makes the initial variable selected a degree of freedom.
+The iterative scheme of the algorithm makes the initially selected variable a degree of freedom.
 Therefore, SPA considers every variable as candidate seed and subsequently selects the variable set with
 a maximum CV performance.
 
-Note also, that the features are selected solely with regard to their collinearity. The quality for
+Note also, that the features are selected solely with regard to their collinearity. The quality w.r.t.
 the target quantity regression is only considered during the CV optimization of the initial variable.
 
 .. topic:: References:
