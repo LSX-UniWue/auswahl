@@ -110,7 +110,6 @@ class CARS(PointSelector):
         return (selection_ratios*n_wavelengths + 1e-10).astype('int')
     
     def _get_wavelength_weights(self, X, y, n_fit_samples, wavelengths, pls, random_state):
-        
         fitting_samples = random_state.choice(X.shape[0],
                                               n_fit_samples,
                                               replace=False)
@@ -126,7 +125,6 @@ class CARS(PointSelector):
         return wavelength_weights
     
     def _evaluate(self, X, y, wavelengths, pls):
-        
         cv_scores = cross_val_score(pls,
                                     X[:, wavelengths],
                                     y, 
@@ -134,14 +132,10 @@ class CARS(PointSelector):
                                     scoring='neg_mean_squared_error')
         return np.mean(cv_scores)
         
-    def _fit_cars(self, X, y, n_features_to_select, pls):
-        
+    def _fit_cars(self, X, y, n_features_to_select, pls, seed):
         pls = PLSRegression() if pls is None else clone(pls)
-        random_state = check_random_state(self.random_state)
-        
-        self._check_n_sample_runs()
-        self._check_fit_samples_ratio()
-        
+        random_state = check_random_state(seed)
+
         edf_schedule = self._prepare_edf_schedule(X.shape[1])
         n_fit_samples = int(X.shape[0] * self.fit_samples_ratio)
 
@@ -176,10 +170,17 @@ class CARS(PointSelector):
         return score, wavelengths
 
     def _fit(self, X, y, n_features_to_select):
+        self._check_n_sample_runs()
+        self._check_fit_samples_ratio()
+
+        random_state = check_random_state(self.random_state)
+        seeds = random_state.random_integers(0, 1000000, self.n_cars_runs)
+
         candidates = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_cars)(X,
                                                                           y,
                                                                           n_features_to_select,
-                                                                          self.pls) for i in range(self.n_cars_runs))
+                                                                          self.pls,
+                                                                          seeds[i]) for i in range(self.n_cars_runs))
         score, opt_wavelengths = max(candidates, key=lambda x: x[0])
         self.support_ = np.zeros(X.shape[1]).astype('bool')
         self.support_[opt_wavelengths] = True
@@ -189,7 +190,6 @@ class CARS(PointSelector):
         return self.support_ 
     
     def _check_fit_samples_ratio(self):
-        
         if self.fit_samples_ratio < 0:
             raise ValueError('fit_sample_ratio is required to be in [0,1]. ' 
                              f'Got {self.fit_samples_ratio}')
