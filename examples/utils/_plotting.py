@@ -10,7 +10,7 @@ def plot_spectra(wavelengths: np.array,
                  quantity_name: str = 'Absorbance',
                  x_name: str = 'Wavenumber',
                  plot_name: str = 'Spectra',
-                 save_path: str = './spectra.png',
+                 save_path: str = None,
                  highlight_ranges: List[tuple] = None,
                  highlight_color: Literal['red', 'green', 'blue'] = 'red',
                  highlight_opacity: float = 0.3):
@@ -37,4 +37,5 @@ def plot_spectra(wavelengths: np.array,
 
     ax.plot(*plot_args)
     plt.title(plot_name)
-    plt.savefig(save_path)
+    if save_path is not None:
+        plt.savefig(save_path)
