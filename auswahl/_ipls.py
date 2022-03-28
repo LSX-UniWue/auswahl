@@ -1,5 +1,6 @@
 from typing import Union, Dict
 
+import warnings
 import numpy as np
 from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
@@ -57,6 +58,7 @@ class IPLS(IntervalSelector):
         """
 
     def __init__(self,
+                 n_intervals_to_select: int = 1,
                  interval_width: Union[int, float] = None,
                  n_cv_folds: int = 10,
                  pls: PLSRegression = None,
@@ -64,6 +66,10 @@ class IPLS(IntervalSelector):
                  random_state: Union[int, np.random.RandomState] = None):
 
         super().__init__(1, interval_width)
+
+        if n_intervals_to_select != 1:
+            warnings.warn("""IPLS only supports the selection of a single interval. 
+                             n_intervals_to_select has been clipped to 1""")
 
         self.pls = pls
         self.n_cv_folds = n_cv_folds

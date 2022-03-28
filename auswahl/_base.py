@@ -49,6 +49,11 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
         if n_features_to_select is None:
             n_features_to_select = n_features // 2
+        else:
+            check_scalar(n_features_to_select,
+                         name='n_features_to_select',
+                         target_type=(int, float))
+
         if 0 < n_features_to_select < 1:
             n_features_to_select = int(n_features_to_select * n_features)
 
@@ -95,7 +100,7 @@ class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
             Returns the instance itself.
         """
         X, y = self._validate_data(X, y, accept_sparse=False, ensure_min_samples=2, ensure_min_features=2)
-        self._check_n_intervals_to_select()
+        self._check_n_intervals_to_select(X)
         interval_width = self._check_interval_width(X)
 
         self._fit(X, y, self.n_intervals_to_select, interval_width)
@@ -105,8 +110,11 @@ class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         pass
 
-    def _check_n_intervals_to_select(self):
-        check_scalar(self.n_intervals_to_select, name='n_intervals_to_select', target_type=int, min_val=1)
+    def _check_n_intervals_to_select(self, X):
+        check_scalar(self.n_intervals_to_select,
+                     name='n_intervals_to_select',
+                     target_type=int, min_val=1,
+                     max_val=X.shape[1]-1)
 
     def _check_interval_width(self, X):
         n_features = X.shape[1]
@@ -117,7 +125,10 @@ class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
         elif 0 < interval_width < 1:
             interval_width = max(2, int(interval_width * n_features))
 
-        if (interval_width <= 0) or (interval_width >= n_features):
+        if (interval_width <= 0) \
+                or (interval_width >= n_features) \
+                or (self.n_intervals_to_select * interval_width >= n_features):
+
             raise ValueError('interval_width has to be either an int in {1, ..., n_features-1}'
                              f'or a float in (0, 1); got {self.interval_width}')
 
