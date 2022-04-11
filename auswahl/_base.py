@@ -19,7 +19,7 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     def __init__(self, n_features_to_select: Union[int, float] = None):
         self.n_features_to_select = n_features_to_select
 
-    def fit(self, X, y, mask = None):
+    def fit(self, X, y, mask=None):
         """Run the feature selection process.
 
         Parameters
