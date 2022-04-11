@@ -169,6 +169,12 @@ class CARS(PointSelector):
         score = self._evaluate(X, y, wavelengths, pls)
         return score, wavelengths
 
+    def _calculate_feature_importance(self, n_features, selection_candidates):
+        importance = np.zeros((n_features,))
+        for score, wavelengths in selection_candidates:
+            importance[wavelengths] = importance[wavelengths] + np.ones((len(wavelengths, )))
+        return importance / self.n_cars_runs
+
     def _fit(self, X, y, n_features_to_select):
         self._check_n_sample_runs()
         self._check_fit_samples_ratio()
@@ -185,6 +191,7 @@ class CARS(PointSelector):
                                                                           self.pls,
                                                                           seeds[i]) for i in range(self.n_cars_runs))
         score, opt_wavelengths = max(candidates, key=lambda x: x[0])
+        self.feature_importance_ = self._calculate_feature_importance(X.shape[1], candidates)
         self.support_ = np.zeros(X.shape[1]).astype('bool')
         self.support_[opt_wavelengths] = True
 

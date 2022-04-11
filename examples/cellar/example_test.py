@@ -24,7 +24,7 @@ plot_spectra(np.arange(spectra.shape[1]),
 plot_spectra(np.arange(spectra.shape[1]),
              spectra,
              plot_name="Ground truth interval",
-             save_path="./ground_truth_intervals.png",
+             save_path="ground_truth_intervals.png",
              highlight_ranges=[(gold[i, 0], gold[i, -1]) for i in range(gold.shape[0])])
 
 

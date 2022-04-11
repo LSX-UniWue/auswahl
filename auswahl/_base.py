@@ -5,6 +5,7 @@ from sklearn.base import BaseEstimator
 from sklearn.feature_selection import SelectorMixin
 from sklearn.utils import check_scalar
 
+import numpy as np
 
 class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     """Base class for feature selection methods that select features independently.
@@ -18,7 +19,7 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     def __init__(self, n_features_to_select: Union[int, float] = None):
         self.n_features_to_select = n_features_to_select
 
-    def fit(self, X, y):
+    def fit(self, X, y, mask = None):
         """Run the feature selection process.
 
         Parameters
@@ -29,14 +30,30 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
         y : array-like of shape (n_samples,)
             The target values.
 
+        mask: np.array of shape (n_features,)
+            Mask indicating (values == 0), which features are not to be taken into account during the feature selection
+
         Returns
         -------
         self : object
             Returns the instance itself.
         """
+        if mask is not None:
+            if mask.shape != (X.shape[1],):
+                raise ValueError(f'Expected mask to have shape {(X.shape[1],)}. Got {mask.shape}')
+            mask_indices = np.nonzero(mask)[0]
+            n_features = X.shape[1]
+            X = X[:, mask_indices]
+
         X, y = self._validate_data(X, y, accept_sparse=False, ensure_min_samples=2, ensure_min_features=2)
         n_features_to_select = self._check_n_features_to_select(X)
         self._fit(X, y, n_features_to_select)
+
+        if mask is not None:
+            selected = mask_indices[np.nonzero(self.support_)]
+            self.support_ = np.zeros((n_features,), dtype=bool)
+            self.support_[selected] = 1
+
         return self
 
     @abstractmethod
