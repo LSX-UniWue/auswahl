@@ -12,5 +12,5 @@ from ._base import IntervalSelector
 from ._version import __version__
 
 __all__ = ['PointSelector', 'IntervalSelector',
-           'CARS', 'SPA', 'MCUVE', 'RandomFrog', 'VIP', 'IPLS',
+           'CARS', 'SPA', 'MCUVE', 'RandomFrog', 'VIP', 'IPLS', 'PointSelector', 'IntervalSelector',
            '__version__']

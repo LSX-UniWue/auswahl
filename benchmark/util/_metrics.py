@@ -28,9 +28,9 @@ def selection_stability_score(supports: list):
     return (n - (d - n)/(r - 1)) / n
 
 
-def _intersection_expecatation(n, s):
+def _intersection_expectation(n, s):
     logs = np.log(np.arange(1, n + 1))
-    fix_summand = 2 * np.sum(logs[:s]) + 2 * np.sum(logs[:n - s]) - np.sum(logs)
+    constant = 2 * np.sum(logs[:s]) + 2 * np.sum(logs[:n - s]) - np.sum(logs)
 
     m_fac = - logs[0]
     sm_fac = -2 * np.sum(logs[:s - 1])
@@ -38,7 +38,7 @@ def _intersection_expecatation(n, s):
 
     e = 0
     for i in range(s - 1):
-        e += np.exp(m_fac + sm_fac + nssm_fac + logs[i] + fix_summand)
+        e += np.exp(m_fac + sm_fac + nssm_fac + logs[i] + constant)
         m_fac -= logs[i + 1]
         sm_fac += 2 * logs[s - i - 2]
         nssm_fac -= logs[n - 2 * s + i + 1]
@@ -48,8 +48,7 @@ def _intersection_expecatation(n, s):
     return e
 
 
-# todo: nomenclature!
-def stability_score(supports: list, n_wavelengths: int):
+def deng_stability_score(supports: list, n_wavelengths: int):
     """
             Calculates a selection stability score for randomized selection methods, according to Deng et al. [1]_.
 
@@ -78,10 +77,13 @@ def stability_score(supports: list, n_wavelengths: int):
     pairwise_sim = np.empty((r**2 - r) / 2, dtype='float')
 
     sample_size = supports[0].shape[0]
-    e = _intersection_expecatation(n_wavelengths, sample_size)
+    e = _intersection_expectation(n_wavelengths, sample_size)
     for i, (x, y) in enumerate(np.triu_indices(r)):
         if x != y:
             pairwise_sim[i] = (np.intersect1d(supports[x, y]) - e) / (np.sqrt(supports[x].shape[0] * supports[y].shape[0])
                                                                       - e)
-    return np.sum(pairwise_sim) / (2 / (r*(r - 1)))
+    return np.sum(pairwise_sim) * (2 / (r*(r - 1)))
+
+
+
 
