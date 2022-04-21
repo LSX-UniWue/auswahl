@@ -120,11 +120,8 @@ def mean_std_statistics(pod: BenchmarkPOD):
     """
     for method in pod.get_methods():
         for metric in pod.get_item(method, 'metrics').keys():
-            scores = np.array(pod.get_item(method, 'metrics', metric))
-            stats = dict()
-            stats[f'mean_{metric}'] = scores.mean()
-            stats[f'std_{metric}'] = scores.std()
-            pod.register(method, 'metrics', **stats)
+            scores = np.array(pod.get_item(method, 'metrics', metric, 'samples'))
+            pod.register(method, 'metrics', metric, mean=scores.mean(), std=scores.std())
 
 
 

@@ -49,11 +49,9 @@ def benchmark(data_x: np.array,
             test_regressor.fit(train_x[:, support])
             prediction = test_regressor.predict(test_x)
 
-            metrics = {}
             for metric_name, metric in reg_metrics:
-                metrics[metric_name] = metric(test_y, prediction)
+                pod.register(method, 'metrics', metric_name, samples=metric(test_y, prediction))
 
             pod.register(method, time=exec_time, support=support)
-            pod.register(method, 'metrics', **metrics)
 
     return pod

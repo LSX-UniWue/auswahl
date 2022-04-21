@@ -4,7 +4,7 @@ import matplotlib.patches as mpatches
 from typing import List
 from matplotlib import pyplot as plt
 
-from _data_handling import BenchmarkPOD
+from ._data_handling import BenchmarkPOD
 
 
 def plot_score_stability_box(pod: BenchmarkPOD,
@@ -42,7 +42,7 @@ def plot_score_stability_box(pod: BenchmarkPOD,
         plotting_kwargs = dict()
         for entity in entities:
             plotting_kwargs[entity] = dict(color=colors[i])
-        score = pod.get_item(method, 'metrics', regression_metric)
+        score = pod.get_item(method, 'metrics', regression_metric, 'samples')
         stability = pod.get_item(method, stability_metric)
         ax.boxplot(score, positions=[stability], whis=(0, 100), **plotting_kwargs)
         legend_handles.append(mpatches.Patch(color=colors[i], label=method))
