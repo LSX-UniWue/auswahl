@@ -7,7 +7,7 @@ def mw_u_test(pod: BenchmarkPOD, metric_name: str, greater_better=False):
 
     """
         Calculates for the given metric the Mann-Whitney U-test.
-        For each method the probability of being better, given the metric, than the other methods.
+        For each method the probability of being better than the remaining methods, given the metric, is calculated.
 
         Parameters
         ----------
