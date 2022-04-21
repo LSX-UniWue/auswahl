@@ -22,7 +22,7 @@ class BenchmarkPOD:
             values.append(kwargs[key])
 
     def get_methods(self):
-        return self.data.keys()
+        return list(self.data.keys())
 
     def get_item(self, method: str, *item_keys):
         d = self.data[method]

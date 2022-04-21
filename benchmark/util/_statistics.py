@@ -21,11 +21,9 @@ def mw_u_test(pod: BenchmarkPOD, metric_name: str, greater_better=False):
             indicator whether a greater value of the metric implies a better performance
 
     """
-    methods = []
     data = []
-
-    for method in pod.get_methods():
-       methods.append(method)
+    methods = pod.get_methods()
+    for method in methods:
        data.append(np.array(pod.get_item(method, 'metrics', metric_name, 'samples')))
     data = np.stack(data)
 
