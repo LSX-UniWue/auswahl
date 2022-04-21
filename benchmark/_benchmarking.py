@@ -1,40 +1,14 @@
 import numpy as np
+import timeit as tt
+
 from numpy.random import RandomState
-from typing import Union, List, Tuple
+from typing import Union, List
 from sklearn.utils import check_random_state
 from sklearn.model_selection import train_test_split
 from sklearn import clone
+
 from auswahl import PointSelector, IntervalSelector
-import timeit as tt
-
-class BenchmarkPOD:
-
-    """
-        TODO: extension
-        Plain Old Data entity for the exchange of data between benchmarker, user and analytics consumers
-    """
-
-    def __init__(self):
-        self.data = dict()
-
-    def register(self, method_key: str, **kwargs):
-        if method_key not in self.data:
-            self.data[method_key] = dict()
-        for key in kwargs.keys():
-            if key not in self.data[method_key]:
-                self.data[method_key][key] = []
-            self.data[method_key][key].append(kwargs[key])
-
-    def register_metrics(self, method_key, metrics: List[Tuple[str, float]]):
-        if method_key not in self.data:
-            self.data[method_key] = dict()
-        if 'metrics' not in self.data[method_key]:
-            self.data[method_key]['metrics'] = dict()
-        for metric_name, value in metrics:
-            if metric_name not in self.data[method_key]['metrics']:
-                self.data[method_key]['metrics'][metric_name] = []
-            self.data[method_key]['metrics'][metric_name].append(value)
-
+from benchmark.util._data_handling import BenchmarkPOD
 
 
 def benchmark(data_x: np.array,
@@ -42,11 +16,12 @@ def benchmark(data_x: np.array,
               n_runs: int,
               train_size: Union[int, float],
               test_model, # TODO: type information
-              reg_metrics,  # TODO: type information
+              reg_metrics,  # TODO: type information,
+              stability_metrics, # TODO: type information
               methods: List[Union[PointSelector, IntervalSelector]],
               random_state: Union[int, RandomState]):  # TODO: possibly further arguments are to be added
 
-    # TODO: ensure, that not a mixed list of PointSelectors and IntervalSelectors is
+    # TODO: ensure, that not a mixed list of PointSelectors and IntervalSelectors is provided
     # Different interfaces for both? --> assume for now PointSelectors
 
     # Extend the methods by their class name (sorting not really necessary), should it be allowed to pass several
@@ -57,6 +32,8 @@ def benchmark(data_x: np.array,
     random_state = check_random_state(random_state)
 
     pod = BenchmarkPOD()
+    pod.register_meta(n_samples=data_x.shape[0], n_wavelengths=data_x.shape[1])
+
     # coarse and tentative benchmarking draft
     # TODO: parallelization with argument n-jobs
     for r in range(n_runs):
@@ -72,8 +49,11 @@ def benchmark(data_x: np.array,
             test_regressor.fit(train_x[:, support])
             prediction = test_regressor.predict(test_x)
 
-            metrics = []
+            metrics = {}
             for metric_name, metric in reg_metrics:
-                metrics.append((metric_name, metric(test_y, prediction)))
+                metrics[metric_name] = metric(test_y, prediction)
+
             pod.register(method, time=exec_time, support=support)
-            pod.register_metrics(method, metrics)
+            pod.register(method, 'metrics', **metrics)
+
+    return pod
