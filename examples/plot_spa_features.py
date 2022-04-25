@@ -1,6 +1,6 @@
 """
 ===================
-VIP - Basic example
+SPA - Basic example
 ===================
 
 A Successive Projections Algorithm example demonstrating the feature selection process
