@@ -14,4 +14,8 @@ Wavelength Point Selection
 Wavelength Interval Selection
 -----------------------------
 
-Work in progress
+.. toctree::
+    :numbered:
+    :maxdepth: 2
+
+    interval_selection.rst

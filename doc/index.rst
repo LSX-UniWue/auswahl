@@ -47,7 +47,7 @@ API Documentation
 -----------------
 
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     api
 
