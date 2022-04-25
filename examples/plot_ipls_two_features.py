@@ -1,7 +1,7 @@
 """
-===================
+====================
 IPLS - Basic example
-===================
+====================
 
 An Interval Partial Least Squares example showing the optimal interval of specified size for the regression of synthetic
 data.

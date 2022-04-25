@@ -1,5 +1,9 @@
 .. currentmodule:: auswahl
 
+===
+API
+===
+
 Wavelength Point Selection
 ==========================
 

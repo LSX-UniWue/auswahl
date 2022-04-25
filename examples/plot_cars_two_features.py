@@ -1,7 +1,7 @@
 """
-===================
-VIP - Basic example
-===================
+====================
+CARS - Basic example
+====================
 
 A Competetive Adaptive Reweighted Sampling example showing the feature importance defined as selection probability of
 multiple CARS runs for a synthetic regression task.
