@@ -4,6 +4,7 @@ from ._random_frog import RandomFrog
 from ._vip import VIP
 from ._spa import SPA
 from ._ipls import IPLS
+from ._vip_spa import VIP_SPA
 from ._dummy import DummyPointSelector, DummyIntervalSelector
 
 from ._base import PointSelector
@@ -12,5 +13,5 @@ from ._base import IntervalSelector
 from ._version import __version__
 
 __all__ = ['PointSelector', 'IntervalSelector',
-           'CARS', 'SPA', 'MCUVE', 'RandomFrog', 'VIP', 'IPLS', 'PointSelector', 'IntervalSelector',
+           'CARS', 'SPA', 'MCUVE', 'RandomFrog', 'VIP', 'IPLS', 'VIP_SPA', 'PointSelector', 'IntervalSelector',
            '__version__']

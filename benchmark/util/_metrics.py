@@ -24,7 +24,7 @@ def stability_score(pod: BenchmarkPOD):
         supports = pod.get_item(method, "support")
 
         n = supports[0].shape[0]
-        d = np.distinct(np.concatenate(supports)).shape[0]
+        d = np.unique(np.concatenate(supports)).shape[0]
         r = len(supports)
         score = (n - (d - n)/(r - 1)) / n
 
@@ -93,7 +93,7 @@ def deng_stability_score(pod: BenchmarkPOD):
         supports = pod.get_item(method, "support")
 
         r = len(supports)
-        pairwise_sim = np.empty((r**2 - r) / 2, dtype='float')
+        pairwise_sim = np.empty(int((r**2 - r) / 2), dtype='float')
 
         sample_size = supports[0].shape[0]
         e = _intersection_expectation(n_wavelengths, sample_size)
