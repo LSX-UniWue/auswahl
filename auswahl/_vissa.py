@@ -102,12 +102,15 @@ class VISSA(PointSelector):
         # permute the Binary Sampling Matrix
         return np.reshape(bsm[(row_selector, p)], (n_feats, self.n_submodels))
 
+
     def _evaluate(self, X, y, pls, submodel_index):
-        cv_scores = cross_val_score(pls,
-                                    X,
-                                    y,
-                                    cv=self.n_cv_folds,
-                                    scoring='neg_mean_squared_error')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cv_scores = cross_val_score(pls,
+                                        X,
+                                        y,
+                                        cv=self.n_cv_folds,
+                                        scoring='neg_mean_squared_error')
         return np.mean(cv_scores), submodel_index
 
     def _evaluate_submodels(self, X, y, pls, bsm):

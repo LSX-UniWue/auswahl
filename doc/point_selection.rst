@@ -101,6 +101,10 @@ in a fitted Partial Least Squares (PLS) model. The importance is subsequently us
 sampling procedure, in which the set of features is generated through sampling with replacement. The number of samples
 drawn is determined by the EDF.
 
+.. topic:: Examples
+
+    * :ref:`sphx_glr_auto_examples_plot_cars_two_features.py`: A CARS example usage for a synthetic regression task
+
 .. topic:: References:
 
     * Hongdong Li,Yizeng Liang, Qingsong Xu and Dongsheng Cao,
@@ -129,9 +133,39 @@ a maximum CV performance.
 Note also, that the features are selected solely with regard to their collinearity. The quality w.r.t.
 the target quantity regression is only considered during the CV optimization of the initial variable.
 
+.. topic:: Examples
+
+    * :ref:`sphx_glr_auto_examples_plot_spa_features.py`: A SPA example usage for a synthetic regression task
+
 .. topic:: References:
 
     * Mário César Ugulino Araújo,Teresa Cristina Bezerra Saldanha, Roberto Kawakami Harrop Galvao,
       Takashi Yoneyama, Henrique Caldas Chame and Valeria Visani,
       'The successive projections algorithm for variable selection in spectroscopic multicomponent analysis',
       Chemometrics and Intelligent Laboratory Systems, 57, 65-73, 2001
+
+Variable Iterative Subspace Shrinkage Approach
+==============================================
+
+The Variable Iterative Subspace Shrinkage Approach (VISSA) is an algorithm exploring the space of feature subsets
+via a Weighted Block Matrix Sampling strategy and is available in :class:`VISSA`
+
+The algorithm creates a number of submodels in each iterations, consisting
+of random selections of variables under the restriction, that the number of submodels a variable participates in, corresponds
+to the weight of the variable calculated in the preceding iteration.
+The weight of a variable is calculated by the share of models the variable appears in, among
+the best 5% of submodels tested with Cross Validation. If variables appear in non or all of these top submodels, the
+search space is effectively shrunken.
+
+The algorithm terminates, if either the required number of variables have
+achieved a weight of circa 1, or the variable weights in an iteration produce a deteriorating average Cross Validation score
+of the top submodels compared to the previous iterations.
+
+
+
+.. topic:: References:
+
+    * Bai-chuan Deng, Yong-huan Yun, Yi-zeng Liang, Lun-shao Yi,
+      'A novel variable selection approach that iteratively optimizes variable space using weighted binary
+      matrix sampling',
+      Analyst, 139, 4836–-4845, 2014.

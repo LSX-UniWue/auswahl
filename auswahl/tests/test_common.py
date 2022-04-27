@@ -2,10 +2,10 @@ import numpy as np
 import pytest
 from sklearn.utils.estimator_checks import check_estimator
 
-from auswahl import CARS, VIP, MCUVE, RandomFrog, SPA, IPLS, DummyPointSelector, DummyIntervalSelector
+from auswahl import CARS, VIP, MCUVE, RandomFrog, SPA, IPLS, VISSA, DummyPointSelector, DummyIntervalSelector
 
 
-@pytest.mark.parametrize("estimator", [CARS(), IPLS(), SPA(), VIP(), MCUVE(), RandomFrog(n_iterations=10)])
+@pytest.mark.parametrize("estimator", [VISSA(n_submodels=50), CARS(), IPLS(), SPA(), VIP(), MCUVE(), RandomFrog(n_iterations=10)])
 def test_all_estimators(estimator):
     return check_estimator(estimator)
 
@@ -15,7 +15,7 @@ def test_exceptions_interval_selection():
 
     dummies = [
         DummyIntervalSelector(n_intervals_to_select=[2]),  # non-scalar
-        DummyIntervalSelector(n_intervals_to_select=0),  # min-val violoated
+        DummyIntervalSelector(n_intervals_to_select=0),  # min-val violated
         DummyIntervalSelector(n_intervals_to_select=x.shape[1]),  # max-val violated
         DummyIntervalSelector(n_intervals_to_select=1, interval_width=x.shape[1]),  # max interval width violated
         DummyIntervalSelector(n_intervals_to_select=1, interval_width=-1),  # negative interval width
@@ -36,7 +36,7 @@ def test_exceptions_point_selection():
 
     dummies = [
         DummyPointSelector(n_features_to_select=[1]),  # non-scalar
-        DummyPointSelector(n_features_to_select=0),  # min val violated
+        DummyPointSelector(n_features_to_select=0),  # min-val violated
         DummyPointSelector(n_features_to_select=x.shape[1]),  # max-val violoated
     ]
 
