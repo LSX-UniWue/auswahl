@@ -1,3 +1,4 @@
+import pandas as pd
 
 class BenchmarkPOD:
 
@@ -32,5 +33,46 @@ class BenchmarkPOD:
 
     def get_meta_item(self, key: str):
         return self.meta[key]
+
+    def get_reg_metrics(self):
+        return self.meta['regs']
+
+    def get_stability_metrics(self):
+        return self.meta['stabs']
+
+    def _enumerate_values(self, method: str, item_key: str):
+        data = self.data[method][item_key] # reminder: every leave is a list
+        if type(data) == dict:  # shallowness assumed
+            return sum(list(data.values()), [])
+        else:
+            return data
+
+    def _enumerate_keys(self, item_key: str):
+        keys = [item_key]
+        values = self.data[self.get_methods()[0]][item_key]  # use any method
+        if type(values) == dict:  # shallowness assumed
+            keys = sum(list(values.keys()), [])
+            values = list(values.keys())
+        for i in range(values):
+            if len(values[i]) > 1:
+                keys[i] = [i for i in range(1, len(values[i]) + 1)]
+        return keys
+
+    def to_csv(self, item_key):
+
+        """
+            The file will always be produced across all methods
+            and comprise the values of every subitem of the item addressed
+
+        """
+        rows = []
+        index = self.get_methods()
+        columns = self._enumerate_keys()
+        for method in index:
+            self._enumerate(method, item_key)
+
+
+
+
 
 

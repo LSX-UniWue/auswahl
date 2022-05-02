@@ -1,5 +1,5 @@
 import numpy as np
-from ._data_handling import BenchmarkPOD
+from ._data_handling2 import BenchmarkPOD
 
 
 def stability_score(pod: BenchmarkPOD):
@@ -118,16 +118,10 @@ def mean_std_statistics(pod: BenchmarkPOD):
             data container produced by benchmarking
 
     """
-    for method in pod.get_methods():
-        for metric in pod.get_item(method, 'metrics').keys():
-            scores = np.array(pod.get_item(method, 'metrics', metric, 'samples'))
-            pod.register(method, 'metrics', metric, mean=scores.mean(), std=scores.std())
-
-
-
-
-
-
-
-
+    for metric in pod.get_reg_metrics():
+        data = np.array(pod.get_item(None, metric, 'samples'))
+        pod.register(None,
+                     metric,
+                     mean=data.mean(axis=1, keepdims=True).tolist(),
+                     std=data.std(axis=1, keepdims=True).tolist())
 

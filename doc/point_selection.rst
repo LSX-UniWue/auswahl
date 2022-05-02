@@ -161,7 +161,9 @@ The algorithm terminates, if either the required number of variables have
 achieved a weight of circa 1, or the variable weights in an iteration produce a deteriorating average Cross Validation score
 of the top submodels compared to the previous iterations.
 
+.. topic:: Examples
 
+    * :ref:`sphx_glr_auto_examples_plot_vissa_two_features.py`: A VISSA example usage for a synthetic regression task
 
 .. topic:: References:
 

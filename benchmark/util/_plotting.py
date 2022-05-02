@@ -43,9 +43,9 @@ def plot_score_stability_box(pod: BenchmarkPOD,
         plotting_kwargs = dict()
         for entity in entities:
             plotting_kwargs[entity] = dict(color=colors[i])
-        score = pod.get_item(method, 'metrics', regression_metric, 'samples')
+        score = pod.get_item(method, regression_metric, 'samples')
         stability = pod.get_item(method, stability_metric)
-        ax.boxplot(score, positions=stability, whis=(0, 100), manage_ticks=False, **plotting_kwargs)
+        ax.boxplot(score, positions=stability, whis=(0, 100), widths=0.05, manage_ticks=False, **plotting_kwargs)
         legend_handles.append(mpatches.Patch(color=colors[i], label=method))
 
     ax.set_title("Score-Stability plot")

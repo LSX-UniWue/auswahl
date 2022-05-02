@@ -102,7 +102,6 @@ class VISSA(PointSelector):
         # permute the Binary Sampling Matrix
         return np.reshape(bsm[(row_selector, p)], (n_feats, self.n_submodels))
 
-
     def _evaluate(self, X, y, pls, submodel_index):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
