@@ -25,6 +25,7 @@ vip_spa = VIP_SPA(n_features_to_select=10, n_jobs=2)
 
 pod = benchmark(x,
                 y,
+                n_features=[10],
                 n_runs=2,
                 train_size=0.9,
                 test_model=PLSRegression(n_components=1),
@@ -32,9 +33,9 @@ pod = benchmark(x,
                 stab_metrics=[stability_score],
                 methods=[mcuve, cars, vip],
                 random_state=1111111)
-
-#pod.to_csv("./samples.csv", ['mean_squared_error', 'samples'])
-pod.to_csv("./all.csv", [['mean_squared_error', 'mean_absolute_error'], ['mean', 'std', 'samples']])
+print(pod.get_regression_data())
+#print(pod.get_regression_data(method='CARS'))
+#print(pod.get_selection_data())
 #plot_score_stability_box(pod,
                          #'stability_score',
                          #'mean_squared_error',
