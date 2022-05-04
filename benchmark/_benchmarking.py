@@ -62,12 +62,13 @@ def benchmark(data_x: np.array,
     # runtimes, a parallelization at this level woud yield with high probability idlying threads
     # => avoids unnecessary synchronization between threads
     for n in n_features:
+        speaker.announce(f'Started cycle with {n} features to select:')
         for r in range(n_runs):
-            speaker.announce(f'Started run: {r}')
+            speaker.announce(f'    Started run: {r}')
             seed = random_state.randint(0, 1000000)
             train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, train_size=train_size, random_state=seed)
             for method_name, method in zip(method_names, methods):
-                speaker.announce(f'    Started method {method_name}')
+                speaker.announce(f'        started method {method_name}')
                 if hasattr(method, 'random_state'):
                     method.random_state = seed
 
@@ -83,20 +84,20 @@ def benchmark(data_x: np.array,
                 prediction = test_regressor.predict(test_x[:, support])
 
                 for metric_name, metric in zip(reg_metric_names, reg_metrics):
-                    pod.register_regression(method_name,
+                    pod.register_regression(metric(test_y, prediction),
+                                            method_name,
                                             n,
                                             metric_name,
-                                            r,
-                                            value=metric(test_y, prediction))
-                # TODO
-                #pod.register_selection(method_name,
-                 #                      n,
-                  #                     r,
-                   #                    support)
+                                            'samples',
+                                            r)
 
-    # TODO: this can probably stay here
+                pod.register_selection(method_name,
+                                       n,
+                                       r,
+                                       support)
+
     # mean and std over all regression metrics and runs
-    #mean_std_statistics(pod)
+    mean_std_statistics(pod)
 
     # stability scores
     #for metric_name, metric in stabs:

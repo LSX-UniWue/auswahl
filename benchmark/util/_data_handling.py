@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
+import warnings
 
 from typing import List, Union, Literal
 
@@ -24,6 +25,7 @@ class BenchmarkPOD:
                  stab_metrics: List,
                  n_runs: int):
 
+        methods = sorted(methods)  # canonical order of methods
         reg_index, reg_size = self._build_multiindex([
             methods,
             n_features,
@@ -45,6 +47,7 @@ class BenchmarkPOD:
         self.selection_data = pd.DataFrame(-1 * np.ones((selection_size,), dtype='int'), index=selection_index)
         self.stab_data = pd.DataFrame(np.zeros((stab_size,), dtype='float'), index=stab_index)
         self.reg_data = pd.DataFrame(np.zeros((reg_size,), dtype='float'), index=reg_index)
+
 
         # TODO: make these available via getters maybe
         self.methods = methods
@@ -68,26 +71,52 @@ class BenchmarkPOD:
         for key in kwargs.keys():
             self.meta[key] = kwargs[key]
 
-    def register_regression(self,
-                            method_key: str,
-                            n_features,
-                            metric_name,
-                            sample,
-                            value):
+    def _make_regression_key(self,
+                             method: Union[str, List[str]] = None,
+                             n_features: Union[int, List[int]] = None,
+                             reg_metric: Union[str, List[str]] = None,
+                             item: Literal['mean', 'std', 'samples'] = None,
+                             sample_number: Union[int, List[int]] = None):
+        if item == 'samples':
+            if sample_number is None:
+                item = [f'sample_{i}' for i in range(self.n_runs)]
+            elif type(sample_number) == list:
+                item = [f'sample_{i}' for i in range(sample_number)]
+            else:
+                item = f'sample_{sample_number}'
+        key = (
+                method if method is not None else slice(None),
+                self._string_conversion(n_features) if n_features is not None else slice(None),
+                reg_metric if reg_metric is not None else slice(None),
+                item if item is not None else slice(None)
+              )
+        return key
 
-        self.reg_data.loc[method_key,
-                          str(n_features),
-                          metric_name,
-                          f'sample_{sample}'] = value
+    def register_regression(self,
+                            value, #TODO: type information
+                            method: Union[str, List[str]] = None,
+                            n_features: Union[int, List[int]] = None,
+                            reg_metric: Union[str, List[str]] = None,
+                            item: Literal['mean', 'std', 'samples'] = None,
+                            sample_number: int = None):
+        key = self._make_regression_key(method, n_features, reg_metric, item, sample_number)
+        if type(value) == pd.DataFrame:
+            self.reg_data.loc[key] = value.values.tolist()
+        elif type(value) == np.array:
+            self.reg_data.loc[key] = value.tolist()
+        else:
+            self.reg_data.loc[key] = value
 
     def register_selection(self,
                            method_key: str,
                            n_features,
                            sample,
                            selection: np.array):
-        print(self.selection_data.loc[(method_key,
-                                 str(n_features),
-                                 f'sample_{sample}')]) #.iloc[:selection.shape[0], 0] = selection.tolist()
+        with warnings.catch_warnings():  # TODO: do something about that
+            warnings.filterwarnings("ignore")
+            self.selection_data.loc[(method_key,
+                                     str(n_features),
+                                     f'sample_{sample}')].iloc[:selection.shape[0], 0] = selection.tolist()
 
     def register_stability(self,
                            method_key,
@@ -129,23 +158,16 @@ class BenchmarkPOD:
             -------
             pandas multiIndex DataFrame sliced to the requested data
         """
-        # constructs multiIndex-slice
-        if item == 'samples':
-            item = [f'samples_{i}' for i in range(self.n_runs)]
-        key = (
-                method if method is not None else slice(None),
-                self._string_conversion(n_features) if n_features is not None else slice(None),
-                reg_metric if reg_metric is not None else slice(None),
-                item if item is not None else slice(None)
-            )
+        key = self._make_regression_key(method, n_features, reg_metric, item)
         return self.reg_data.loc[key]
 
     def get_selection_data(self,
                            method: Union[str, List[str]] = None,
                            n_features: Union[int, List[int]] = None,
-                           sample_run: Union[int, List[int]] = None):
+                           sample_run: Union[int, List[int]] = None,
+                           selected_features: Union[int, List[int]] = None):
         """
-            Retrieve data related to the regression performance of feature selection methods
+            Retrieve data related to the regression performance of feature selection methods.
 
             Parameters
             ----------
@@ -169,13 +191,20 @@ class BenchmarkPOD:
                 sample_run = [f'sample_{i}' for i in sample_run]
             else:
                 sample_run = f'sample_{sample_run}'
+        if n_features is not None \
+                and type(n_features) != list \
+                and selected_features is None:
+            selected_features = [f'feature_{i}' for i in range(n_features)]
         key = (
             method if method is not None else slice(None),
             self._string_conversion(n_features) if n_features is not None else slice(None),
-            sample_run if sample_run is not None else slice(None)
+            sample_run if sample_run is not None else slice(None),
+            selected_features if selected_features is not None else slice(None)
         )
-        # TODO: retrieve the non-negative elements --> not possible keeping the frame structure if n_features is a list
-        return self.selection_data.loc[key]
+        with warnings.catch_warnings():  #TODO: do something about that
+            warnings.filterwarnings("ignore")
+            frame = self.selection_data.loc[key]
+            return frame.sort_index(level=0)
 
     def get_stability_data(self,
                            method: Union[str, List[str]] = None,

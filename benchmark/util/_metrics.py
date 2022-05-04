@@ -1,5 +1,6 @@
 import numpy as np
-from ._data_handling2 import BenchmarkPOD
+import pandas
+from ._data_handling import BenchmarkPOD
 
 
 def stability_score(pod: BenchmarkPOD):
@@ -118,10 +119,12 @@ def mean_std_statistics(pod: BenchmarkPOD):
             data container produced by benchmarking
 
     """
-    for metric in pod.get_reg_metrics():
-        data = np.array(pod.get_item(None, metric, 'samples'))
-        pod.register(None,
-                     metric,
-                     mean=data.mean(axis=1, keepdims=True).tolist(),
-                     std=data.std(axis=1, keepdims=True).tolist())
+    samples = pod.get_regression_data(item='samples')
+    means = samples.groupby(level=[0, 1, 2], sort=False).mean()
+    stds = samples.groupby(level=[0, 1, 2], sort=False).std()
+    #means = samples.mean()  # TODO: fix such data layout agnostic approaches
+    #stds = samples.std()
+    pod.register_regression(value=means, item='mean')
+    pod.register_regression(value=stds, item='std')
+
 
