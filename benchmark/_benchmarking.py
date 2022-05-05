@@ -57,10 +57,6 @@ def benchmark(data_x: np.array,
                       n_wavelengths=data_x.shape[1],
                       )
 
-    # TODO: parallelization with argument n-jobs (produce seeds beforehand to avoid scheduling related reproducilbility issues)
-    # parallelization of the outer loop: Due to different methods having different
-    # runtimes, a parallelization at this level woud yield with high probability idlying threads
-    # => avoids unnecessary synchronization between threads
     for n in n_features:
         speaker.announce(f'Started cycle with {n} features to select:')
         for r in range(n_runs):
@@ -100,7 +96,7 @@ def benchmark(data_x: np.array,
     mean_std_statistics(pod)
 
     # stability scores
-    #for metric_name, metric in stabs:
-        #metric(pod)
+    for metric_name, metric in zip(stab_metric_names, stab_metrics):
+        metric(pod)
 
     return pod

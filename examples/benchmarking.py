@@ -35,8 +35,15 @@ pod = benchmark(x,
                 random_state=1111111,
                 verbose=False)
 
-print(pod.get_selection_data(n_features=10))
+#print(pod.get_selection_data(n_features=10))
+#print(pod.get_regression_data())
 #plot_score_stability_box(pod,
                          #'stability_score',
                          #'mean_squared_error',
                          #save_path="./benchmark_plot.png")
+
+#frame = pod.get_regression_data(method='MCUVE')
+#print(frame)
+
+#print(pod.get_stability_data(stab_metric='stability_score'))
+print(pod.get_selection_data(method='MCUVE', n_features=10))
