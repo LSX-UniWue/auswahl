@@ -9,7 +9,6 @@ from typing import List, Union, Literal
     TODO: - Allow the handling of different datasets
           - include execution time --> fits perfectly into the regression frame
           - Enforce a visually pleasant sorting
-
 """
 
 
@@ -26,25 +25,37 @@ class BenchmarkPOD:
                  stab_metrics: List,
                  n_runs: int):
 
-        methods = sorted(methods)  # canonical order of methods
-        reg_index, reg_size = self._build_multiindex([
+        methods = np.array(sorted(methods))  # canonical order of methods
+
+        reg_index_arrays, reg_size = self._build_multiindex([
             n_features,
             reg_metrics,
-            ['mean', 'std', *[f'sample_{i}' for i in range(n_runs)]]
+            ['mean', 'std', *[i for i in range(n_runs)]]
         ])
-        stab_index, stab_size = self._build_multiindex([
+        reg_index = pd.MultiIndex.from_arrays(reg_index_arrays, names=['n_features', 'regression_metric', 'item'])
+
+        stab_index_arrays, stab_size = self._build_multiindex([
             n_features,
             stab_metrics,
         ])
-        selection_index, selection_size = self._build_multiindex([
-            n_features,
-            [f'sample_{i}' for i in range(n_runs)],
-            [f'feature_{i}' for i in range(max(n_features))]
-        ])
+        stab_index = pd.MultiIndex.from_arrays(stab_index_arrays, names=['n_features', 'stability_metric'])
 
-        self.selection_data = pd.DataFrame(-1 * np.ones((len(methods), selection_size), dtype='int'), index=methods, columns=selection_index)
-        self.stab_data = pd.DataFrame(np.zeros((len(methods), stab_size), dtype='float'), index=methods, columns=stab_index)
-        self.reg_data = pd.DataFrame(np.zeros((len(methods), reg_size), dtype='float'), index=methods, columns=reg_index)
+        selection_index_arrays, selection_size = self._build_multiindex([
+            n_features,
+            [i for i in range(n_runs)],
+            [i for i in range(max(n_features))]
+        ])
+        selection_index = pd.MultiIndex.from_arrays(selection_index_arrays, names=['n_features', 'sample', 'feature'])
+
+        self.selection_data = pd.DataFrame(-1 * np.ones((len(methods), selection_size), dtype='int'),
+                                           index=methods,
+                                           columns=selection_index)
+        self.stab_data = pd.DataFrame(np.zeros((len(methods), stab_size), dtype='float'),
+                                      index=methods,
+                                      columns=stab_index)
+        self.reg_data = pd.DataFrame(np.zeros((len(methods), reg_size), dtype='float'),
+                                     index=methods,
+                                     columns=reg_index)
 
         self.methods = methods
         self.reg_metrics = reg_metrics
@@ -55,7 +66,7 @@ class BenchmarkPOD:
 
         self.meta = dict()
 
-    def _build_multiindex(self, structure: List[List[str]]):
+    def _build_multiindex(self, structure: List[Union[List[str], np.array]]):
         index = np.array([structure[-1]])
         for i in range(len(structure) - 2, -1, -1):
             index = np.concatenate([
@@ -68,6 +79,11 @@ class BenchmarkPOD:
         for key in kwargs.keys():
             self.meta[key] = kwargs[key]
 
+    def _string_conversion(self, item):
+        if type(item) == list:
+            return [str(i) for i in item]
+        return str(item)
+
     def _make_regression_key(self,
                              method: Union[str, List[str]] = None,
                              n_features: Union[int, List[int]] = None,
@@ -76,14 +92,11 @@ class BenchmarkPOD:
                              sample_number: Union[int, List[int]] = None):
         if item == 'samples':
             if sample_number is None:
-                item = [f'sample_{i}' for i in range(self.n_runs)]
-            elif type(sample_number) == list:
-                item = [f'sample_{i}' for i in range(sample_number)]
+                item = [str(i) for i in range(self.n_runs)]
             else:
-                item = f'sample_{sample_number}'
+                item = self._string_conversion(sample_number)
         method_key = method if method is not None else slice(None)
         key = (
-                #method if method is not None else slice(None),
                 self._string_conversion(n_features) if n_features is not None else slice(None),
                 reg_metric if reg_metric is not None else slice(None),
                 item if item is not None else slice(None)
@@ -91,7 +104,7 @@ class BenchmarkPOD:
         return method_key, key
 
     def register_regression(self,
-                            value, #TODO: type information
+                            value,
                             method: Union[str, List[str]] = None,
                             n_features: Union[int, List[int]] = None,
                             reg_metric: Union[str, List[str]] = None,
@@ -107,14 +120,14 @@ class BenchmarkPOD:
 
     def register_selection(self,
                            method_key: str,
-                           n_features,
-                           sample,
+                           n_features: int,
+                           sample: int,
                            selection: np.array):
         with warnings.catch_warnings():  # TODO: do something about that
             warnings.filterwarnings("ignore")
             self.selection_data.loc[method_key,
-                                    (str(n_features),
-                                     f'sample_{sample}')].iloc[:selection.shape[0]] = selection.tolist()
+                                    (n_features,
+                                     sample)].iloc[:selection.shape[0]] = selection.tolist()
 
     def register_stability(self,
                            n_features,
@@ -122,13 +135,8 @@ class BenchmarkPOD:
                            value,
                            method_key=None):
         self.stab_data.loc[method_key if method_key is not None else slice(None),
-                           (str(n_features),
+                           (n_features,
                             metric_name)] = value
-
-    def _string_conversion(self, item):
-        if type(item) == list:
-            return [str(i) for i in item]
-        return str(item)
 
     def get_regression_data(self,
                             method: Union[str, List[str]] = None,
@@ -184,26 +192,22 @@ class BenchmarkPOD:
         """
 
         # constructs multiIndex-slice
-        if sample_run is not None:
-            if type(sample_run) == list:
-                sample_run = [f'sample_{i}' for i in sample_run]
-            else:
-                sample_run = f'sample_{sample_run}'
         if n_features is not None \
                 and type(n_features) != list \
                 and selected_features is None:
-            selected_features = [f'feature_{i}' for i in range(n_features)]
+            selected_features = [i for i in range(n_features)]
 
         method_key = method if method is not None else slice(None)
         key = (
-            self._string_conversion(n_features) if n_features is not None else slice(None),
+            n_features if n_features is not None else slice(None),
             sample_run if sample_run is not None else slice(None),
             selected_features if selected_features is not None else slice(None)
         )
+
         with warnings.catch_warnings():  #TODO: do something about that
             warnings.filterwarnings("ignore")
             frame = self.selection_data.loc[method_key, key]
-            return frame.sort_index(level=0)
+            return frame.sort_index(level=[0, 1])
 
     def get_stability_data(self,
                            method: Union[str, List[str]] = None,
@@ -230,7 +234,7 @@ class BenchmarkPOD:
         # constructs multiIndex-slice
         method_key = method if method is not None else slice(None)
         key = (
-            self._string_conversion(n_features) if n_features is not None else slice(None),
-            stab_metric if stab_metric is not None else slice(None)
+               n_features if n_features is not None else slice(None),
+               stab_metric if stab_metric is not None else slice(None)
         )
         return self.stab_data.loc[(method_key, key)]

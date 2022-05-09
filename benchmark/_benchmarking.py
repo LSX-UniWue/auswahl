@@ -65,6 +65,7 @@ def benchmark(data_x: np.array,
             train_x, test_x, train_y, test_y = train_test_split(data_x, data_y, train_size=train_size, random_state=seed)
             for method_name, method in zip(method_names, methods):
                 speaker.announce(f'        started method {method_name}')
+                method.n_features_to_select = n
                 if hasattr(method, 'random_state'):
                     method.random_state = seed
 
