@@ -14,7 +14,7 @@ from auswahl._base import IntervalSelector
 
 class IPLS(IntervalSelector):
 
-    """ Interval selection with Interal Partial Least Squares (iPLS).
+    """ Interval selection with Interval Partial Least Squares (iPLS).
 
         The optimal interval of a specified width is calculated according to Norgaard et al. [1]_.
 

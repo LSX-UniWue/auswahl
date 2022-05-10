@@ -12,9 +12,23 @@ Use the methods available in :mod:`sklearn.model_selection` to determine a suita
 
 .. _ipls:
 
-Inteval Partial Least Squares
-=================================
+Interval Partial Least Squares
+==============================
 
-Internal Partial Least Squares is available in :class:`IPLS`.
+Interval Partial Least Squares (IPLS) is available in :class:`IPLS`.
 IPLS is a simple algorithm, selecting the best interval of a user definable width w.r.t. to
 a regression model.
+
+.. _irf:
+
+Interval Random Frog
+====================
+
+Interval Random Frog (iRF) is available in :class:`IntervalRandomFrog`.
+
+.. topic:: References:
+
+    * Yong-Huan Yun and Hong-Dong Li and Leslie R. E. Wood and Wei Fan and Jia-Jun Wang and Dong-Sheng Cao and
+      Qing-Song Xu and Yi-Zeng Liang,
+      'An efficient method of wavelength interval selection based on random frog for multivariate spectral calibration',
+      Spectrochimica Acta Part A: Molecular and Biomolecular Spectroscopy, 111, 31-36, 2013
