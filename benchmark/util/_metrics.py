@@ -124,17 +124,13 @@ def mean_std_statistics(pod: BenchmarkPOD):
     # register means and stds for regression
     samples = pod.get_regression_data(item='samples')
     grouped = samples.groupby(axis=1, level=['dataset', 'n_features', 'regression_metric'], sort=False)
-    means = grouped.mean()
-    stds = grouped.std()
-    pod.register_regression(value=means, item='mean')
-    pod.register_regression(value=stds, item='std')
+    pod.register_regression(value=grouped.mean(), item='mean')
+    pod.register_regression(value=grouped.std(), item='std')
 
     # register means and stds for runtime measurements
     samples = pod.get_measurement_data(item='samples')
     grouped = samples.groupby(axis=1, level=['dataset', 'n_features'], sort=False)
-    means = grouped.mean()
-    stds = grouped.std()
-    pod.register_measurement(value=means, item='mean')
-    pod.register_measurement(value=stds, item='std')
+    pod.register_measurement(value=grouped.mean(), item='mean')
+    pod.register_measurement(value=grouped.std(), item='std')
 
 
