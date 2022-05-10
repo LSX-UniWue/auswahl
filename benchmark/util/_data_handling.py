@@ -1,9 +1,9 @@
+
 import pandas as pd
 import numpy as np
-import os
 import warnings
 
-from typing import List, Union, Literal
+from typing import List, Union, Literal, Tuple
 
 """
     TODO: - Allow the handling of different datasets
@@ -19,33 +19,46 @@ class BenchmarkPOD:
     """
 
     def __init__(self,
+                 datasets: List[str],
                  methods: List,
                  n_features: List[int],
                  reg_metrics: List,
                  stab_metrics: List,
                  n_runs: int):
 
+        datasets = np.array(sorted(datasets))  # canonical order of datasets
         methods = np.array(sorted(methods))  # canonical order of methods
 
         reg_index_arrays, reg_size = self._build_multiindex([
+            datasets,
             n_features,
             reg_metrics,
             ['mean', 'std', *[i for i in range(n_runs)]]
         ])
-        reg_index = pd.MultiIndex.from_arrays(reg_index_arrays, names=['n_features', 'regression_metric', 'item'])
+        reg_index = pd.MultiIndex.from_arrays(reg_index_arrays, names=['dataset', 'n_features', 'regression_metric', 'item'])
 
         stab_index_arrays, stab_size = self._build_multiindex([
+            datasets,
             n_features,
             stab_metrics,
         ])
-        stab_index = pd.MultiIndex.from_arrays(stab_index_arrays, names=['n_features', 'stability_metric'])
+        stab_index = pd.MultiIndex.from_arrays(stab_index_arrays, names=['dataset', 'n_features', 'stability_metric'])
 
+        # should be fine here (automatic conversion)
         selection_index_arrays, selection_size = self._build_multiindex([
+            datasets,
             n_features,
             [i for i in range(n_runs)],
             [i for i in range(max(n_features))]
         ])
-        selection_index = pd.MultiIndex.from_arrays(selection_index_arrays, names=['n_features', 'sample', 'feature'])
+        selection_index = pd.MultiIndex.from_arrays(selection_index_arrays, names=['dataset', 'n_features', 'sample', 'feature'])
+
+        measurement_index_arrays, measurement_size = self._build_multiindex([
+            datasets,
+            n_features,
+            ['mean', 'std', *[i for i in range(n_runs)]]
+        ])
+        measurement_index = pd.MultiIndex.from_arrays(measurement_index_arrays, names=['dataset', 'n_features', 'item'])
 
         self.selection_data = pd.DataFrame(-1 * np.ones((len(methods), selection_size), dtype='int'),
                                            index=methods,
@@ -57,6 +70,11 @@ class BenchmarkPOD:
                                      index=methods,
                                      columns=reg_index)
 
+        self.measurement_data = pd.DataFrame(np.zeros((len(methods), measurement_size), dtype='float'),
+                                             index=methods,
+                                             columns=measurement_index)
+
+        self.datasets = datasets
         self.methods = methods
         self.reg_metrics = reg_metrics
         self.stab_metrics = stab_metrics
@@ -75,42 +93,46 @@ class BenchmarkPOD:
             ])
         return index.tolist(), index.shape[1]
 
-    def register_meta(self, **kwargs):
-        for key in kwargs.keys():
-            self.meta[key] = kwargs[key]
+    def register_meta(self, dataset_meta: List[Tuple[np.array, np.array, str]]):
+        for x, y, name in dataset_meta:
+            self.meta[name] = x.shape
 
     def _string_conversion(self, item):
         if type(item) == list:
             return [str(i) for i in item]
         return str(item)
 
-    def _make_regression_key(self,
+    def _make_key(self,
+                             dataset: Union[str, List[str]] = None,
                              method: Union[str, List[str]] = None,
                              n_features: Union[int, List[int]] = None,
                              reg_metric: Union[str, List[str]] = None,
                              item: Literal['mean', 'std', 'samples'] = None,
-                             sample_number: Union[int, List[int]] = None):
+                             sample_number: Union[int, List[int]] = None,
+                             has_reg: bool = True):
         if item == 'samples':
             if sample_number is None:
                 item = [str(i) for i in range(self.n_runs)]
             else:
                 item = self._string_conversion(sample_number)
         method_key = method if method is not None else slice(None)
-        key = (
-                self._string_conversion(n_features) if n_features is not None else slice(None),
-                reg_metric if reg_metric is not None else slice(None),
-                item if item is not None else slice(None)
-              )
-        return method_key, key
+        key = [dataset if dataset is not None else slice(None),
+               self._string_conversion(n_features) if n_features is not None else slice(None)]
+        if has_reg:
+            key.append(reg_metric if reg_metric is not None else slice(None))
+        key.append(item if item is not None else slice(None))
+
+        return method_key, tuple(key)
 
     def register_regression(self,
                             value,
+                            dataset: Union[str, List[str]] = None,
                             method: Union[str, List[str]] = None,
                             n_features: Union[int, List[int]] = None,
                             reg_metric: Union[str, List[str]] = None,
                             item: Literal['mean', 'std', 'samples'] = None,
                             sample_number: int = None):
-        method_key, key = self._make_regression_key(method, n_features, reg_metric, item, sample_number)
+        method_key, key = self._make_key(dataset, method, n_features, reg_metric, item, sample_number)
         if type(value) == pd.DataFrame:
             self.reg_data.loc[(method_key, key)] = value.values.tolist()
         elif type(value) == np.array:
@@ -119,26 +141,47 @@ class BenchmarkPOD:
             self.reg_data.loc[(method_key, key)] = value
 
     def register_selection(self,
-                           method_key: str,
+                           dataset: str,
+                           method: str,
                            n_features: int,
                            sample: int,
                            selection: np.array):
         with warnings.catch_warnings():  # TODO: do something about that
             warnings.filterwarnings("ignore")
-            self.selection_data.loc[method_key,
-                                    (n_features,
-                                     sample)].iloc[:selection.shape[0]] = selection.tolist()
+            self.selection_data.loc[method,
+                                    (dataset,
+                                     self._string_conversion(n_features),
+                                     self._string_conversion(sample))].iloc[:selection.shape[0]] = selection.tolist()
 
     def register_stability(self,
+                           dataset: str,
                            n_features,
                            metric_name,
                            value,
-                           method_key=None):
-        self.stab_data.loc[method_key if method_key is not None else slice(None),
-                           (n_features,
+                           method=None):
+        self.stab_data.loc[method if method is not None else slice(None),
+                           (dataset,
+                            self._string_conversion(n_features),
                             metric_name)] = value
 
+    def register_measurement(self,
+                             value,
+                             dataset: Union[str, List[str]] = None,
+                             method: Union[str, List[str]] = None,
+                             n_features: Union[int, List[int]] = None,
+                             item: Literal['mean', 'std', 'samples'] = None,
+                             sample_number: int = None):
+        method_key, key = self._make_key(dataset, method, n_features, item=item, sample_number=sample_number, has_reg=False)
+        if type(value) == pd.DataFrame:
+            self.measurement_data.loc[(method_key, key)] = value.values.tolist()
+        elif type(value) == np.array:
+            self.measurement_data.loc[(method_key, key)] = value.tolist()
+        else:
+            self.measurement_data.loc[(method_key, key)] = value
+
+
     def get_regression_data(self,
+                            dataset: Union[str, List[str]] = None,
                             method: Union[str, List[str]] = None,
                             n_features: Union[int, List[int]] = None,
                             reg_metric: Union[str, List[str]] = None,
@@ -164,10 +207,11 @@ class BenchmarkPOD:
             -------
             pandas multiIndex DataFrame sliced to the requested data
         """
-        method_key, key = self._make_regression_key(method, n_features, reg_metric, item)
+        method_key, key = self._make_key(dataset, method, n_features, reg_metric, item)
         return self.reg_data.loc[(method_key, key)]
 
     def get_selection_data(self,
+                           dataset: Union[str, List[str]] = None,
                            method: Union[str, List[str]] = None,
                            n_features: Union[int, List[int]] = None,
                            sample_run: Union[int, List[int]] = None,
@@ -191,7 +235,7 @@ class BenchmarkPOD:
             pandas multiIndex DataFrame sliced to the requested data
         """
 
-        # constructs multiIndex-slice
+        # drop selected features added for padding in the dataframe if possible
         if n_features is not None \
                 and type(n_features) != list \
                 and selected_features is None:
@@ -199,9 +243,10 @@ class BenchmarkPOD:
 
         method_key = method if method is not None else slice(None)
         key = (
-            n_features if n_features is not None else slice(None),
-            sample_run if sample_run is not None else slice(None),
-            selected_features if selected_features is not None else slice(None)
+            dataset if dataset is not None else slice(None),
+            self._string_conversion(n_features) if n_features is not None else slice(None),
+            self._string_conversion(sample_run) if sample_run is not None else slice(None),
+            self._string_conversion(selected_features) if selected_features is not None else slice(None)
         )
 
         with warnings.catch_warnings():  #TODO: do something about that
@@ -210,6 +255,7 @@ class BenchmarkPOD:
             return frame.sort_index(level=[0, 1])
 
     def get_stability_data(self,
+                           dataset: Union[str, List[str]] = None,
                            method: Union[str, List[str]] = None,
                            n_features: Union[int, List[int]] = None,
                            stab_metric: Union[str, List[str]] = None):
@@ -234,7 +280,17 @@ class BenchmarkPOD:
         # constructs multiIndex-slice
         method_key = method if method is not None else slice(None)
         key = (
-               n_features if n_features is not None else slice(None),
+               dataset if dataset is not None else slice(None),
+               self._string_conversion(n_features) if n_features is not None else slice(None),
                stab_metric if stab_metric is not None else slice(None)
         )
         return self.stab_data.loc[(method_key, key)]
+
+    def get_measurement_data(self,
+                             dataset: Union[str, List[str]] = None,
+                             method: Union[str, List[str]] = None,
+                             n_features: Union[int, List[int]] = None,
+                             item: Literal['mean', 'std', 'samples'] = None):
+        method_key, key = self._make_key(dataset, method, n_features, item=item, has_reg=False)
+        return self.measurement_data.loc[(method_key, key)]
+

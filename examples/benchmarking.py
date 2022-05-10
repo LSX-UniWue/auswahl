@@ -23,37 +23,20 @@ vip = VIP(n_features_to_select=10)
 ipls = IPLS(interval_width=10)
 vip_spa = VIP_SPA(n_features_to_select=10, n_jobs=2)
 
-pod = benchmark(x,
-                y,
+pod = benchmark([(x , y, 'manure'),
+                 (x , y, 'corn')],
                 n_features=[10, 11],
                 n_runs=2,
                 train_size=0.9,
                 test_model=PLSRegression(n_components=1),
                 reg_metrics=[mean_squared_error, mean_absolute_error],
                 stab_metrics=[stability_score],
-                methods=[mcuve, vip],
+                methods=[cars, mcuve, vip],
                 random_state=1111111,
-                verbose=False)
+                verbose=True)
 
 
-#print(pod.get_selection_data(n_features=10))
-#print(pod.get_regression_data())
-#plot_score_stability_box(pod,
-                         #'stability_score',
-                         #'mean_squared_error',
-                         #save_path="./benchmark_plot.png")
 
-#frame = pod.get_regression_data(method='MCUVE')
-#print(frame)
-
-#print(pod.get_stability_data(stab_metric='stability_score'))
-#print(pod.get_selection_data(method='MCUVE', n_features=10))
-print(pod.get_regression_data(method='VIP', n_features=10))
-print(pod.get_selection_data(method='VIP', n_features=10, sample_run=1))
-#frame.to_csv("./test.csv")
-#print(pod.get_selection_data(n_features=11, sample_run=0))
-
-#plot_score_stability_box(pod, n_features=10, stability_metric='stability_score', regression_metric='mean_squared_error')
-#print(pod.get_regression_data(method='MCUVE', reg_metric="mean_squared_error"))
-
-#plot_performance_series(pod, 'mean_squared_error')
+#print(pod.get_selection_data(method='VIP', n_features=10))
+#print(pod.get_regression_data(method='VIP'))
+print(pod.get_measurement_data())

@@ -8,6 +8,7 @@ from ._data_handling import BenchmarkPOD
 
 
 def plot_score_stability_box(pod: BenchmarkPOD,
+                             dataset: str,
                              n_features: int,
                              stability_metric: str,
                              regression_metric: str,
@@ -25,6 +26,9 @@ def plot_score_stability_box(pod: BenchmarkPOD,
 
         pod : BenchmarkPOD
             data container produced by benchmarking
+
+        dataset: str
+            dataset for which the data is to be plotted
 
         n_features: int
             number of features, which were to be selected by the algorithms

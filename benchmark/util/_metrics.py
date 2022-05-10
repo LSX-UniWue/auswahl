@@ -25,12 +25,13 @@ def stability_score(pod: BenchmarkPOD):
     """
     for n in pod.n_features:
         for method in pod.methods:
-            data = pod.get_selection_data(method=method, n_features=n).to_numpy()
-            d = np.unique(data).size
-            r = pod.n_runs
-            score = (n - (d - n)/(r - 1)) / n
+            for dataset in pod.datasets:
+                data = pod.get_selection_data(method=method, n_features=n).to_numpy()
+                d = np.unique(data).size
+                r = pod.n_runs
+                score = (n - (d - n)/(r - 1)) / n
 
-            pod.register_stability(method_key=method, n_features=n, metric_name='stability_score', value=score)
+                pod.register_stability(dataset=dataset, method=method, n_features=n, metric_name='stability_score', value=score)
 
 
 def _intersection_expectation(n: int, s: int):
@@ -120,10 +121,20 @@ def mean_std_statistics(pod: BenchmarkPOD):
             data container produced by benchmarking
 
     """
+    # register means and stds for regression
     samples = pod.get_regression_data(item='samples')
-    means = samples.groupby(axis=1, level=['n_features', 'regression_metric'], sort=False).mean()
-    stds = samples.groupby(axis=1, level=['n_features', 'regression_metric'], sort=False).std()
+    grouped = samples.groupby(axis=1, level=['dataset', 'n_features', 'regression_metric'], sort=False)
+    means = grouped.mean()
+    stds = grouped.std()
     pod.register_regression(value=means, item='mean')
     pod.register_regression(value=stds, item='std')
+
+    # register means and stds for runtime measurements
+    samples = pod.get_measurement_data(item='samples')
+    grouped = samples.groupby(axis=1, level=['dataset', 'n_features'], sort=False)
+    means = grouped.mean()
+    stds = grouped.std()
+    pod.register_measurement(value=means, item='mean')
+    pod.register_measurement(value=stds, item='std')
 
 
