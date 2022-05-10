@@ -25,3 +25,5 @@ Wavelength Interval Selection
     :template: class.rst
 
     IntervalSelector
+    IPLS
+    IntervalRandomFrog
