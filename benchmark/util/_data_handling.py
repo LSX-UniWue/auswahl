@@ -5,12 +5,6 @@ import warnings
 
 from typing import List, Union, Literal, Tuple
 
-"""
-    TODO: - Allow the handling of different datasets
-          - include execution time --> fits perfectly into the regression frame
-          - Enforce a visually pleasant sorting
-"""
-
 
 class BenchmarkPOD:
 
