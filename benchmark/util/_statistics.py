@@ -24,13 +24,13 @@ def mw_u_test(pod: BenchmarkPOD, metric_name: str, greater_better=False):
     data = []
     methods = pod.get_methods()
     for method in methods:
-       data.append(np.array(pod.get_item(method, 'metrics', metric_name, 'samples')))
+       data.append(np.array(pod.get_item(method, metric_name, 'samples')))
     data = np.stack(data)
 
     # mask = np.arange(len(methods))
     for i, method in enumerate(methods):
         # _, p = mannwhitneyu(data[i], np.compress(mask != i, data, axis=0))
         _, p = mannwhitneyu(data[i], data, alternative=('greater' if greater_better else 'smaller'), axis=1)
-        pod.register(method, 'metrics', metric_name, mw_u_test=p)
+        pod.register(method, metric_name, mw_u_test=p)
 
 

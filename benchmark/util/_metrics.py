@@ -1,4 +1,7 @@
 import numpy as np
+import pandas
+import pandas as pd
+
 from ._data_handling import BenchmarkPOD
 
 
@@ -20,15 +23,14 @@ def stability_score(pod: BenchmarkPOD):
             Extends the passed BenchmarkPOD with the stability score according to the above formula
 
     """
-    for method in pod.get_methods():
-        supports = pod.get_item(method, "support")
+    for n in pod.n_features:
+        for method in pod.methods:
+            data = pod.get_selection_data(method=method, n_features=n).to_numpy()
+            d = np.unique(data).size
+            r = pod.n_runs
+            score = (n - (d - n)/(r - 1)) / n
 
-        n = supports[0].shape[0]
-        d = np.unique(np.concatenate(supports)).shape[0]
-        r = len(supports)
-        score = (n - (d - n)/(r - 1)) / n
-
-        pod.register(method, stability_score=score)
+            pod.register_stability(method_key=method, n_features=n, metric_name='stability_score', value=score)
 
 
 def _intersection_expectation(n: int, s: int):
@@ -118,16 +120,10 @@ def mean_std_statistics(pod: BenchmarkPOD):
             data container produced by benchmarking
 
     """
-    for method in pod.get_methods():
-        for metric in pod.get_item(method, 'metrics').keys():
-            scores = np.array(pod.get_item(method, 'metrics', metric, 'samples'))
-            pod.register(method, 'metrics', metric, mean=scores.mean(), std=scores.std())
-
-
-
-
-
-
-
+    samples = pod.get_regression_data(item='samples')
+    means = samples.groupby(axis=1, level=['n_features', 'regression_metric'], sort=False).mean()
+    stds = samples.groupby(axis=1, level=['n_features', 'regression_metric'], sort=False).std()
+    pod.register_regression(value=means, item='mean')
+    pod.register_regression(value=stds, item='std')
 
 
