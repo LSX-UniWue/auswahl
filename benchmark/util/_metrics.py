@@ -26,12 +26,15 @@ def stability_score(pod: BenchmarkPOD):
     for n in pod.n_features:
         for method in pod.methods:
             for dataset in pod.datasets:
-                data = pod.get_selection_data(method=method, n_features=n).to_numpy()
+                data = pod.get_selection_data(dataset=dataset, method=method, n_features=n).to_numpy()
                 d = np.unique(data).size
                 r = pod.n_runs
                 score = (n - (d - n)/(r - 1)) / n
-
-                pod.register_stability(dataset=dataset, method=method, n_features=n, metric_name='stability_score', value=score)
+                pod.register_stability(dataset=dataset,
+                                       method=method,
+                                       n_features=n,
+                                       metric_name='stability_score',
+                                       value=score)
 
 
 def _intersection_expectation(n: int, s: int):
@@ -121,16 +124,22 @@ def mean_std_statistics(pod: BenchmarkPOD):
             data container produced by benchmarking
 
     """
-    # register means and stds for regression
+    # register means, stds, mins, max and medians for regression
     samples = pod.get_regression_data(item='samples')
     grouped = samples.groupby(axis=1, level=['dataset', 'n_features', 'regression_metric'], sort=False)
     pod.register_regression(value=grouped.mean(), item='mean')
     pod.register_regression(value=grouped.std(), item='std')
+    pod.register_regression(value=grouped.min(), item='min')
+    pod.register_regression(value=grouped.max(), item='max')
+    pod.register_regression(value=grouped.median(), item='median')
 
-    # register means and stds for runtime measurements
+    # register means, stds, mins, max and medians for runtime measurements
     samples = pod.get_measurement_data(item='samples')
     grouped = samples.groupby(axis=1, level=['dataset', 'n_features'], sort=False)
     pod.register_measurement(value=grouped.mean(), item='mean')
     pod.register_measurement(value=grouped.std(), item='std')
+    pod.register_measurement(value=grouped.min(), item='min')
+    pod.register_measurement(value=grouped.max(), item='max')
+    pod.register_measurement(value=grouped.median(), item='median')
 
 

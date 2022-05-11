@@ -27,7 +27,7 @@ class BenchmarkPOD:
             datasets,
             n_features,
             reg_metrics,
-            ['mean', 'std', *[i for i in range(n_runs)]]
+            ['mean', 'std', 'median', 'max', 'min', *[i for i in range(n_runs)]]
         ])
         reg_index = pd.MultiIndex.from_arrays(reg_index_arrays, names=['dataset', 'n_features', 'regression_metric', 'item'])
 
@@ -50,7 +50,7 @@ class BenchmarkPOD:
         measurement_index_arrays, measurement_size = self._build_multiindex([
             datasets,
             n_features,
-            ['mean', 'std', *[i for i in range(n_runs)]]
+            ['mean', 'std', 'median', 'max', 'min', *[i for i in range(n_runs)]]
         ])
         measurement_index = pd.MultiIndex.from_arrays(measurement_index_arrays, names=['dataset', 'n_features', 'item'])
 
@@ -101,7 +101,7 @@ class BenchmarkPOD:
                              method: Union[str, List[str]] = None,
                              n_features: Union[int, List[int]] = None,
                              reg_metric: Union[str, List[str]] = None,
-                             item: Literal['mean', 'std', 'samples'] = None,
+                             item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None,
                              sample_number: Union[int, List[int]] = None,
                              has_reg: bool = True):
         if item == 'samples':
@@ -124,7 +124,7 @@ class BenchmarkPOD:
                             method: Union[str, List[str]] = None,
                             n_features: Union[int, List[int]] = None,
                             reg_metric: Union[str, List[str]] = None,
-                            item: Literal['mean', 'std', 'samples'] = None,
+                            item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None,
                             sample_number: int = None):
         method_key, key = self._make_key(dataset, method, n_features, reg_metric, item, sample_number)
         if type(value) == pd.DataFrame:
@@ -163,7 +163,7 @@ class BenchmarkPOD:
                              dataset: Union[str, List[str]] = None,
                              method: Union[str, List[str]] = None,
                              n_features: Union[int, List[int]] = None,
-                             item: Literal['mean', 'std', 'samples'] = None,
+                             item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None,
                              sample_number: int = None):
         method_key, key = self._make_key(dataset, method, n_features, item=item, sample_number=sample_number, has_reg=False)
         if type(value) == pd.DataFrame:
@@ -179,7 +179,7 @@ class BenchmarkPOD:
                             method: Union[str, List[str]] = None,
                             n_features: Union[int, List[int]] = None,
                             reg_metric: Union[str, List[str]] = None,
-                            item: Literal['mean', 'std', 'samples'] = None
+                            item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None
                             ):
         """
             Retrieve data related to the regression performance of feature selection methods
@@ -193,7 +193,7 @@ class BenchmarkPOD:
                 the runs for all numbers of selected features are retrieved
             reg_metric : str or list of str, default=None
                 regression metric(s) to be retrieved. If None, all available metrics are retrieved
-            item : Literal of ['mean', 'std', 'samples'], default=None
+            item : Literal of ['mean', 'std', 'median', 'max', 'min', 'samples'], default=None
                 specify, which indicator(s) for the selected regression metrics is to be retrieved.
                 If None, all indicators are retrieved
 
@@ -284,7 +284,8 @@ class BenchmarkPOD:
                              dataset: Union[str, List[str]] = None,
                              method: Union[str, List[str]] = None,
                              n_features: Union[int, List[int]] = None,
-                             item: Literal['mean', 'std', 'samples'] = None):
+                             item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None):
         method_key, key = self._make_key(dataset, method, n_features, item=item, has_reg=False)
         return self.measurement_data.loc[(method_key, key)]
+
 
