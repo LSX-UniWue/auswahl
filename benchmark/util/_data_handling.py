@@ -91,6 +91,22 @@ class BenchmarkPOD:
         for x, y, name in dataset_meta:
             self.meta[name] = x.shape
 
+    def get_meta(self, dataset):
+        """
+                    Provides meta information for each dataset
+        parameters
+        ----------
+        dataset: str
+            name of the dataset, whose meta information is requested
+
+        returns
+        -------
+        tuple
+            (n_samples, n_wavelengths)
+
+        """
+        return self.meta[dataset]
+
     def _string_conversion(self, item):
         if type(item) == list:
             return [str(i) for i in item]

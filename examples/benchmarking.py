@@ -8,7 +8,7 @@
 """
 import numpy as np
 from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, VISSA, RandomFrog
-from benchmark import benchmark, stability_score, plot_score_stability_box, plot_exec_time, plot_performance_series
+from benchmark import *
 
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -31,8 +31,8 @@ pod = benchmark([(x, y, 'manure'),
                 train_size=0.9,
                 test_model=PLSRegression(n_components=1),
                 reg_metrics=[mean_squared_error, mean_absolute_error],
-                stab_metrics=[stability_score],
-                methods=[cars, vip, mcuve, vip_spa],
+                stab_metrics=[stability_score, deng_stability_score],
+                methods=[vip, mcuve, cars],
                 random_state=1111111,
                 verbose=True)
 
@@ -46,5 +46,11 @@ pod = benchmark([(x, y, 'manure'),
 
 #plot_exec_time(pod, dataset='manure')
 #print(pod.get_regression_data(dataset='manure', method='VIP', reg_metric='mean_squared_error', item='samples'))
-plot_performance_series(pod, dataset='manure', regression_metric='mean_squared_error', item='median', save_path="./performance.png")
+#plot_performance_series(pod, dataset='manure', regression_metric='mean_squared_error', item='median', save_path="./performance.png")
+
+plot_score_stability_box(pod,
+                         dataset='manure',
+                         n_features=10,
+                         stability_metric='deng_stability_score',
+                         regression_metric='mean_squared_error')
 

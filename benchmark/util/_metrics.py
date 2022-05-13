@@ -40,7 +40,7 @@ def stability_score(pod: BenchmarkPOD):
 def _intersection_expectation(n: int, s: int):
     """
         Calculates the expectation value of the size of the intersection of two samples of size s each drawn from the
-        same pool of n unique entities without replacement
+        same pool of n unique entities without replacement. Calculations are using logarithm-tricks
 
         Parameters
         ----------
@@ -74,7 +74,7 @@ def _intersection_expectation(n: int, s: int):
 
 def deng_stability_score(pod: BenchmarkPOD):
     """
-            Calculates a selection stability score for randomized selection methods, according to Deng et al. [1]_.
+            Calculates the selection stability score for randomized selection methods, according to Deng et al. [1]_.
 
             Parameters
             ----------
@@ -93,30 +93,51 @@ def deng_stability_score(pod: BenchmarkPOD):
                    Analyst, 6, 1876-1885, 2015.
 
     """
-    n_wavelengths = pod.get_meta_item("n_wavelengths")
 
-    for method in pod.get_methods():
-        supports = pod.get_item(method, "support")
+    # number of different samples of selected fleatures available
+    r = pod.n_runs
+    for n in pod.n_features:
+        for method in pod.methods:
+            for dataset in pod.datasets:
+                _, n_wavelengths = pod.get_meta(dataset)
+                # retrieve the samples of selected features
+                supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy()
+                supports = np.reshape(supports, newshape=(r, n))
 
-        r = len(supports)
-        pairwise_sim = np.empty(int((r**2 - r) / 2), dtype='float')
+                # Calculate
+                pairwise_sim = np.empty(int((r ** 2 - r) / 2), dtype='float')
 
-        sample_size = supports[0].shape[0]
-        e = _intersection_expectation(n_wavelengths, sample_size)
-        for i, (x, y) in enumerate(np.triu_indices(r)):
-            if x != y:
-                pairwise_sim[i] = (np.intersect1d(supports[x, y]) - e) / (np.sqrt(supports[x].shape[0] * supports[y].shape[0])
-                                                                      - e)
-        score = np.sum(pairwise_sim) * (2 / (r*(r - 1)))
+                e = _intersection_expectation(n_wavelengths, n)
+                dim0, dim1 = np.triu_indices(r)
+                counter = 0
+                for i in range(dim0.size):
+                    if dim0[i] != dim1[i]:
+                        pairwise_sim[counter] = (np.intersect1d(supports[dim0[i]], supports[dim1[i]]).size - e) / (n - e)
+                        counter += 1
+                score = np.sum(pairwise_sim) * (2 / (r * (r - 1)))
 
-        pod.register(method, deng_stability_score=score)
+                pod.register_stability(method=method,
+                                       n_features=n,
+                                       dataset=dataset,
+                                       metric_name='deng_stability_score',
+                                       value=score)
+
+
+
+def _register_stats(function, grouped):
+    function(value=grouped.mean(), item='mean')
+    function(value=grouped.std(), item='std')
+    function(value=grouped.min(), item='min')
+    function(value=grouped.max(), item='max')
+    function(value=grouped.median(), item='median')
 
 
 def mean_std_statistics(pod: BenchmarkPOD):
 
     """
 
-        Calculates mean and standard deviation for all methods and all metrics contained the BenchmarkPOD object
+        Calculates mean and standard deviation for all methods, metrics, datasets, feature numbers, runtime measurements
+        contained the BenchmarkPOD object
 
         Parameters
         ----------
@@ -127,19 +148,11 @@ def mean_std_statistics(pod: BenchmarkPOD):
     # register means, stds, mins, max and medians for regression
     samples = pod.get_regression_data(item='samples')
     grouped = samples.groupby(axis=1, level=['dataset', 'n_features', 'regression_metric'], sort=False)
-    pod.register_regression(value=grouped.mean(), item='mean')
-    pod.register_regression(value=grouped.std(), item='std')
-    pod.register_regression(value=grouped.min(), item='min')
-    pod.register_regression(value=grouped.max(), item='max')
-    pod.register_regression(value=grouped.median(), item='median')
+    _register_stats(pod.register_regression, grouped)
 
     # register means, stds, mins, max and medians for runtime measurements
     samples = pod.get_measurement_data(item='samples')
     grouped = samples.groupby(axis=1, level=['dataset', 'n_features'], sort=False)
-    pod.register_measurement(value=grouped.mean(), item='mean')
-    pod.register_measurement(value=grouped.std(), item='std')
-    pod.register_measurement(value=grouped.min(), item='min')
-    pod.register_measurement(value=grouped.max(), item='max')
-    pod.register_measurement(value=grouped.median(), item='median')
+    _register_stats(pod.register_measurement, grouped)
 
 

@@ -19,3 +19,12 @@ Wavelength Interval Selection
     :maxdepth: 2
 
     interval_selection.rst
+
+Benchmarking
+------------
+
+.. toctree::
+    :numbered:
+    :maxdepth: 2
+
+    benchmarking.rst

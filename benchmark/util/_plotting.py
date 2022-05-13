@@ -225,3 +225,16 @@ def plot_performance_series(pod: BenchmarkPOD,
                    save_path=save_path
                    )
 
+
+def plot_selection_behaviour(pod: BenchmarkPOD,
+                            dataset: str,
+                            methods: Union[str, List[str]] = None,
+                            n_features: Union[int, List[int]] = None,
+                            save_path: str = None):
+    """
+
+        Visualize in some way the selected variables and agreement of approaches
+
+    """
+    ...
+

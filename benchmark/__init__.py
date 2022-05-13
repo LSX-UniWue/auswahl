@@ -4,6 +4,7 @@ from .util._plotting import plot_score_stability_box, plot_performance_series, p
 
 __all__ = ['benchmark',
            'stability_score',
+           'deng_stability_score',
            'plot_score_stability_box',
            'plot_performance_series',
            'plot_exec_time']
