@@ -75,6 +75,7 @@ class BenchmarkPOD:
         self.max_features = n_features
         self.n_runs = n_runs
         self.n_features = n_features
+        self.n_datasets = len(datasets)
 
         self.meta = dict()
 
