@@ -16,6 +16,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 x = np.load("./data/spectra.npy")
 y = np.load("./data/targets.npy")
+n = np.load("./data/nitrogen.npy")
 
 mcuve = MCUVE(n_features_to_select=10)
 cars = CARS(n_features_to_select=10)
@@ -23,16 +24,18 @@ vip = VIP(n_features_to_select=10)
 ipls = IPLS(interval_width=10)
 vip_spa = VIP_SPA(n_features_to_select=10, n_jobs=2)
 rf = RandomFrog(n_features_to_select=10)
+ipls = IPLS(n_intervals_to_select=1, interval_width=10, n_jobs=2)
 
-pod = benchmark([(x, y, 'manure'),
+pod = benchmark([(x, n, 'nitrogen'),
                  ],#(x, y, 'corn')],
-                n_features=[10, 11, 12],
+                n_features=[10],
+                n_intervals=[1],
                 n_runs=5,
                 train_size=0.9,
                 test_model=PLSRegression(n_components=1),
                 reg_metrics=[mean_squared_error, mean_absolute_error],
                 stab_metrics=[stability_score, deng_stability_score],
-                methods=[vip, cars, mcuve],
+                methods=[vip, cars, mcuve, ipls],
                 random_state=1111111,
                 verbose=True)
 
@@ -48,10 +51,12 @@ pod = benchmark([(x, y, 'manure'),
 #print(pod.get_regression_data(dataset='manure', method='VIP', reg_metric='mean_squared_error', item='samples'))
 #plot_performance_series(pod, dataset='manure', regression_metric='mean_squared_error', item='median', save_path="./performance.png")
 
-#plot_score_stability_box(pod,
- #                        dataset='manure',
-  #                       n_features=10,
-   #                      stability_metric='deng_stability_score',
-    #                     regression_metric='mean_squared_error')
+plot_score_stability_box(pod,
+                         dataset='nitrogen',
+                         n_features=10,
+                         stability_metric='stability_score',
+                         regression_metric='mean_squared_error')
+
+strata, p = mw_ranking(pod, regression_metric='mean_squared_error')
 
 

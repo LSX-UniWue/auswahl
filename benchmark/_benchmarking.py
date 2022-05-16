@@ -22,6 +22,27 @@ class Speaker:
         if self.verbose:
             print("    " * level + message)
 
+def _check_feature_interval_consistency(methods, n_features, n_intervals):
+    if n_intervals is None:
+        for method in methods:
+            if isinstance(method, IntervalSelector):
+                raise ValueError("Number of intervals for IntervalSelectors not specified")
+    else:
+        if len(n_features) != len(n_intervals):
+            raise ValueError("The length of the lists n_features and n_intervals are required to be equal."
+                             f'Got {len(n_features)} and {n_intervals}')
+        else:
+            if not np.all(np.logical_not(np.mod(np.array(n_features), np.array(n_intervals)))):
+                raise ValueError("n_features are requires to be divisible by n_intervals")
+
+def _parameterize(method, n_features, n_intervals, seed, index):
+    if isinstance(method, PointSelector):
+        method.n_features_to_select = n_features[index]
+    else:
+        method.n_intervals_to_select = n_intervals[index]
+        method.interval_width = n_features[index] // n_intervals[index]
+    if hasattr(method, 'random_state'):
+        method.random_state = seed
 
 def benchmark(data: List[Tuple[np.array, np.array, str]],
               n_features: List[int],
@@ -32,7 +53,10 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
               stab_metrics: List,
               methods: List[Union[PointSelector, IntervalSelector]],
               random_state: Union[int, RandomState],
+              n_intervals: List[int] = None,
               verbose: bool = True):
+
+    _check_feature_interval_consistency(methods, n_features, n_intervals)
 
     speaker = Speaker(verbose)
 
@@ -55,7 +79,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
 
     for x, y, dataset_name in data:
         speaker.announce(level=0, message=f'Started benchmark for dataset {dataset_name}')
-        for n in n_features:
+        for i, n in enumerate(n_features):
             speaker.announce(level=1, message=f'Started cycle with {n} features to select:')
             for r in range(n_runs):
                 speaker.announce(level=2, message=f'Started run: {r}')
@@ -63,9 +87,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
                 train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=train_size, random_state=seed)
                 for method_name, method in zip(method_names, methods):
                     speaker.announce(level=3, message=f'started method {method_name}')
-                    method.n_features_to_select = n
-                    if hasattr(method, 'random_state'):
-                        method.random_state = seed
+                    _parameterize(method, n_features, n_intervals, seed, i)
 
                     start = time.process_time()
                     method.fit(train_x, train_y)
