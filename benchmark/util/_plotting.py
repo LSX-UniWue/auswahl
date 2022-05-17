@@ -83,6 +83,37 @@ def _errorbar_plot(title: str,
         plt.savefig(save_path)
     plt.show()
 
+def _line_plot(title: str,
+               x_label: str,
+               y_label: str,
+               y_data: List[List[float]],
+               x_data: List[List[Union[float, int]]],
+               legend: List[str],
+               save_path: str = None):
+
+    # TODO: color strategies
+    colors = ['k', 'b', 'g', 'r', 'c', 'm', 'y']
+    markers = [c for c in ".ov^<>12348sp*hH+xDd|"]
+
+    fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
+    legend_handles = []
+
+    for i, y_data in enumerate(y_data):
+        ax.errorbar(x_data[i] if len(x_data) > 1 else x_data[0],
+                    y_data,
+                    color=colors[i],
+                    marker=markers[i])
+        legend_handles.append(mpatches.Patch(color=colors[i], label=legend[i]))
+
+    ax.set_title(title)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+    ax.legend(handles=legend_handles)
+
+    if save_path is not None:
+        plt.savefig(save_path)
+    plt.show()
+
 def plot_score_stability_box(pod: BenchmarkPOD,
                              dataset: str,
                              n_features: int,
@@ -157,6 +188,12 @@ def plot_exec_time(pod: BenchmarkPOD,
                    item: Literal['mean', 'median'] = 'mean',
                    save_path: str = None):
 
+    """
+
+            TODO
+
+    """
+
     exec_times = pod.get_measurement_data(dataset=dataset,
                                           method=methods,
                                           n_features=n_features,
@@ -225,6 +262,41 @@ def plot_performance_series(pod: BenchmarkPOD,
                    save_path=save_path
                    )
 
+def plot_stability_series(pod: BenchmarkPOD,
+                          dataset: str,
+                          stability_metric: str,
+                          methods: Union[str, List[str]] = None,
+                          save_path: str = None):
+
+    """
+        Plots the stability score of methods for a given metric across the number of features to be selected
+
+        Parameters
+        ----------
+        pod: BenchmarkPOD
+            BenchmarkPOD object containing the benchmarking data
+        dataset: str
+            dataset identifier
+        stability_metric: str
+            stability metric used for plotting
+        methods: Union[str, List[str]], default=None
+            method identifier or list of method identifiers for methods to be plotted. If None, all available methods
+            are plotted
+        save_path: str, default=None
+            path on which to store the plot. If None, the plot is simply displayed
+
+    """
+
+    y_data = pod.get_stability_data(method=methods, dataset=dataset, stab_metric=stability_metric).to_numpy().tolist()
+    x_data = [pod.n_features]
+
+    _line_plot(f'Stability across n_features to select: Dataset {dataset}',
+               "n_features",
+               stability_metric,
+               y_data,
+               x_data,
+               pod.methods,
+               save_path)
 
 def plot_selection_behaviour(pod: BenchmarkPOD,
                             dataset: str,
