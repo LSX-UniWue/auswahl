@@ -5,74 +5,44 @@ import pandas as pd
 from ._data_handling import BenchmarkPOD
 
 
-def stability_score(pod: BenchmarkPOD):
-    """
-        Calculates a selection stability score for randomized selection methods.
-        If r is the number of runs, n the number of features to select and d the number of distinct features selected
-        across the runs, the score in range [0,1] is calculated as:
-
-                        score = (n - (d - n)/(r -1)) / n
-
-        Parameters
-        ----------
-        pod : BenchmarkPOD
-            data container produced by benchmarking
-
-        Returns
-        -------
-            Extends the passed BenchmarkPOD with the stability score according to the above formula
-
-    """
+def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str):
+    r = pod.n_runs
     for n in pod.n_features:
         for method in pod.methods:
             for dataset in pod.datasets:
-                data = pod.get_selection_data(dataset=dataset, method=method, n_features=n).to_numpy()
-                d = np.unique(data).size
-                r = pod.n_runs
-                score = (n - (d - n)/(r - 1)) / n
-                pod.register_stability(dataset=dataset,
-                                       method=method,
+                # retrieve the samples of selected features
+                supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy()
+                supports = np.reshape(supports, newshape=(r, n))  # reshape to sample_runs x n_features selected
+
+                # Calculate
+                pairwise_sim = []
+
+                dim0, dim1 = np.triu_indices(r)
+                for i in range(dim0.size):
+                    if dim0[i] != dim1[i]:
+                        pairwise_sim.append(pairwise_sim_function(pod,
+                                                                  support_1 = supports[dim0[i]],
+                                                                  support_2 = supports[dim1[i]],
+                                                                  n_features=n,
+                                                                  method=method,
+                                                                  dataset=dataset))
+                score = np.sum(np.array(pairwise_sim)) * (2 / (r * (r - 1)))
+
+                pod.register_stability(method=method,
                                        n_features=n,
-                                       metric_name='stability_score',
+                                       dataset=dataset,
+                                       metric_name=metric_name,
                                        value=score)
 
 
-def _intersection_expectation(n: int, s: int):
-    """
-        Calculates the expectation value of the size of the intersection of two samples of size s each drawn from the
-        same pool of n unique entities without replacement. Calculations are using logarithm-tricks
-
-        Parameters
-        ----------
-        n : int
-            number of elements drawn from
-        s : int
-            sample size
-
-        Returns
-        -------
-        expectation value of the intersection size: float
-    """
-    logs = np.log(np.arange(1, n + 1))
-    constant = 2 * np.sum(logs[:s]) + 2 * np.sum(logs[:n - s]) - np.sum(logs)
-
-    m_fac = - logs[0]
-    sm_fac = -2 * np.sum(logs[:s - 1])
-    nssm_fac = - np.sum(logs[:n - 2 * s + 1])
-
-    e = 0
-    for i in range(s - 1):
-        e += np.exp(m_fac + sm_fac + nssm_fac + logs[i] + constant)
-        m_fac -= logs[i + 1]
-        sm_fac += 2 * logs[s - i - 2]
-        nssm_fac -= logs[n - 2*s + i + 1]
-
-    # special case intersection of size s
-    e += np.exp(logs[s - 1] + np.sum(logs[:s]) + np.sum(logs[:n - s]) - np.sum(logs))
-    return e
+def _deng_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.array, **kwargs):
+    n_wavelengths = pod.get_meta(kwargs['dataset'])[2][1]
+    n = kwargs['n_features']
+    e = n ** 2 / n_wavelengths
+    return (np.intersect1d(support_1, support_2).size - e) / (n - e)
 
 
-def deng_stability_score(pod: BenchmarkPOD):
+def deng_score(pod: BenchmarkPOD):
     """
             Calculates the selection stability score for randomized selection methods, according to Deng et al. [1]_.
 
@@ -93,35 +63,46 @@ def deng_stability_score(pod: BenchmarkPOD):
                    Analyst, 6, 1876-1885, 2015.
 
     """
+    _pairwise_scoring(pod, _deng_stability_score, 'deng_score')
 
-    # number of different samples of selected fleatures available
-    r = pod.n_runs
-    for n in pod.n_features:
-        for method in pod.methods:
-            for dataset in pod.datasets:
-                _, n_wavelengths = pod.get_meta(dataset)
-                # retrieve the samples of selected features
-                supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy()
-                supports = np.reshape(supports, newshape=(r, n))
 
-                # Calculate
-                pairwise_sim = np.empty(int((r ** 2 - r) / 2), dtype='float')
+def _thresholded_correlation(spectra, support_1: np.array, support_2: np.array, threshold: float):
+    set_diff = np.setdiff1d(support_2, support_1)
+    if set_diff.size == 0:
+        return 0
+    diff_features = np.transpose(spectra[:, set_diff])  # features x observations
+    sup1_features = np.transpose(spectra[:, support_1])
+    correlation = np.abs(np.corrcoef(sup1_features, diff_features))
+    correlation = correlation * (correlation >= threshold)
+    return (1/support_2.size) * np.sum(correlation[:support_1.size, support_1.size:])
 
-                e = _intersection_expectation(n_wavelengths, n)
-                dim0, dim1 = np.triu_indices(r)
-                counter = 0
-                for i in range(dim0.size):
-                    if dim0[i] != dim1[i]:
-                        pairwise_sim[counter] = (np.intersect1d(supports[dim0[i]], supports[dim1[i]]).size - e) / (n - e)
-                        counter += 1
-                score = np.sum(pairwise_sim) * (2 / (r * (r - 1)))
 
-                pod.register_stability(method=method,
-                                       n_features=n,
-                                       dataset=dataset,
-                                       metric_name='deng_stability_score',
-                                       value=score)
+def _zucknick_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.array, **kwargs):
+    n = kwargs['n_features']
+    spectra = pod.get_meta(kwargs['dataset'])[0]
+    intersection_size = np.intersect1d(support_1, support_2).size
+    union_size = 2*n - intersection_size
+    c_12 = _thresholded_correlation(spectra, support_1, support_2, 0.8)
+    c_21 = _thresholded_correlation(spectra, support_2, support_1, 0.8)
+    return (intersection_size + c_12 + c_21) / union_size
 
+
+def zucknick_score(pod: BenchmarkPOD):
+    """
+            Calculates the stability score according to Zucknick et al. _[1]
+
+        Parameters
+        ----------
+        pod: BenchmarkPOD
+            BenchmarkPOD object containing benchmarking data
+
+        References
+        ----------
+        _[1] Zucknick, M., Richardson, S., Stronach, E.A.: Comparing the characteristics of
+             gene expression profiles derived by univariate and multivariate classification methods.
+             Stat. Appl. Genet. Molecular Biol. 7(1), 7 (2008)
+    """
+    _pairwise_scoring(pod, _zucknick_stability_score, 'zucknick_score')
 
 
 def _register_stats(function, grouped):

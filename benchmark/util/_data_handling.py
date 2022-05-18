@@ -90,7 +90,7 @@ class BenchmarkPOD:
 
     def register_meta(self, dataset_meta: List[Tuple[np.array, np.array, str]]):
         for x, y, name in dataset_meta:
-            self.meta[name] = x.shape
+            self.meta[name] = (x, y, x.shape)
 
     def get_meta(self, dataset):
         """
@@ -103,7 +103,7 @@ class BenchmarkPOD:
         returns
         -------
         tuple
-            (n_samples, n_wavelengths)
+            (spectra, targets, (n_samples, n_wavelengths))
 
         """
         return self.meta[dataset]

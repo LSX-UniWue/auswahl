@@ -28,12 +28,12 @@ ipls = IPLS(n_intervals_to_select=1, interval_width=10, n_jobs=2)
 
 pod = benchmark([(x, n, 'nitrogen'),
                  ],#(x, y, 'corn')],
-                n_features=np.arange(10, 300, 5).tolist(),
+                n_features=[10],  # np.arange(10, 300, 5).tolist(),
                 n_runs=5,
                 train_size=0.9,
                 test_model=PLSRegression(n_components=1),
                 reg_metrics=[mean_squared_error, mean_absolute_error],
-                stab_metrics=[stability_score, deng_stability_score],
+                stab_metrics=[zucknick_score, deng_score],
                 methods=[vip, mcuve, cars],
                 random_state=1111111,
                 verbose=True)
@@ -50,14 +50,20 @@ pod = benchmark([(x, n, 'nitrogen'),
 #print(pod.get_regression_data(dataset='manure', method='VIP', reg_metric='mean_squared_error', item='samples'))
 #plot_performance_series(pod, dataset='manure', regression_metric='mean_squared_error', item='median', save_path="./performance.png")
 
-#plot_score_stability_box(pod,
- #                        dataset='nitrogen',
-  #                       n_features=10,
-   #                      stability_metric='stability_score',
-    #                     regression_metric='mean_squared_error')
+plot_score_stability_box(pod,
+                         dataset='nitrogen',
+                         n_features=10,
+                         stability_metric='zucknick_score',
+                         regression_metric='mean_squared_error')
+
+plot_score_stability_box(pod,
+                         dataset='nitrogen',
+                         n_features=10,
+                         stability_metric='deng_score',
+                         regression_metric='mean_squared_error')
 
 #strata, p = mw_ranking(pod, regression_metric='mean_squared_error')
 
-plot_stability_series(pod, dataset='nitrogen', stability_metric='stability_score', save_path="./stability.png")
+#plot_stability_series(pod, dataset='nitrogen', stability_metric='stability_score', save_path="./stability.png")
 
 
