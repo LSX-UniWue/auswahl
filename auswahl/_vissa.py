@@ -10,10 +10,75 @@ from joblib import Parallel, delayed
 
 import warnings
 
-from auswahl._base import PointSelector
+from auswahl._base import PointSelector, IntervalSelector
 
 
-class VISSA(PointSelector):
+class _VISSA:
+
+    """
+        Mixin for the VISSA feature selection method
+    """
+
+    def _produce_submodels(self, var_weights: np.array, n_submodels, random_state):
+        n_feats = var_weights.shape[0]
+        appearances = np.reshape(np.round(var_weights * n_submodels), (-1, 1))
+
+        # populate Binary Sampling Matrix according to weights
+        bsm = np.tile(np.arange(1, n_submodels + 1).reshape((1, -1)), [n_feats, 1])
+        bsm = (bsm <= appearances)
+
+        # create permutation for each a row of the Binary Sampling Matrix
+        p = np.arange(n_submodels * n_feats)
+        random_state.shuffle(p)
+        p = np.reshape(p, (n_feats, n_submodels))
+        p = np.reshape(np.argsort(p, axis=1), (-1,))
+        row_selector = np.repeat(np.arange(n_feats), n_submodels)
+
+        # permute the Binary Sampling Matrix
+        return np.reshape(bsm[(row_selector, p)], (n_feats, n_submodels))
+
+    def _evaluate(self, X, y, pls, submodel_index):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            cv_scores = cross_val_score(pls,
+                                        X,
+                                        y,
+                                        cv=self.n_cv_folds,
+                                        scoring='neg_mean_squared_error')
+        return np.mean(cv_scores), submodel_index
+
+    def _evaluate_submodels(self, X, y, pls, bsm):
+        submodels = Parallel(n_jobs=self.n_jobs)(delayed(self._evaluate)(X[:, bsm[:, i]],
+                                                                         y,
+                                                                         PLSRegression() if pls is None else clone(pls),
+                                                                         i) for i in range(self.n_submodels))
+        return submodels
+
+    def _yield_best_weights(self, X, y, var_weights, n_submodels, random_state, selection_quantile):
+        best_score = -10000000
+        best_var_weights = None
+        while True:
+            #produce weighted binary sampling matrix
+            bsm = self._produce_submodels(var_weights, n_submodels, random_state)
+            # score submodels
+            submodels = self._evaluate_submodels(X, y, self.pls, bsm)
+            submodels_sorted = sorted(submodels, key=lambda x: -x[0])
+
+            # get submodel indices and scores of best submodels
+            top_scores, top_models = list(zip(*(submodels_sorted[: selection_quantile])))
+            # get average score of best submodels
+            avg_top_scores = np.mean(top_scores)
+
+            if avg_top_scores > best_score:
+                best_score = avg_top_scores
+                best_var_weights = np.sum(bsm[:, top_models], axis=1) / selection_quantile
+            else:
+                break
+
+        return best_score, best_var_weights
+
+
+class VISSA(PointSelector, _VISSA):
 
     """
         Feature Selection with Variable Iterative Space Shrinkage Approach (VISSA).
@@ -84,41 +149,6 @@ class VISSA(PointSelector):
         self.n_cv_folds = n_cv_folds
         self.random_state = random_state
 
-    def _produce_submodels(self, var_weights: np.array, random_state):
-        n_feats = var_weights.shape[0]
-        appearances = np.reshape(np.round(var_weights * self.n_submodels), (-1, 1))
-
-        # populate Binary Sampling Matrix according to weights
-        bsm = np.tile(np.arange(1, self.n_submodels + 1).reshape((1, -1)), [n_feats, 1])
-        bsm = (bsm <= appearances)
-
-        # create permutation for each a row of the Binary Sampling Matrix
-        p = np.arange(self.n_submodels * n_feats)
-        random_state.shuffle(p)
-        p = np.reshape(p, (n_feats, self.n_submodels))
-        p = np.reshape(np.argsort(p, axis=1), (-1,))
-        row_selector = np.repeat(np.arange(n_feats), self.n_submodels)
-
-        # permute the Binary Sampling Matrix
-        return np.reshape(bsm[(row_selector, p)], (n_feats, self.n_submodels))
-
-    def _evaluate(self, X, y, pls, submodel_index):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            cv_scores = cross_val_score(pls,
-                                        X,
-                                        y,
-                                        cv=self.n_cv_folds,
-                                        scoring='neg_mean_squared_error')
-        return np.mean(cv_scores), submodel_index
-
-    def _evaluate_submodels(self, X, y, pls, bsm):
-        submodels = Parallel(n_jobs=self.n_jobs)(delayed(self._evaluate)(X[:, bsm[:, i]],
-                                                                         y,
-                                                                         PLSRegression() if pls is None else clone(pls),
-                                                                         i) for i in range(self.n_submodels))
-        return submodels
-
     def _fit(self, X, y, n_features_to_select):
         random_state = check_random_state(self.random_state)
 
@@ -126,35 +156,22 @@ class VISSA(PointSelector):
         selection_quantile = int(0.05 * self.n_submodels)
         n_subs = self.n_submodels
 
-        score = -10000000
-        var_weights = 0.5 * np.ones((X.shape[1],))
+        top_score = -10000000
+        top_var_weights = 0.5 * np.ones((X.shape[1],))
         while True:
-            cache_score = -10000000
-            cache_var_weights = None
-            while True:
-                bsm = self._produce_submodels(var_weights, random_state)
-                # a partial recycling of the bsm is here possible in the following call
-                submodels = self._evaluate_submodels(X, y, self.pls, bsm)
-                submodels_sorted = sorted(submodels, key=lambda x: -x[0])
-
-                # get submodel indices and scores of best submodels
-                top_scores, top_models = list(zip(*(submodels_sorted[: selection_quantile])))
-                # get average score of best submodels
-                avg_top_scores = np.mean(top_scores)
-
-                if avg_top_scores > cache_score:
-                    cache_score = avg_top_scores
-                    cache_var_weights = np.sum(bsm[:, top_models], axis=1) / selection_quantile
-                else:
-                    break
-
-            if cache_score > score:
-                score = cache_score
-                var_weights = cache_var_weights
+            score, var_weights = self._yield_best_weights(X,
+                                                          y,
+                                                          top_var_weights,
+                                                          n_subs,
+                                                          random_state,
+                                                          selection_quantile)
+            if score > top_score:
+                top_score = score
+                top_var_weights = var_weights
             else:
                 break
 
-            # early stopping
+            # early stopping: the requested number of features have probability of ca. 1
             if np.sum(var_weights >= ((n_subs - 0.5)/n_subs)) >= n_features_to_select:
                 break
 
@@ -165,5 +182,113 @@ class VISSA(PointSelector):
     def _get_support_mask(self):
         check_is_fitted(self)
         return self.support_
+
+
+class iVISSA(IntervalSelector, _VISSA):
+
+    def __init__(self,
+                 n_intervals_to_select: int = 1,
+                 interval_width: Union[int, float] = None,
+                 n_submodels: int = 1000,
+                 n_jobs: int = 1,
+                 n_cv_folds: int = 5,
+                 pls: PLSRegression = None,
+                 random_state: Union[int, np.random.RandomState] = None):
+
+        super().__init__(n_intervals_to_select, interval_width)
+
+        self.pls = pls
+        self.n_submodels = n_submodels
+        self.n_jobs = n_jobs
+        self.n_cv_folds = n_cv_folds
+        self.random_state = random_state
+
+    def _newly_selected(self, var_weights, next_var_weights, n_submodels):
+        """
+            Calculates features, which have been newly selected (weight of ca. 1)
+        """
+        old_selected = np.nonzero(var_weights >= (n_submodels - 0.5) / n_submodels)[0]
+        new_selected = np.nonzero(next_var_weights >= (n_submodels - 0.5) / n_submodels)[0]
+        return new_selected, np.setdiff1d(new_selected, old_selected)
+
+    def _expand_interval(self,
+                         X,
+                         y,
+                         var_weights,
+                         score,
+                         features,
+                         new_feature,
+                         n_submodels):
+        threshold = (n_submodels - 0.5) / n_submodels
+
+        # for now an interleaved expansion on both sides
+        left = new_feature - 1
+        right = new_feature + 1
+        progress_left, progress_right = True, True
+        while progress_left or progress_right:
+            progress_right, progress_left = True, True
+            if left >= 0:
+                if var_weights[left] >= threshold:  # already included
+                    left -= 1
+                else:
+                    feature_score, _ = self._evaluate(X[:, features + [left]], y, PLSRegression() if self.pls is None else clone(self.pls))
+                    if feature_score > score:
+                        score = feature_score
+                        features.append(left)
+                        var_weights[left] = 1
+                        left -= 1
+                    else:
+                        progress_left = False
+            else:
+                progress_left = False
+
+            if right < X.shape[1]:
+                if var_weights[right] >= threshold:  # already included
+                    right += 1
+                else:
+                    feature_score, _ = self._evaluate(X[:, features + [right]], y, PLSRegression() if self.pls is None else clone(self.pls))
+                    if feature_score > score:
+                        score = feature_score
+                        features.append(right)
+                        var_weights[right] = 1
+                        left += 1
+                    else:
+                        progress_right = False
+            else:
+                progress_right = False
+        return features, score
+
+    def _grow_intervals(self, var_weights, next_var_weights, score, n_submodels):
+        features, new_features = self._newly_selected(var_weights, next_var_weights, n_submodels)
+        for i in range(new_features.size):
+            features, score = self._expand_interval(score, features, new_features[i], n_submodels)
+
+        next_var_weights[features] = 1
+        return next_var_weights, score
+
+    def _fit(self, X, y, n_intervals_to_select, interval_width):
+        random_state = check_random_state(self.random_state)
+
+        # number of top models to used to update the weights of features
+        selection_quantile = int(0.05 * self.n_submodels)
+        n_subs = self.n_submodels
+
+        top_score = -10000000
+        top_var_weights = 0.5 * np.ones((X.shape[1],))
+        while True:
+            score, var_weights = self._yield_best_weights(X,
+                                                          y,
+                                                          top_var_weights,
+                                                          n_subs,
+                                                          random_state,
+                                                          selection_quantile)
+            if score > top_score:
+                var_weights, score = self._grow_intervals(top_var_weights, var_weights, score)
+                top_score = score
+                top_var_weights = var_weights
+            else:
+                break
+
+        # TODO: extract intervals
 
 

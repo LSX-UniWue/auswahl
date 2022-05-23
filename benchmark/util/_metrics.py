@@ -14,15 +14,13 @@ def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str
                 supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy()
                 supports = np.reshape(supports, newshape=(r, n))  # reshape to sample_runs x n_features selected
 
-                # Calculate
                 pairwise_sim = []
-
                 dim0, dim1 = np.triu_indices(r)
                 for i in range(dim0.size):
-                    if dim0[i] != dim1[i]:
+                    if dim0[i] != dim1[i]:  # only consider similarity between different pairs of feature sets
                         pairwise_sim.append(pairwise_sim_function(pod,
-                                                                  support_1 = supports[dim0[i]],
-                                                                  support_2 = supports[dim1[i]],
+                                                                  support_1=supports[dim0[i]],
+                                                                  support_2=supports[dim1[i]],
                                                                   n_features=n,
                                                                   method=method,
                                                                   dataset=dataset))
