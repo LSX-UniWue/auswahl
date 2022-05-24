@@ -341,7 +341,7 @@ def plot_selection(pod: BenchmarkPOD,
     for ax in axs:
         ax.label_outer()
 
-    plt.show()
     if save_path is not None:
         plt.savefig(save_path)
+    plt.show()
 
