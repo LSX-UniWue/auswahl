@@ -1,5 +1,6 @@
 
 import numpy as np
+import pandas as pd
 import matplotlib.patches as mpatches
 
 from typing import List, Union, Literal
@@ -298,15 +299,49 @@ def plot_stability_series(pod: BenchmarkPOD,
                pod.methods,
                save_path)
 
-def plot_selection_behaviour(pod: BenchmarkPOD,
-                            dataset: str,
-                            methods: Union[str, List[str]] = None,
-                            n_features: Union[int, List[int]] = None,
-                            save_path: str = None):
-    """
+def plot_selection(pod: BenchmarkPOD,
+                   dataset: str,
+                   n_features: int,
+                   methods: Union[str, List[str]] = None,
+                   save_path: str = None):
 
-        Visualize in some way the selected variables and agreement of approaches
+    if methods is None:
+        methods = pod.methods
+    if type(methods) == str:
+        methods = [methods]
 
-    """
-    ...
+    colors = ['darkorange', 'cornflowerblue']
+
+    fig = plt.figure()
+    gs = fig.add_gridspec(len(methods), hspace=0)
+    axs = gs.subplots(sharex=True, sharey=True)
+    fig.suptitle(f'Displaying selection probability P on dataset {dataset} for {n_features} features to be selected')
+
+    selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features)
+    n_wavelengths = pod.get_meta(dataset)[2][1]
+
+    for i in range(len(methods)):
+
+        unique_counts = selections.iloc[i].value_counts()
+        bar_heights = np.zeros((n_wavelengths,))
+        bar_heights[unique_counts.index.to_numpy().astype('int')] = unique_counts.to_numpy()
+
+        axs[i].bar(np.arange(n_wavelengths), bar_heights / pod.n_runs, color=colors[i % 2])
+        if i % 2 == 0:  # distribute y-axis ticks between left and right hand side
+            axs[i].yaxis.tick_right()
+        else:
+            axs[i].yaxis.set_label_position("right")
+
+        axs[i].set_xlabel("wavelength")
+        axs[i].set_ylabel("P")
+
+        axs[i].legend(handles=[mpatches.Patch(color=colors[i % 2], label=methods[i])])
+
+    # Hide x labels and tick labels for all but bottom plot.
+    for ax in axs:
+        ax.label_outer()
+
+    plt.show()
+    if save_path is not None:
+        plt.savefig(save_path)
 

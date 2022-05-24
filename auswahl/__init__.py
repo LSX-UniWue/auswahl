@@ -9,9 +9,9 @@ from ._spa import SPA
 from ._version import __version__
 from ._vip import VIP
 from ._vip_spa import VIP_SPA
-from ._vissa import VISSA
+from ._vissa import VISSA, iVISSA
 
 __all__ = ['PointSelector', 'IntervalSelector',
            'CARS', 'MCUVE', 'RandomFrog', 'SPA', 'VIP', 'VIP_SPA', 'VISSA',
-           'IntervalRandomFrog', 'IPLS',
+           'IntervalRandomFrog', 'IPLS', 'iVISSA',
            '__version__']

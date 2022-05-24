@@ -57,13 +57,15 @@ class _VISSA:
     def _yield_best_weights(self, X, y, var_weights, n_submodels, random_state, selection_quantile):
         best_score = -10000000
         best_var_weights = None
-        while True:
+        for i in range(5): #while True:
+            print("Inner iteration")
             #produce weighted binary sampling matrix
             bsm = self._produce_submodels(var_weights, n_submodels, random_state)
+            print('-->BSM done')
             # score submodels
             submodels = self._evaluate_submodels(X, y, self.pls, bsm)
             submodels_sorted = sorted(submodels, key=lambda x: -x[0])
-
+            print('-->Eval done')
             # get submodel indices and scores of best submodels
             top_scores, top_models = list(zip(*(submodels_sorted[: selection_quantile])))
             # get average score of best submodels
@@ -220,56 +222,53 @@ class iVISSA(IntervalSelector, _VISSA):
                          new_feature,
                          n_submodels):
         threshold = (n_submodels - 0.5) / n_submodels
-
-        # for now an interleaved expansion on both sides
-        left = new_feature - 1
-        right = new_feature + 1
-        progress_left, progress_right = True, True
-        while progress_left or progress_right:
-            progress_right, progress_left = True, True
-            if left >= 0:
-                if var_weights[left] >= threshold:  # already included
-                    left -= 1
+        features = features.tolist()
+        # interleaved expansion on both sides
+        borders = [new_feature - 1, new_feature + 1]
+        limits = [0, -(X.shape[1] - 1)]
+        index = 0
+        progress = True
+        while True:
+            if borders[index] >= limits[index]:
+                if var_weights[borders[index]] >= threshold:
+                    borders[index] += (1 - index) * -1 + index * 1
+                    progress = True
                 else:
-                    feature_score, _ = self._evaluate(X[:, features + [left]], y, PLSRegression() if self.pls is None else clone(self.pls))
+                    feature_score, _ = self._evaluate(X[:, features + [borders[index]]], y,
+                                                      PLSRegression() if self.pls is None else clone(self.pls),
+                                                      None)
                     if feature_score > score:
                         score = feature_score
-                        features.append(left)
-                        var_weights[left] = 1
-                        left -= 1
-                    else:
-                        progress_left = False
-            else:
-                progress_left = False
+                        features.append(borders[index])
+                        var_weights[borders[index]] = 1  # mark the feature as selected
+                        borders[index] += (1 - index) * -1 + index * 1
+                        progress = True
 
-            if right < X.shape[1]:
-                if var_weights[right] >= threshold:  # already included
-                    right += 1
-                else:
-                    feature_score, _ = self._evaluate(X[:, features + [right]], y, PLSRegression() if self.pls is None else clone(self.pls))
-                    if feature_score > score:
-                        score = feature_score
-                        features.append(right)
-                        var_weights[right] = 1
-                        left += 1
-                    else:
-                        progress_right = False
-            else:
-                progress_right = False
+            if index == 1 and not progress:
+                break
+            elif index == 1:
+                progress = False
+
+            index = (index + 1) % 2
+
         return features, score
 
-    def _grow_intervals(self, var_weights, next_var_weights, score, n_submodels):
+    def _grow_intervals(self, X, y, var_weights, next_var_weights, score, n_submodels):
         features, new_features = self._newly_selected(var_weights, next_var_weights, n_submodels)
-        for i in range(new_features.size):
-            features, score = self._expand_interval(score, features, new_features[i], n_submodels)
-
-        next_var_weights[features] = 1
+        for i in range(new_features.size):  # expand intervals around newly selected variables
+            features, score = self._expand_interval(X, y,
+                                                    next_var_weights, score,
+                                                    features, new_features[i], n_submodels)
         return next_var_weights, score
+
+    def _extract_intervals(self):
+        # TODO: at first check general functinality
+        ...
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         random_state = check_random_state(self.random_state)
 
-        # number of top models to used to update the weights of features
+        # number of top models to be used to update the weights of features
         selection_quantile = int(0.05 * self.n_submodels)
         n_subs = self.n_submodels
 
@@ -283,12 +282,20 @@ class iVISSA(IntervalSelector, _VISSA):
                                                           random_state,
                                                           selection_quantile)
             if score > top_score:
-                var_weights, score = self._grow_intervals(top_var_weights, var_weights, score)
+                var_weights, score = self._grow_intervals(X, y, top_var_weights, var_weights, score, n_subs)
                 top_score = score
                 top_var_weights = var_weights
             else:
                 break
 
+        # preliminarily
+        self.weights_ = var_weights
+        self.support_ = np.zeros(X.shape[1]).astype('bool')
+        self.support_[np.argsort(-var_weights)[: n_intervals_to_select * interval_width]] = True
         # TODO: extract intervals
+
+    def _get_support_mask(self):
+        check_is_fitted(self)
+        return self.support_
 
 
