@@ -92,6 +92,11 @@ class BenchmarkPOD:
         for x, y, name in dataset_meta:
             self.meta[name] = (x, y, x.shape)
 
+    def _string_conversion(self, item):
+        if type(item) == list:
+            return [str(i) for i in item]
+        return str(item)
+
     def get_meta(self, dataset):
         """
                     Provides meta information for each dataset
@@ -107,11 +112,6 @@ class BenchmarkPOD:
 
         """
         return self.meta[dataset]
-
-    def _string_conversion(self, item):
-        if type(item) == list:
-            return [str(i) for i in item]
-        return str(item)
 
     def _make_key(self,
                              dataset: Union[str, List[str]] = None,

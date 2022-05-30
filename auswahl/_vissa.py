@@ -10,6 +10,7 @@ from joblib import Parallel, delayed
 
 import warnings
 
+from auswahl.util._optimization import optimize_intervals
 from auswahl._base import PointSelector, IntervalSelector
 
 
@@ -205,9 +206,9 @@ class iVISSA(IntervalSelector, _VISSA):
         self.n_cv_folds = n_cv_folds
         self.random_state = random_state
 
-    def _newly_selected(self, var_weights, next_var_weights, n_submodels):
+    def _retrieve_newly_selected(self, var_weights, next_var_weights, n_submodels):
         """
-            Calculates features, which have been newly selected (weight of ca. 1)
+            Retrieves features, which have been newly selected (weight of ca. 1)
         """
         old_selected = np.nonzero(var_weights >= (n_submodels - 0.5) / n_submodels)[0]
         new_selected = np.nonzero(next_var_weights >= (n_submodels - 0.5) / n_submodels)[0]
@@ -254,16 +255,16 @@ class iVISSA(IntervalSelector, _VISSA):
         return features, score
 
     def _grow_intervals(self, X, y, var_weights, next_var_weights, score, n_submodels):
-        features, new_features = self._newly_selected(var_weights, next_var_weights, n_submodels)
+        features, new_features = self._retrieve_newly_selected(var_weights, next_var_weights, n_submodels)
         for i in range(new_features.size):  # expand intervals around newly selected variables
             features, score = self._expand_interval(X, y,
                                                     next_var_weights, score,
                                                     features, new_features[i], n_submodels)
         return next_var_weights, score
 
-    def _extract_intervals(self):
-        # TODO: at first check general functinality
-        ...
+    def _extract_intervals(self, n_intervals, interval_width, weights):
+       _, interval_starts = optimize_intervals(n_intervals, interval_width, weights)
+       return interval_starts
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         random_state = check_random_state(self.random_state)
@@ -291,8 +292,12 @@ class iVISSA(IntervalSelector, _VISSA):
         # preliminarily
         self.weights_ = var_weights
         self.support_ = np.zeros(X.shape[1]).astype('bool')
-        self.support_[np.argsort(-var_weights)[: n_intervals_to_select * interval_width]] = True
-        # TODO: extract intervals
+        interval_starts = np.expand_dims(self._extract_intervals(n_intervals_to_select,
+                                                                 interval_width,
+                                                                 var_weights), axis=-1)
+        interval_range = np.reshape(np.arange(interval_width), newshape=(1, -1))
+        intervals = np.reshape(interval_starts + interval_range, newshape=(-1))
+        self.support_[intervals] = 1
 
     def _get_support_mask(self):
         check_is_fitted(self)
