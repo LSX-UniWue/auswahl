@@ -289,7 +289,6 @@ class iVISSA(IntervalSelector, _VISSA):
             else:
                 break
 
-        # preliminarily
         self.weights_ = var_weights
         self.support_ = np.zeros(X.shape[1]).astype('bool')
         interval_starts = np.expand_dims(self._extract_intervals(n_intervals_to_select,

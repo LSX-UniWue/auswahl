@@ -30,14 +30,15 @@ ivissa = iVISSA(n_intervals_to_select=2, interval_width=10)
 
 pod = benchmark([(x, n, 'nitrogen'),
                  ],#(x, y, 'corn')],
-                n_features=[10],  # np.arange(10, 300, 5).tolist(),
-                n_intervals=[1],
-                n_runs=10,
+                n_features=[12, 11, 10],  # np.arange(10, 300, 5).tolist(),
+                #n_intervals=[1, 1, 1],
+                #interval_widths=[10, 11, 12],
+                n_runs=5,
                 train_size=0.9,
                 test_model=PLSRegression(n_components=1),
-                reg_metrics=[mean_squared_error, mean_absolute_error],
-                stab_metrics=[zucknick_score, deng_score],
-                methods=[vip, mcuve, cars, ipls, vip_spa],
+                reg_metrics=[mean_squared_error],
+                stab_metrics=[deng_score],
+                methods=[cars, (cars, "cars_the_second")],
                 random_state=11111111,
                 verbose=True)
 
@@ -69,7 +70,9 @@ pod = benchmark([(x, n, 'nitrogen'),
 
 #plot_stability_series(pod, dataset='nitrogen', stability_metric='stability_score', save_path="./stability.png")
 
-plot_selection(pod, dataset='nitrogen', n_features=10, save_path="./selection.png")
+#plot_selection(pod, dataset='nitrogen', n_features=10, save_path="./selection.png")
+
+#plot_selection(pod, 'nitrogen', n_features=10, methods='CARS', plot_type='heatmap')
 
 #ivissa.fit(x, n)
 #print(ivissa.get_support(indices=True))

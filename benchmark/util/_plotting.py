@@ -180,8 +180,6 @@ def plot_score_stability_box(pod: BenchmarkPOD,
               pod.methods,
               save_path)
 
-
-
 def plot_exec_time(pod: BenchmarkPOD,
                    dataset: str,
                    methods: Union[str, List[str]] = None,
@@ -194,15 +192,19 @@ def plot_exec_time(pod: BenchmarkPOD,
             TODO
 
     """
+    if type(n_features) == int:
+        n_features = [n_features]
 
     exec_times = pod.get_measurement_data(dataset=dataset,
                                           method=methods,
                                           n_features=n_features,
                                           item=item).to_numpy().tolist()
+
     exec_mins = pod.get_measurement_data(dataset=dataset,
                                          method=methods,
                                          n_features=n_features,
                                          item='min').to_numpy().tolist()
+
     exec_max = pod.get_measurement_data(dataset=dataset,
                                         method=methods,
                                         n_features=n_features,
@@ -299,16 +301,12 @@ def plot_stability_series(pod: BenchmarkPOD,
                pod.methods,
                save_path)
 
-def plot_selection(pod: BenchmarkPOD,
-                   dataset: str,
-                   n_features: int,
-                   methods: Union[str, List[str]] = None,
-                   save_path: str = None):
 
-    if methods is None:
-        methods = pod.methods
-    if type(methods) == str:
-        methods = [methods]
+def _plot_selection_bar(pod: BenchmarkPOD,
+                        dataset: str,
+                        n_features: int,
+                        methods: Union[str, List[str]] = None,
+                        save_path: str = None):
 
     colors = ['darkorange', 'cornflowerblue']
 
@@ -319,6 +317,9 @@ def plot_selection(pod: BenchmarkPOD,
 
     selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features)
     n_wavelengths = pod.get_meta(dataset)[2][1]
+
+    if len(methods) == 1:
+        axs = [axs]
 
     for i in range(len(methods)):
 
@@ -345,3 +346,55 @@ def plot_selection(pod: BenchmarkPOD,
         plt.savefig(save_path)
     plt.show()
 
+
+def _plot_selection_heatmap(pod: BenchmarkPOD,
+                            dataset: str,
+                            n_features: int,
+                            methods: Union[str, List[str]] = None,
+                            save_path: str = None):
+
+    fig, ax = plt.subplots()
+    ax.set_title(f'Displaying selection probability heatmap on dataset {dataset} for {n_features} features to be selected')
+
+    selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features)
+    n_wavelengths = pod.get_meta(dataset)[2][1]
+
+    selection_prob = np.zeros((len(methods), n_wavelengths))
+    for i in range(len(methods)):
+        unique_counts = selections.iloc[i].value_counts()
+        selection_prob[i, unique_counts.index.to_numpy().astype('int')] = unique_counts.to_numpy() / pod.n_runs
+
+    #build heatmap
+    print(selection_prob)
+    ax.imshow(selection_prob, cmap='viridis')
+
+    #add annotations
+    ax.set_xlabel('wavelength')
+    ax.set_ylabel('method')
+    ax.set_yticks(np.arange(len(methods)), labels=methods)
+    ax.set_xlabel(np.arange(n_wavelengths))
+
+    if save_path is not None:
+        plt.savefig(save_path)
+    plt.show()
+
+
+def plot_selection(pod: BenchmarkPOD,
+                   dataset: str,
+                   n_features: int,
+                   methods: Union[str, List[str]] = None,
+                   plot_type: Literal['heatmap', 'bar'] = 'bar',
+                   save_path: str = None):
+
+    if methods is None:
+        methods = pod.methods
+    if type(methods) == str:
+        methods = [methods]
+
+    if plot_type == 'bar':
+        _plot_selection_bar(pod, dataset, n_features, methods, save_path)
+    elif plot_type == 'heatmap':
+        _plot_selection_heatmap(pod, dataset, n_features, methods, save_path)
+    else:
+        raise ValueError(f'Unknown plot_type passed to function plot_selection: {plot_type}.'
+                         'Use one of {heatmap, bar}')

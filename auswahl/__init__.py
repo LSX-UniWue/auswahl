@@ -10,6 +10,7 @@ from ._version import __version__
 from ._vip import VIP
 from ._vip_spa import VIP_SPA
 from ._vissa import VISSA, iVISSA
+from ._dummy import DummyIntervalSelector, DummyPointSelector
 
 __all__ = ['PointSelector', 'IntervalSelector',
            'CARS', 'MCUVE', 'RandomFrog', 'SPA', 'VIP', 'VIP_SPA', 'VISSA',
