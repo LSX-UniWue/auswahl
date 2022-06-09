@@ -203,6 +203,8 @@ class BenchmarkPOD:
 
             Parameters
             ----------
+            dataset: Union[str, List[str]]
+                dataset identifier or list of dataset identifiers
             method : str or list of str, default=None
                 method(s) to be retrieved. If None, all methods are retrieved
             n_features : int or list of int, default=None

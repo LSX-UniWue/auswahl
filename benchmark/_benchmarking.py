@@ -194,7 +194,7 @@ def _unpack_methods(methods):
     return selectors, names
 
 
-def _unpack_metrics(metrics):
+def _unpack_metrics(metrics, compulsory=False):
     """
 
             Decomposes the metrics arguments passed to function benchmark into a list of functions and names.
@@ -202,16 +202,19 @@ def _unpack_metrics(metrics):
 
         Parameters
         ----------
-        metrics: List[callable]
+        metrics: List[Callable[[np.ndarray, np.ndarray], float]]
             list of metrics
 
         Returns
         -------
-        tuple: Tuple[List[callable], List[str]]
+        tuple: Tuple[List[Callable], List[str]]
 
         """
     if not isinstance(metrics, list):
         metrics = [metrics]
+
+    if compulsory and len(metrics) == 0:
+        raise ValueError(f'At least one regression metric has to be specified.')
 
     metric_functions = []
     names = []
@@ -238,7 +241,8 @@ def _check_datasets(data):
 
     Returns
     -------
-        dataset names: List[str]
+        tuple: data if data is a list, else [data]
+               dataset names: List[str]
 
     """
     if not isinstance(data, list):
@@ -256,17 +260,65 @@ def _check_datasets(data):
             raise ValueError(f'The name of a dataset is required to be of type str. Got {type(dataset[2])}')
         names.append(dataset[2])
 
-    return names
+    return data, names
+
+
+def _check_train_size(train_size, data):
+
+    """
+        Sanitize train_size passed to function benchmarking. Check the proper range and scales
+        w.r.t. the dataset sizes.
+
+        Parameters
+        ----------
+        train_size: Union[float, List[float]]
+            train_size passed to function benchmark
+        data: List[Tuple[np.ndarray, np.ndarray, str]]
+            datasets passed to function benchmark
+
+        Returns
+        -------
+        List[float]
+            returns train_size. If need be expanded to match the number of datasets
+
+    """
+
+    if isinstance(train_size, list):
+        if len(train_size) != len(data):
+            raise ValueError(f'If train_size is specified as list, its length has to match the number of datasets')
+        for size in train_size:
+            if size <= 0 or size >= 1:
+                raise ValueError(f'train_size expected to be in ]0,1[. Got {size}')
+    else:
+        if train_size <= 0 or train_size >= 1:
+            raise ValueError(f'train_size expected to be in ]0,1[. Got {train_size}')
+        train_size = [train_size] * len(data)
+
+    #Check that train_size leaves a non-empty set of test data for each dataset
+    for i in range(len(train_size)):
+        x, _, name = data[i]
+        if int(x.shape[0] * (1 - train_size[i])) == 0:
+            raise ValueError(f'Given the size of the dataset {name}, the specified train_size {train_size[i]} leaves'
+                             f'an empty test set.')
+    return train_size
+
+
+def _check_n_runs(n_runs):
+
+    if not isinstance(n_runs, int):
+        raise ValueError(f'n_runs is required to be an integer')
+    if n_runs <= 0:
+        raise ValueError(f'n_runs is required to be positive')
 
 
 def benchmark(data: List[Tuple[np.array, np.array, str]],
               n_runs: int,
-              train_size: Union[int, float],
+              train_size: Union[float, List[float]],
               test_model: BaseEstimator,
-              reg_metrics: List[Callable],
-              stab_metrics: List[Callable],
               methods: List[Union[PointSelector, IntervalSelector, Tuple[Union[PointSelector, IntervalSelector], str]]],
+              reg_metrics: List[Callable[[np.ndarray, np.ndarray], float]],
               random_state: Union[int, RandomState],
+              stab_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = [],
               n_features: List[int] = None,
               n_intervals: List[int] = None,
               interval_widths: List[int] = None,
@@ -302,8 +354,8 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
 
     speaker = Speaker(verbose)
 
-    dataset_names = _check_datasets(data)
-    reg_metrics, reg_metric_names = _unpack_metrics(reg_metrics)
+    data, dataset_names = _check_datasets(data)
+    reg_metrics, reg_metric_names = _unpack_metrics(reg_metrics, compulsory=True)
     stab_metric, stab_metric_names = _unpack_metrics(stab_metrics)
     methods, method_names = _unpack_methods(methods)
 
@@ -312,6 +364,8 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
     _check_name_uniqueness(reg_metric_names, "reg_metrics")
     _check_name_uniqueness(stab_metric_names, "stab_metrics")
 
+    train_size = _check_train_size(train_size, data)
+    _check_n_runs(n_runs)
 
     random_state = check_random_state(random_state)
 
@@ -325,14 +379,14 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
 
     pod.register_meta(data)
 
-    for x, y, dataset_name in data:
+    for d, (x, y, dataset_name) in enumerate(data):
         speaker.announce(level=0, message=f'Started benchmark for dataset {dataset_name}')
         for i, n in enumerate(n_features):
             speaker.announce(level=1, message=f'Started cycle with {n} features to select:')
             for r in range(n_runs):
                 speaker.announce(level=2, message=f'Started run: {r}')
                 seed = random_state.randint(0, 1000000)
-                train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=train_size, random_state=seed)
+                train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=train_size[d], random_state=seed)
                 for method_name, method in zip(method_names, methods):
                     speaker.announce(level=3, message=f'started method {method_name}')
                     _parameterize(method, n_features, n_intervals, interval_widths, seed, i)
@@ -362,7 +416,6 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
                                              n,
                                              'samples',
                                              r)
-                    print(f'Measred {end-start}')
 
                     pod.register_selection(dataset_name,
                                            method_name,
