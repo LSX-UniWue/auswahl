@@ -1,0 +1,30 @@
+dataset: nitrogen
+run: 0
+features: 5
+method: ExceptionalSelector
+during: Fitting of Selector
+exception: Traceback (most recent call last):
+  File "C:\Users\heils\Documents\Hiwi\Auswahl\auswahl\benchmark\_benchmarking.py", line 398, in _benchmark_parallel
+    method.fit(train_x, train_y)
+  File "C:\Users\heils\Documents\Hiwi\Auswahl\auswahl\auswahl\_base.py", line 50, in fit
+    self._fit(X, y, n_features_to_select)
+  File "C:\Users\heils\Documents\Hiwi\Auswahl\auswahl\auswahl\_dummy.py", line 45, in _fit
+    raise NotImplementedError("This function is not meaningfully implemented")
+NotImplementedError: This function is not meaningfully implemented
+
+---------
+dataset: nitrogen
+run: 0
+features: 5
+method: ex_the_second
+during: Fitting of Selector
+exception: Traceback (most recent call last):
+  File "C:\Users\heils\Documents\Hiwi\Auswahl\auswahl\benchmark\_benchmarking.py", line 398, in _benchmark_parallel
+    method.fit(train_x, train_y)
+  File "C:\Users\heils\Documents\Hiwi\Auswahl\auswahl\auswahl\_base.py", line 50, in fit
+    self._fit(X, y, n_features_to_select)
+  File "C:\Users\heils\Documents\Hiwi\Auswahl\auswahl\auswahl\_dummy.py", line 45, in _fit
+    raise NotImplementedError("This function is not meaningfully implemented")
+NotImplementedError: This function is not meaningfully implemented
+
+---------

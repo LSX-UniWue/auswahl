@@ -7,7 +7,7 @@
 
 """
 import numpy as np
-from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, VISSA, RandomFrog, iVISSA
+from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, VISSA, RandomFrog, iVISSA, ExceptionalSelector
 from benchmark import *
 
 from sklearn.cross_decomposition import PLSRegression
@@ -27,20 +27,22 @@ rf = RandomFrog(n_features_to_select=10)
 ipls = IPLS(n_intervals_to_select=1, interval_width=10, n_jobs=2)
 
 ivissa = iVISSA(n_intervals_to_select=2, interval_width=10)
+ex = ExceptionalSelector(n_features_to_select=10)
 
 pod = benchmark([(x, n, 'nitrogen'),
                  ],#(x, y, 'corn')],
                 n_features=[5],  # np.arange(10, 300, 5).tolist(),
                 #n_intervals=[1, 1, 1],
                 #interval_widths=[10, 11, 12],
-                n_runs=10,
+                n_runs=1,
                 train_size=0.9,
                 test_model=PLSRegression(n_components=1),
                 reg_metrics=[mean_squared_error],
                 #stab_metrics=[],
-                methods=[cars, (cars, "cars_the_second")],
+                #methods=[cars, (cars, "cars_the_second")],
+                methods=[ex, (ex, "ex_the_second")],
                 random_state=11111111,
-                n_jobs=2,
+                n_jobs=1,
                 verbose=True)
 
 
