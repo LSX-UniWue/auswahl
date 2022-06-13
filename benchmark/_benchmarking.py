@@ -1,8 +1,10 @@
 import numpy as np
 import time
+import copy
 
 from numpy.random import RandomState
 from typing import Union, List, Tuple, Callable
+
 from sklearn.utils import check_random_state
 from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator
@@ -11,6 +13,8 @@ from sklearn import clone
 from auswahl import PointSelector, IntervalSelector
 from benchmark.util._data_handling import BenchmarkPOD
 from benchmark.util._metrics import mean_std_statistics
+
+from joblib import Parallel, delayed
 
 
 class Speaker:
@@ -53,15 +57,24 @@ def _check_feature_interval_consistency(methods, n_features, n_intervals, interv
     """
 
     if n_intervals is None:
-        for method in methods:
-            if isinstance(method, IntervalSelector):
-                raise ValueError("Number of intervals for IntervalSelectors is not specified")
         if n_features is None:
             raise ValueError("If n_intervals is not specified, n_features must be specified")
-    else:
-
         if interval_widths is None:
+            for method in methods:
+                if isinstance(method, IntervalSelector):
+                    raise ValueError("Number of intervals for IntervalSelectors is not specified")
+        else:  # check consistency
+            if len(n_features) != len(interval_widths):
+                raise ValueError("The length of the lists n_features and interval_widths are required to be equal."
+                                 f'Got {len(n_features)} and {interval_widths}')
+            if not np.all(np.logical_not(np.mod(np.array(n_features), np.array(interval_widths)))):
+                raise ValueError("n_features are requires to be divisible by interval_widths")
 
+            # infer n_intervals
+            n_intervals = [n_features[i] // interval_widths[i] for i in range(len(n_features))]
+
+    else:
+        if interval_widths is None:
             if n_features is None:
                 raise ValueError("n_intervals has been specified. "
                                  "The specification of n_features or interval_width is additionally required")
@@ -72,6 +85,8 @@ def _check_feature_interval_consistency(methods, n_features, n_intervals, interv
                 else:
                     if not np.all(np.logical_not(np.mod(np.array(n_features), np.array(n_intervals)))):
                         raise ValueError("n_features are requires to be divisible by n_intervals")
+            # infer interval_widths
+            interval_widths = [n_features[i] // n_intervals[i] for i in range(len(n_intervals))]
         else:
             if len(interval_widths) != len(n_intervals):
                 raise ValueError("The length of the lists interval_width and n_intervals are required to be equal."
@@ -81,18 +96,19 @@ def _check_feature_interval_consistency(methods, n_features, n_intervals, interv
                     raise ValueError("The total number of features is inconsistent between the specification of n_features"
                                      "and n_intervals in conjunction with interval_width")
             else:
+                # infer n_features
                 return [interval_widths[i] * n_intervals[i] for i in range(len(n_intervals))]
 
-    return n_features
+    return n_features, n_intervals, interval_widths
 
 
-def _parameterize(method, n_features, n_intervals, interval_widths, seed, index):
+def _parameterize(methods, n_features, n_intervals, interval_widths, index):
     """
             Reconfigure parameterization of methods.
 
         Parameters
         ----------
-        method: Union[PointSelector, IntervalSelector]
+        method: List[Union[PointSelector, IntervalSelector]]
             method to be reparameterized
         n_features: List[int]
             list of n_features to be benchmarked
@@ -100,23 +116,30 @@ def _parameterize(method, n_features, n_intervals, interval_widths, seed, index)
             list of n_intervals to be benchmarked
         interval_widths: List[int]
             list of interval_widths to be benchmarked
-        seed: int
-            seed to be used by the method
         index: int
             position indicator of the parameters to be used for reparameterization in the lists passed to the function
 
     """
-    if isinstance(method, PointSelector):
-        method.n_features_to_select = n_features[index]
-    else:
-        method.n_intervals_to_select = n_intervals[index]
-        if interval_widths is None:
-            #infer interval_width
-            method.interval_width = n_features[index] // n_intervals[index]
+    for method in methods:
+        if isinstance(method, PointSelector):
+            method.n_features_to_select = n_features[index]
         else:
+            method.n_intervals_to_select = n_intervals[index]
             method.interval_width = interval_widths[index]
 
-    # reparameterize the method seed, if the method is probabilistic
+
+def _reseed(method, seed):
+    """
+            Update seed of method
+
+    Parameters
+    ----------
+    method: Union[PointSelector, IntervalSelector]
+        method to be re-seeded
+    seed: int
+        random seed
+
+    """
     if hasattr(method, 'random_state'):
         method.random_state = seed
 
@@ -294,7 +317,7 @@ def _check_train_size(train_size, data):
             raise ValueError(f'train_size expected to be in ]0,1[. Got {train_size}')
         train_size = [train_size] * len(data)
 
-    #Check that train_size leaves a non-empty set of test data for each dataset
+    #Check if train_size leaves a non-empty set of test data for each dataset
     for i in range(len(train_size)):
         x, _, name = data[i]
         if int(x.shape[0] * (1 - train_size[i])) == 0:
@@ -311,6 +334,70 @@ def _check_n_runs(n_runs):
         raise ValueError(f'n_runs is required to be positive')
 
 
+def _drain_threads(methods):
+
+    """
+            Configure the methods to be single-thread operating
+
+    Parameters
+    ----------
+    methods: List[Union[PointSelector, IntervalSelector]]
+
+    """
+
+    for method in methods:
+        if hasattr(method, 'n_jobs'):
+            method.n_jobs = 1
+
+
+def _copy_methods(methods):
+    return [copy.deepcopy(method) for method in methods]
+
+
+def _benchmark_parallel(x: np.array, y: np.array, train_size: float, model: BaseEstimator,
+                        methods, method_names, reg_metrics, seed: int):
+    methods = _copy_methods(methods)
+    train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=train_size, random_state=seed)
+
+    results = dict()
+    for method_name, method in zip(method_names, methods):
+        results[method_name] = dict()
+        _reseed(method, seed)
+
+        start = time.process_time()
+        method.fit(train_x, train_y)
+        end = time.process_time()
+
+        support = method.get_support(indices=True)
+
+        test_regressor = clone(model)
+        test_regressor.fit(train_x[:, support], train_y)
+        prediction = test_regressor.predict(test_x[:, support])
+
+        metrics = []
+        for metric in reg_metrics:
+            metrics.append(metric(test_y, prediction))
+
+        results[method_name]['metrics'] = metrics
+        results[method_name]['exec'] = end-start
+        results[method_name]['selection'] = support
+
+    return results
+
+
+def _pot(pod, dataset_name, feature_index, methods_names, reg_metrics_names, results):
+    #  the actual index of the threads run is irrelevant
+    for i, result in enumerate(results):
+        for method in methods_names:
+            pod.register_measurement(result[method]['exec'], dataset_name, method,
+                                     feature_index, 'samples', i)
+            pod.register_selection(dataset_name, method,
+                                   feature_index, i, result[method]['selection'])
+            for j, metric in enumerate(reg_metrics_names):
+                pod.register_regression(result[method]['metrics'][j], dataset_name, method,
+                                        feature_index, metric, 'samples', i)
+
+
 def benchmark(data: List[Tuple[np.array, np.array, str]],
               n_runs: int,
               train_size: Union[float, List[float]],
@@ -322,6 +409,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
               n_features: List[int] = None,
               n_intervals: List[int] = None,
               interval_widths: List[int] = None,
+              n_jobs: int = 1,
               verbose: bool = True):
 
     """
@@ -341,6 +429,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
         n_features
         n_intervals
         interval_widths
+        n_jobs
         verbose
 
         Returns
@@ -350,7 +439,8 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
 
     """
 
-    n_features = _check_feature_interval_consistency(methods, n_features, n_intervals, interval_widths)
+    n_features, n_intervals, interval_widths = _check_feature_interval_consistency(methods, n_features,
+                                                                                   n_intervals, interval_widths)
 
     speaker = Speaker(verbose)
 
@@ -366,6 +456,9 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
 
     train_size = _check_train_size(train_size, data)
     _check_n_runs(n_runs)
+
+    # configure the methods to have a single-thread operation (parallelization is exploited at the benchmarking level)
+    _drain_threads(methods)
 
     random_state = check_random_state(random_state)
 
@@ -383,45 +476,14 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
         speaker.announce(level=0, message=f'Started benchmark for dataset {dataset_name}')
         for i, n in enumerate(n_features):
             speaker.announce(level=1, message=f'Started cycle with {n} features to select:')
-            for r in range(n_runs):
-                speaker.announce(level=2, message=f'Started run: {r}')
-                seed = random_state.randint(0, 1000000)
-                train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=train_size[d], random_state=seed)
-                for method_name, method in zip(method_names, methods):
-                    speaker.announce(level=3, message=f'started method {method_name}')
-                    _parameterize(method, n_features, n_intervals, interval_widths, seed, i)
+            _parameterize(methods, n_features, n_intervals, interval_widths, i)
+            results = Parallel(n_jobs=n_jobs)(delayed(_benchmark_parallel)(x, y, train_size[d], test_model,
+                                                                           methods, method_names, reg_metrics,
+                                                                           random_state.randint(0, 1000000))
+                                              for r in range(n_runs))
 
-                    start = time.process_time()
-                    method.fit(train_x, train_y)
-                    end = time.process_time()
+            _pot(pod, dataset_name, n, method_names, reg_metric_names, results)
 
-                    support = method.get_support(indices=True)
-
-                    test_regressor = clone(test_model)
-                    test_regressor.fit(train_x[:, support], train_y)
-                    prediction = test_regressor.predict(test_x[:, support])
-
-                    for metric_name, metric in zip(reg_metric_names, reg_metrics):
-                        pod.register_regression(metric(test_y, prediction),
-                                                dataset_name,
-                                                method_name,
-                                                n,
-                                                metric_name,
-                                                'samples',
-                                                r)
-
-                    pod.register_measurement(end-start,
-                                             dataset_name,
-                                             method_name,
-                                             n,
-                                             'samples',
-                                             r)
-
-                    pod.register_selection(dataset_name,
-                                           method_name,
-                                           n,
-                                           r,
-                                           support)
 
     # mean and std over all regression metrics, runs and datasets
     mean_std_statistics(pod)

@@ -30,20 +30,21 @@ ivissa = iVISSA(n_intervals_to_select=2, interval_width=10)
 
 pod = benchmark([(x, n, 'nitrogen'),
                  ],#(x, y, 'corn')],
-                n_features=[12, 11, 10],  # np.arange(10, 300, 5).tolist(),
+                n_features=[5],  # np.arange(10, 300, 5).tolist(),
                 #n_intervals=[1, 1, 1],
                 #interval_widths=[10, 11, 12],
-                n_runs=5,
+                n_runs=10,
                 train_size=0.9,
                 test_model=PLSRegression(n_components=1),
-                #reg_metrics=[mean_squared_error],
+                reg_metrics=[mean_squared_error],
                 #stab_metrics=[],
                 methods=[cars, (cars, "cars_the_second")],
                 random_state=11111111,
+                n_jobs=2,
                 verbose=True)
 
 
-
+print(pod.get_regression_data(item='samples'))
 #print(pod.get_selection_data(method='VIP', n_features=10))
 #print(pod.get_regression_data(method='VIP', dataset='manure', n_features=10))
 #print(pod.get_measurement_data())
