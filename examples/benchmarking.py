@@ -6,6 +6,8 @@
     TODO: extend
 
 """
+import pickle
+
 import numpy as np
 from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, VISSA, RandomFrog, iVISSA, ExceptionalSelector
 from benchmark import *
@@ -40,13 +42,11 @@ pod = benchmark([(x, n, 'nitrogen'),
                 reg_metrics=[mean_squared_error],
                 #stab_metrics=[],
                 #methods=[cars, (cars, "cars_the_second")],
-                methods=[ex, (ex, "ex_the_second")],
+                methods=[ex],
                 random_state=11111111,
                 n_jobs=1,
                 verbose=True)
 
-
-print(pod.get_regression_data(item='samples'))
 #print(pod.get_selection_data(method='VIP', n_features=10))
 #print(pod.get_regression_data(method='VIP', dataset='manure', n_features=10))
 #print(pod.get_measurement_data())

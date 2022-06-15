@@ -2,6 +2,7 @@ import numpy as np
 import time
 import copy
 import traceback
+import json
 
 from numpy.random import RandomState
 from typing import Union, List, Tuple, Callable
@@ -36,28 +37,31 @@ class ErrorLogger:
 
     def __init__(self, log_file: str):
         self.log_file = log_file
-        self.log = []
+        self.log = dict()
 
         # meta logging information
         self.dataset = None
         self.features = None
 
+
     def set_meta(self, dataset, features):
         self.dataset = dataset
         self.features = features
 
-    def log_error(self, run: int, method_name: str, during: str, exception: Exception):
-        self.log.append(f'dataset: {self.dataset}\n'
-                        f'run: {run}\n'
-                        f'features: {self.features}\n'
-                        f'method: {method_name}\n'
-                        f'during: {during}\n'
-                        f'exception: {"".join(traceback.TracebackException.from_exception(exception).format())}\n'
-                        f'---------\n')
+    def log_error(self, run_index, seed: int, method_name: str, during: str, exception: Exception):
+        self.log[f'error {len(self.log) + 1}'] = {'dataset': self.dataset,
+                                                  'features': self.features,
+                                                  'run': run_index,
+                                                  'seed': str(seed),
+                                                  'method': method_name,
+                                                  'during': during,
+                                                  'type': type(exception).__name__,
+                                                  'message': str(exception),
+                                                  'trace': "".join(traceback.TracebackException.from_exception(exception).format())}
 
     def write_log(self):
         with open(self.log_file, 'w') as file:
-            file.writelines(self.log)
+            json.dump(self.log, file, indent=4)
 
 
 def _check_feature_interval_consistency(methods, n_features, n_intervals, interval_widths):
@@ -384,7 +388,7 @@ def _copy_methods(methods):
 
 
 def _benchmark_parallel(x: np.array, y: np.array, train_size: float, model: BaseEstimator,
-                        methods, method_names, reg_metrics, seed: int):
+                        methods, method_names, reg_metrics, seed: int, run_index: int):
 
     methods = _copy_methods(methods)
     train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=train_size, random_state=seed)
@@ -398,7 +402,7 @@ def _benchmark_parallel(x: np.array, y: np.array, train_size: float, model: Base
             method.fit(train_x, train_y)
             end = time.process_time()
         except Exception as e:
-            results[method_name]['exception'] = (e, "Fitting of Selector")
+            results[method_name]['exception'] = (e, run_index, seed, "Fitting of Selector")
         else:
             support = method.get_support(indices=True)
             try:
@@ -406,14 +410,14 @@ def _benchmark_parallel(x: np.array, y: np.array, train_size: float, model: Base
                 test_regressor.fit(train_x[:, support], train_y)
                 prediction = test_regressor.predict(test_x[:, support])
             except Exception as e:
-                results[method_name]['exception'] = (e, 'Fitting/prediction of test model')
+                results[method_name]['exception'] = (e, run_index, seed, 'Fitting/prediction of test model')
             else:
                 try:
                     metrics = []
                     for metric in reg_metrics:
                         metrics.append(metric(test_y, prediction))
                 except Exception as e:
-                    results[method_name]['exception'] = (e, 'Metric evaluation')
+                    results[method_name]['exception'] = (e, run_index, seed, 'Metric evaluation')
                 else:
                     results[method_name]['metrics'] = metrics
                     results[method_name]['exec'] = end-start
@@ -435,8 +439,8 @@ def _pot(pod, dataset_name, feature_index, methods_names, reg_metrics_names, res
                     pod.register_regression(result[method]['metrics'][j], dataset_name, method,
                                             feature_index, metric, 'samples', i)
             else:
-                exception, during = result[method]['exception']
-                logger.log_error(run=i, method_name=method, during=during, exception=exception)
+                exception, run_index, seed, during = result[method]['exception']
+                logger.log_error(run_index=run_index, seed=seed, method_name=method, during=during, exception=exception)
 
 
 def benchmark(data: List[Tuple[np.array, np.array, str]],
@@ -516,6 +520,9 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
 
     pod.register_meta(data)
 
+    # pregenerate seeds, such that the seeding of data splits does not depend on the arguments except random_state
+    run_seeds = random_state.randint(0, 1000000, size=n_runs)
+
     for d, (x, y, dataset_name) in enumerate(data):
         speaker.announce(level=0, message=f'Started benchmark for dataset {dataset_name}')
         for i, n in enumerate(n_features):
@@ -525,7 +532,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
             _parameterize(methods, n_features, n_intervals, interval_widths, i)
             results = Parallel(n_jobs=n_jobs)(delayed(_benchmark_parallel)(x, y, train_size[d], test_model,
                                                                            methods, method_names, reg_metrics,
-                                                                           random_state.randint(0, 1000000))
+                                                                           run_seeds[r], r)
                                               for r in range(n_runs))
 
             _pot(pod, dataset_name, n, method_names, reg_metric_names, results, logger)

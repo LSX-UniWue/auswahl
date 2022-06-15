@@ -1,7 +1,9 @@
 
+import os
 import pandas as pd
 import numpy as np
 import warnings
+import pickle
 
 from typing import List, Union, Literal, Tuple
 
@@ -306,5 +308,17 @@ class BenchmarkPOD:
                              item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None):
         method_key, key = self._make_key(dataset, method, n_features, item=item, has_reg=False)
         return self.measurement_data.loc[(method_key, key)]
+
+    def store(self, file_path: str, file_name: str):
+        #hdf = pd.HDFStore(os.path.join(file_path, f'{file_name}.h5'))
+        #hdf.put('regression', self.reg_data, data_columns=True)
+        #hdf.put('selection', self.selection_data, data_columns=True)
+        #hdf.put('measurement', self.measurement_data, data_columns=True)
+        #hdf.put('stability', self.stab_data, data_columns=True)
+        #hdf.close()
+        path = os.path.join(file_path, f'{file_name}.pickle')
+        with open(path, 'wb') as file:
+            pickle.dump(self, file)
+
 
 
