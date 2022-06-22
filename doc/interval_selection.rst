@@ -29,6 +29,13 @@ FiPLS is a variant of IPLS that sequentially selects intervals based on the cros
 The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` but this methods selects continuous
 sequences of features instead of single features.
 
+.. topic:: References:
+
+    * Zou Xiaobo, Zhao Jiewen, Li Yanxiao,
+      'Selection of the efficient wavelength regions in FT-NIR spectroscopy for determination of SSC of ‘Fuji’
+      apple based on BiPLS and FiPLS models',
+      Vibrational Spectroscopy, vol. 44, no. 2, 220--227, 2007.
+
 .. _irf:
 
 Interval Random Frog
