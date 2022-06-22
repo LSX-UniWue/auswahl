@@ -29,6 +29,8 @@ class _RandomFrog(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
                 subset_expansion_factor: float = 3,
                 acceptance_factor: float = 0.1,
                 pls: PLSRegression = None,
+                n_cv_folds: int = 5,
+                n_jobs: int = 1,
                 random_state: Union[int, np.random.RandomState] = None):
         # Perform parameter checks
         self._check_n_iterations(n_iterations)
@@ -73,17 +75,19 @@ class _RandomFrog(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
             candidate_features = features_to_explore[selection_idx]
 
             # Score the current feature selection and the candidate feature selection
-            cv_split = KFold(n_splits=5, shuffle=False)
+            cv_split = KFold(n_splits=n_cv_folds, shuffle=False)
             selected_features_score = cross_val_score(estimator=pls,
                                                       X=X[:, self._idx_to_mask(features_to_explore)],
                                                       y=y,
                                                       scoring='neg_root_mean_squared_error',
-                                                      cv=cv_split).mean()
+                                                      cv=cv_split,
+                                                      n_jobs=n_jobs).mean()
             candidate_features_score = cross_val_score(estimator=pls,
                                                        X=X[:, self._idx_to_mask(candidate_features)],
                                                        y=y,
                                                        scoring='neg_root_mean_squared_error',
-                                                       cv=cv_split).mean()
+                                                       cv=cv_split,
+                                                       n_jobs=n_jobs).mean()
 
             # Update the feature selection
             if candidate_features_score >= selected_features_score:
@@ -177,6 +181,12 @@ class RandomFrog(PointSelector, _RandomFrog):
         acceptance_factor with the relative decrease of the cross-validated performance score.
         This variable is called η in the original publication.
 
+    n_cv_folds : int, default=5
+        Number of cross validation folds used to evaluate the features
+
+    n_jobs : int, default=1
+        Number of parallel processes used to fit the PLS models on the cross-validation splits
+
     pls : PLSRegression, default=None
         Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
         Use this to adjust the hyperparameters of the PLS method.
@@ -219,6 +229,8 @@ class RandomFrog(PointSelector, _RandomFrog):
                  subset_expansion_factor: float = 3,
                  acceptance_factor: float = 0.1,
                  pls: PLSRegression = None,
+                 n_cv_folds: int = 5,
+                 n_jobs: int = 1,
                  random_state: Union[int, np.random.RandomState] = None):
         super().__init__(n_features_to_select)
         self.n_iterations = n_iterations
@@ -226,6 +238,8 @@ class RandomFrog(PointSelector, _RandomFrog):
         self.variance_factor = variance_factor
         self.subset_expansion_factor = subset_expansion_factor
         self.acceptance_factor = acceptance_factor
+        self.n_cv_folds = n_cv_folds
+        self.n_jobs = n_jobs
         self.pls = pls
         self.random_state = random_state
 
@@ -238,7 +252,10 @@ class RandomFrog(PointSelector, _RandomFrog):
                                n_initial_features=self.n_initial_features,
                                variance_factor=self.variance_factor,
                                subset_expansion_factor=self.subset_expansion_factor,
-                               acceptance_factor=self.acceptance_factor, pls=self.pls,
+                               acceptance_factor=self.acceptance_factor,
+                               pls=self.pls,
+                               n_cv_folds=self.n_cv_folds,
+                               n_jobs=self.n_jobs,
                                random_state=self.random_state)
 
     def _idx_to_mask(self, feature_idx):
@@ -296,6 +313,12 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
         acceptance_factor with the relative decrease of the cross-validated performance score.
         This variable is called η in the original publication.
 
+    n_cv_folds : int, default=5
+        Number of cross validation folds used to evaluate the features
+
+    n_jobs : int, default=1
+        Number of parallel processes used to fit the PLS models on the cross-validation splits
+
     pls : PLSRegression, default=None
         Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
         Use this to adjust the hyperparameters of the PLS method.
@@ -339,6 +362,8 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
                  variance_factor: float = 0.3,
                  subset_expansion_factor: float = 3,
                  acceptance_factor: float = 0.1,
+                 n_cv_folds: int = 5,
+                 n_jobs: int = 1,
                  pls: PLSRegression = None,
                  random_state: Union[int, np.random.RandomState] = None):
         super().__init__(n_intervals_to_select, interval_width)
@@ -347,6 +372,8 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
         self.variance_factor = variance_factor
         self.subset_expansion_factor = subset_expansion_factor
         self.acceptance_factor = acceptance_factor
+        self.n_cv_folds = n_cv_folds
+        self.n_jobs = n_jobs
         self.pls = pls
         self.random_state = random_state
 
@@ -359,7 +386,10 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
                                n_initial_features=self.n_initial_intervals,
                                variance_factor=self.variance_factor,
                                subset_expansion_factor=self.subset_expansion_factor,
-                               acceptance_factor=self.acceptance_factor, pls=self.pls,
+                               acceptance_factor=self.acceptance_factor,
+                               n_cv_folds=self.n_cv_folds,
+                               n_jobs=self.n_jobs,
+                               pls=self.pls,
                                random_state=self.random_state)
 
     def _idx_to_mask(self, feature_idx):
