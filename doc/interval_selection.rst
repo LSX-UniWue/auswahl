@@ -19,6 +19,16 @@ Interval Partial Least Squares (IPLS) is available in :class:`IPLS`.
 IPLS is a simple algorithm, selecting the best interval of a user definable width w.r.t. to
 a regression model.
 
+.. _fipls:
+
+Forward Interval Partial Least Squares
+======================================
+
+Forward interval Partial Least Squares (FiPLS) is available in :class:`FiPLS`.
+FiPLS is a variant of IPLS that sequentially selects intervals based on the cross-validated RMSE of a fitted PLS model.
+The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` but this methods selects continuous
+sequences of features instead of single features.
+
 .. _irf:
 
 Interval Random Frog
