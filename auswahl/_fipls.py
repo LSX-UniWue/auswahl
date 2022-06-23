@@ -76,17 +76,17 @@ class FiPLS(IntervalSelector):
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         selection = np.zeros(X.shape[1], dtype=bool)
-        free_idx = [i for i in range(X.shape[1])]
+
         with Parallel(n_jobs=self.n_jobs) as parallel:
             for n in range(n_intervals_to_select):
+                x_selected = X[:, selection]
                 x_free = X[:, ~selection]
+                free_idx = np.arange(X.shape[1])[~selection]
                 scores = parallel(delayed(self._fit_interval)
-                                  (x_free[:, i:i + interval_width], y)
-                                  for i in free_idx)
-                best_idx = free_idx[np.argmax(scores)]
-                selection[best_idx:best_idx + interval_width] = 1
-                for i in range(interval_width):
-                    free_idx.remove(best_idx + i)
+                                  (np.concatenate([x_selected, x_free[:, i:i + interval_width]], axis=1), y)
+                                  for i in range(len(free_idx) - interval_width + 1))
+                best_idx = np.argmax(scores)
+                selection[free_idx[best_idx]:free_idx[best_idx + interval_width - 1] + 1] = 1
 
         self.support_ = selection
         return self
