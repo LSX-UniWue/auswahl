@@ -1,4 +1,4 @@
-from typing import Union, Dict
+from typing import Union, Dict, List
 
 import warnings
 import numpy as np
@@ -63,9 +63,11 @@ class IPLS(IntervalSelector):
                  n_cv_folds: int = 10,
                  pls: PLSRegression = None,
                  n_jobs: int = 1,
+                 model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
 
-        super().__init__(n_intervals_to_select=1, interval_width=interval_width * n_intervals_to_select)
+        super().__init__(n_intervals_to_select=1, interval_width=interval_width * n_intervals_to_select,
+                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
 
         if n_intervals_to_select != 1:
             warnings.warn("""IPLS only supports the selection of a single interval. 
@@ -74,25 +76,14 @@ class IPLS(IntervalSelector):
                              the selected intervals as continuum.""")
 
         self.pls = pls
-        self.n_cv_folds = n_cv_folds
         self.n_jobs = n_jobs
         self.random_state = random_state
 
-    def _evaluate_selection(self, X, y, wavelengths, pls):
-        cv_scores = cross_val_score(pls,
-                                    X[:, wavelengths],
-                                    y,
-                                    cv=self.n_cv_folds,
-                                    scoring='neg_mean_squared_error')
-        return np.mean(cv_scores)
-
     def _fit_ipls(self, X, y, interval_width, pls, start):
-        pls = PLSRegression() if pls is None else clone(pls)
-        score = self._evaluate_selection(X,
-                                         y,
-                                         np.arange(start, start + interval_width, dtype='int'),
-                                         pls)
-        return score, start
+        score, model = self._evaluate(X[:, np.arange(start, start + interval_width, dtype='int')],
+                                      y,
+                                      pls)
+        return score, model, start
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         candidates = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_ipls)(X,
@@ -100,9 +91,10 @@ class IPLS(IntervalSelector):
                                                                           interval_width,
                                                                           self.pls,
                                                                           i) for i in range(X.shape[-1]-interval_width+1))
-        score, start = max(candidates, key=lambda x: x[0])
+        score, best_model, start = max(candidates, key=lambda x: x[0])
         self.support_ = np.zeros(X.shape[1]).astype('bool')
         self.support_[start:start + interval_width] = True
+        self.best_model_ = best_model
 
     def _get_support_mask(self):
         check_is_fitted(self)

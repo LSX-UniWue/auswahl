@@ -1,7 +1,8 @@
-from typing import Union
-from warnings import warn
 
 import numpy as np
+
+from typing import Union, List, Dict
+from warnings import warn
 from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
@@ -56,25 +57,27 @@ class VIP(PointSelector):
 
     def __init__(self,
                  n_features_to_select: Union[int, float] = None,
-                 pls: PLSRegression = None):
+                 n_cv_folds: int = 5,
+                 pls: PLSRegression = None,
+                 model_hyperparams: Union[Dict, List[Dict]] = None):
         super().__init__(n_features_to_select)
         self.pls = pls
 
     def _fit(self, X, y, n_features_to_select):
-        self.pls_ = PLSRegression() if self.pls is None else clone(self.pls)
-        self.pls_.fit(X, y)
-        self.vips_ = self._calculate_vip_scores(X)
+        _, model = self._evaluate(X, y, self.pls, do_cv=False)
+        self.vips_ = self._calculate_vip_scores(X, model)
 
         selected_idx = np.argsort(self.vips_)[-n_features_to_select:]
         self.support_ = np.zeros(X.shape[1], dtype=bool)
         self.support_[selected_idx] = 1
+        _, self.best_model_ = self._evaluate(X[:, self.support_], y, self.pls, do_cv=False)
 
         return self
 
-    def _calculate_vip_scores(self, X):
-        x_scores = self.pls_.transform(X)
-        x_weights = self.pls_.x_weights_  # already normalized
-        y_loadings = self.pls_.y_loadings_
+    def _calculate_vip_scores(self, X, model):
+        x_scores = model.transform(X)
+        x_weights = model.x_weights_  # already normalized
+        y_loadings = model.y_loadings_
 
         num_features = X.shape[1]
         explained_variance = (y_loadings ** 2) @ (x_scores.T @ x_scores)

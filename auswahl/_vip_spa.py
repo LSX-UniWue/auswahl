@@ -1,6 +1,7 @@
-from typing import Union
 
 import numpy as np
+
+from typing import Union, Dict, List
 from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
@@ -20,15 +21,16 @@ class VIP_SPA(PointSelector):
                  n_features_to_select: Union[int, float] = None,
                  n_cv_folds: int = 5,
                  n_jobs: int = 1,
-                 pls: PLSRegression = None):
-        super().__init__(n_features_to_select)
+                 pls: PLSRegression = None,
+                 model_hyperparams: Union[Dict, List[Dict]] = None):
+        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
 
         self.vip = VIP(n_features_to_select=n_features_to_select,
-                       pls=clone(pls) if pls is not None else None)
+                       pls=pls,
+                       n_cv_folds=n_cv_folds, model_hyperparams=model_hyperparams)
         self.spa = SPA(n_features_to_select=n_features_to_select,
-                       n_cv_folds=n_cv_folds,
-                       n_jobs=n_jobs,
-                       pls=clone(pls) if pls is not None else None)
+                       n_cv_folds=n_cv_folds, n_jobs=n_jobs,
+                       pls=pls, model_hyperparams=model_hyperparams)
 
     def _fit(self, X, y, n_features_to_select):
         self.vip.fit(X, y)
@@ -39,6 +41,7 @@ class VIP_SPA(PointSelector):
 
         self.support_ = np.zeros(X.shape[1]).astype('bool')
         self.support_[self.spa.get_support(indices=True)] = True
+        self.best_model_ = self.spa.best_model_
 
     def _get_support_mask(self):
         check_is_fitted(self)
