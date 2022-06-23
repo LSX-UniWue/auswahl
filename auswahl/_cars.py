@@ -1,4 +1,4 @@
-from typing import Union, Dict
+from typing import Union, Dict, List
 
 import numpy as np
 from sklearn import clone
@@ -88,16 +88,16 @@ class CARS(PointSelector):
                  fit_samples_ratio: float = 0.9,
                  n_cv_folds: int = 5,
                  pls: PLSRegression = None,
+                 model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
         
-        super().__init__(n_features_to_select)
+        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
         
         self.pls = pls
         self.n_jobs = n_jobs
         self.n_cars_runs = n_cars_runs
         self.n_sample_runs = n_sample_runs
         self.fit_samples_ratio = fit_samples_ratio
-        self.n_cv_folds = n_cv_folds
         self.random_state = random_state
         
     def _prepare_edf_schedule(self, n_wavelengths, ):
@@ -117,20 +117,12 @@ class CARS(PointSelector):
         x_pls_fit = X[fitting_samples, :][:, wavelengths]
         y_pls_fit = y[fitting_samples]
         
-        pls.fit(x_pls_fit, y_pls_fit)
-        weights = np.abs(pls.coef_).flatten()
+        _, model = self._evaluate(x_pls_fit, y_pls_fit, pls, do_cv=False)
+        weights = np.abs(model.coef_).flatten()
         wavelength_weights = np.zeros(X.shape[1])
         wavelength_weights[wavelengths] = weights
         
         return wavelength_weights
-    
-    def _evaluate(self, X, y, wavelengths, pls):
-        cv_scores = cross_val_score(pls,
-                                    X[:, wavelengths],
-                                    y, 
-                                    cv=self.n_cv_folds, 
-                                    scoring='neg_mean_squared_error')
-        return np.mean(cv_scores)
         
     def _fit_cars(self, X, y, n_features_to_select, edf_schedule, pls, seed):
         pls = PLSRegression() if pls is None else clone(pls)
@@ -166,12 +158,12 @@ class CARS(PointSelector):
             if wavelengths.shape[0] == n_features_to_select:
                 break
 
-        score = self._evaluate(X, y, wavelengths, pls)
-        return score, wavelengths
+        score, model = self._evaluate(X[:, wavelengths], y, pls)
+        return score, wavelengths, model
 
     def _calculate_feature_importance(self, n_features, selection_candidates):
         importance = np.zeros((n_features,))
-        for score, wavelengths in selection_candidates:
+        for score, wavelengths, _ in selection_candidates:
             importance[wavelengths] = importance[wavelengths] + np.ones((len(wavelengths, )))
         return importance / self.n_cars_runs
 
@@ -190,10 +182,11 @@ class CARS(PointSelector):
                                                                           edf_schedule,
                                                                           self.pls,
                                                                           seeds[i]) for i in range(self.n_cars_runs))
-        score, opt_wavelengths = max(candidates, key=lambda x: x[0])
+        score, opt_wavelengths, best_model = max(candidates, key=lambda x: x[0])
         self.feature_importance_ = self._calculate_feature_importance(X.shape[1], candidates)
         self.support_ = np.zeros(X.shape[1]).astype('bool')
         self.support_[opt_wavelengths] = True
+        self.best_model_ = best_model
 
     def _get_support_mask(self):
         check_is_fitted(self)

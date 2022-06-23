@@ -64,78 +64,62 @@ class ErrorLogger:
             json.dump(self.log, file, indent=4)
 
 
-def _check_feature_interval_consistency(methods, n_features, n_intervals, interval_widths):
+def _check_positive_integer(x):
+    if not isinstance(x, int):
+        raise ValueError(f'The specification of features requires integers. Got {type(x)}')
+    if x <= 0:
+        raise ValueError(f'The specification of features requires positive integers. Got {x}')
 
-    """
-            TODO: streamline the consistency checks (feels non-optimal)
-            Check consistency of parameters passed to the benchmarking function.
-            Raises exceptions
 
-        Parameters
-        ----------
-        methods: List[Union[PointSelector, IntervalSelector]]
-            list of PointSelectors and IntervalSelectors to be benchmarked
-        n_features: List[int]
-            list of n_features to be benchmarked
-        n_intervals: List[int]
-            list of n_intervals to be benchmarked
-        interval_widths: List[int]
-            list of interval_widths to be benchmarked
+def _check_diploid_positive_integer_tuple(x):
+    if len(x) != 2:
+        raise ValueError("Feature specification with tuples requires a tuple of length 2.")
+    v1, v2 = x
+    _check_positive_integer(v1)
+    _check_positive_integer(v2)
+    return x
 
-        Returns
-        -------
-        n_features: List[int]
-            n_features if n_features is not None, else n_features is inferred from n_intervals and interval_width
 
-    """
+def _check_feature_consistency(methods, features):
 
-    if n_intervals is None:
-        if n_features is None:
-            raise ValueError("If n_intervals is not specified, n_features must be specified")
-        if interval_widths is None:
-            for method in methods:
-                if isinstance(method, IntervalSelector):
-                    raise ValueError("Number of intervals for IntervalSelectors is not specified")
-        else:  # check consistency
-            if len(n_features) != len(interval_widths):
-                raise ValueError("The length of the lists n_features and interval_widths are required to be equal."
-                                 f'Got {len(n_features)} and {interval_widths}')
-            if not np.all(np.logical_not(np.mod(np.array(n_features), np.array(interval_widths)))):
-                raise ValueError("n_features are requires to be divisible by interval_widths")
+    # make a list
+    if not isinstance(features, list):
+        features = [features]
 
-            # infer n_intervals
-            n_intervals = [n_features[i] // interval_widths[i] for i in range(len(n_features))]
+    # check presence of an IntervalSelector and non-interval-like feature specification
+    contains_interval_selector = np.any([isinstance(method, IntervalSelector) for method in methods])
+    contains_non_tuple = np.any([isinstance(item, int) for item in features])
 
+    if contains_interval_selector and contains_non_tuple:
+        raise ValueError("An IntervalSelector has been passed to benchmarking. The specification of n_intervals "
+                         "and interval_width as features is mandatory")
+    feature_keys = []
+    if contains_interval_selector:
+        # resolve tuples to keys
+        features = [_check_diploid_positive_integer_tuple(f) for f in features]
+        features = sorted(features, key=lambda x: x[0] * x[1])
+        for tup in features:
+            feature_keys.append(f'{tup[0]}/{tup[1]}')
     else:
-        if interval_widths is None:
-            if n_features is None:
-                raise ValueError("n_intervals has been specified. "
-                                 "The specification of n_features or interval_width is additionally required")
+        # resolve possible tuples (PointSelectors only)
+        for i, f in enumerate(features):
+            if isinstance(f, tuple):
+                _check_diploid_positive_integer_tuple(f)
+                feature_keys.append(str(f[0] * f[1]))
+                features[i] = f[0] * f[1]
             else:
-                if len(n_features) != len(n_intervals):
-                    raise ValueError("The length of the lists n_features and n_intervals are required to be equal."
-                                     f'Got {len(n_features)} and {n_intervals}')
-                else:
-                    if not np.all(np.logical_not(np.mod(np.array(n_features), np.array(n_intervals)))):
-                        raise ValueError("n_features are requires to be divisible by n_intervals")
-            # infer interval_widths
-            interval_widths = [n_features[i] // n_intervals[i] for i in range(len(n_intervals))]
-        else:
-            if len(interval_widths) != len(n_intervals):
-                raise ValueError("The length of the lists interval_width and n_intervals are required to be equal."
-                                 f'Got {len(interval_widths)} and {n_intervals}')
-            if n_features is not None:
-                if not np.all(np.array(n_features) == np.array(interval_widths) * np.array(n_intervals)):
-                    raise ValueError("The total number of features is inconsistent between the specification of n_features"
-                                     "and n_intervals in conjunction with interval_width")
-            else:
-                # infer n_features
-                return [interval_widths[i] * n_intervals[i] for i in range(len(n_intervals))]
+                _check_positive_integer(f)
+                feature_keys.append(str(f))
+        feature_keys = sorted(feature_keys, key=lambda x: int(x))
+        feature = sorted(features)
 
-    return n_features, n_intervals, interval_widths
+    # possible resolve duplicates
+    features = list(dict.fromkeys(features))
+    feature_keys = list(dict.fromkeys(feature_keys))
+    return features, feature_keys
 
 
-def _parameterize(methods, n_features, n_intervals, interval_widths, index):
+def _parameterize(methods, features):
     """
             Reconfigure parameterization of methods.
 
@@ -143,22 +127,18 @@ def _parameterize(methods, n_features, n_intervals, interval_widths, index):
         ----------
         method: List[Union[PointSelector, IntervalSelector]]
             method to be reparameterized
-        n_features: List[int]
-            list of n_features to be benchmarked
-        n_intervals: List[int]
-            list of n_intervals to be benchmarked
-        interval_widths: List[int]
-            list of interval_widths to be benchmarked
-        index: int
-            position indicator of the parameters to be used for reparameterization in the lists passed to the function
+        features: str
+            identifer for the features to be selected in this parameterization
 
     """
     for method in methods:
         if isinstance(method, PointSelector):
-            method.n_features_to_select = n_features[index]
+            if isinstance(features, tuple):
+                method.set_n_features(features[0] * features[1])
+            else:
+                method.set_n_features(features)
         else:
-            method.n_intervals_to_select = n_intervals[index]
-            method.interval_width = interval_widths[index]
+            method.set_interval_params(features[0], features[1])
 
 
 def _reseed(method, seed):
@@ -175,21 +155,6 @@ def _reseed(method, seed):
     """
     if hasattr(method, 'random_state'):
         method.random_state = seed
-
-
-def _sanitize_n_features(n_features, n_intervals, interval_widths):
-
-    """
-        Update: this is not valid
-        TODO: update data handling keys
-        -> the same number of features can be selected through different number of intervals and respective interval_widths
-    """
-    _, indices = np.unique(n_features, return_index=True)
-    n_features = n_features[indices]
-    n_intervals = n_intervals[indices]
-    interval_widths = interval_widths[indices]
-
-    return n_features, n_intervals, interval_widths
 
 
 def _check_name_uniqueness(name_list: List[str], identifier):
@@ -304,59 +269,46 @@ def _check_datasets(data):
     if not isinstance(data, list):
         data = [data]
 
-    names = []
     for dataset in data:
         if not isinstance(dataset, (list, tuple)):
             raise ValueError(f'Expected {dataset} to be of type list or tuple')
-        if len(dataset) != 3:
-            raise ValueError(f'The dataset specification requires three fields: (x, y, name)')
+        if len(dataset) != 4:
+            raise ValueError(f'The dataset specification requires three fields: (x, y, name, train_size)')
         if not (isinstance(dataset[0], np.ndarray) and isinstance(dataset[1], np.ndarray)):
-            raise ValueError(f'The first two elements in the dataset specification (x, y, name) need to be of type np.array ')
+            raise ValueError(f'The first two elements in the dataset specification (x, y, name, train_size) need to be of type np.array ')
         if not isinstance(dataset[2], str):
             raise ValueError(f'The name of a dataset is required to be of type str. Got {type(dataset[2])}')
-        names.append(dataset[2])
+        if not isinstance(dataset[3], float):
+            raise ValueError(f'The share of training data is required to be of type float. Got {type(dataset[3])}')
 
-    return data, names
+    return zip(*data)
 
 
-def _check_train_size(train_size, data):
+def _check_train_size(train_sizes, data, dataset_names):
 
     """
-        Sanitize train_size passed to function benchmarking. Check the proper range and scales
+        Sanitize training sizes passed to function benchmarking. Check the proper range and scales
         w.r.t. the dataset sizes.
 
         Parameters
         ----------
-        train_size: Union[float, List[float]]
+        train_sizes: List[float]
             train_size passed to function benchmark
-        data: List[Tuple[np.ndarray, np.ndarray, str]]
+        data: List[np.array]
             datasets passed to function benchmark
-
-        Returns
-        -------
-        List[float]
-            returns train_size. If need be expanded to match the number of datasets
-
     """
 
-    if isinstance(train_size, list):
-        if len(train_size) != len(data):
-            raise ValueError(f'If train_size is specified as list, its length has to match the number of datasets')
-        for size in train_size:
-            if size <= 0 or size >= 1:
-                raise ValueError(f'train_size expected to be in ]0,1[. Got {size}')
-    else:
-        if train_size <= 0 or train_size >= 1:
-            raise ValueError(f'train_size expected to be in ]0,1[. Got {train_size}')
-        train_size = [train_size] * len(data)
+    # Check proper range of the sizes
+    for size in train_sizes:
+        if size <= 0 or size >= 1:
+            raise ValueError(f'train_size expected to be in ]0,1[. Got {size}')
 
-    #Check if train_size leaves a non-empty set of test data for each dataset
-    for i in range(len(train_size)):
-        x, _, name = data[i]
-        if int(x.shape[0] * (1 - train_size[i])) == 0:
-            raise ValueError(f'Given the size of the dataset {name}, the specified train_size {train_size[i]} leaves'
+    # Check if train_sizes leave a non-empty set of test data for each dataset
+    for i in range(len(train_sizes)):
+        x = data[i]
+        if int(x.shape[0] * (1 - train_sizes[i])) == 0:
+            raise ValueError(f'Given the size of the dataset {dataset_names[i]}, the specified train_size {train_sizes[i]} leaves '
                              f'an empty test set.')
-    return train_size
 
 
 def _check_n_runs(n_runs):
@@ -426,34 +378,31 @@ def _benchmark_parallel(x: np.array, y: np.array, train_size: float, model: Base
     return results
 
 
-def _pot(pod, dataset_name, feature_index, methods_names, reg_metrics_names, results, logger: ErrorLogger):
-    #  the actual index of the threads run is irrelevant
+def _pot(pod, dataset_name, feature, methods_names, reg_metrics_names, results, logger: ErrorLogger):
+    #  the actual index of the thread's run is irrelevant
     for i, result in enumerate(results):
         for method in methods_names:
             if 'exception' not in result[method].keys():
                 pod.register_measurement(result[method]['exec'], dataset_name, method,
-                                         feature_index, 'samples', i)
+                                         feature, 'samples', i)
                 pod.register_selection(dataset_name, method,
-                                       feature_index, i, result[method]['selection'])
+                                       feature, i, result[method]['selection'])
                 for j, metric in enumerate(reg_metrics_names):
                     pod.register_regression(result[method]['metrics'][j], dataset_name, method,
-                                            feature_index, metric, 'samples', i)
+                                            feature, metric, 'samples', i)
             else:
                 exception, run_index, seed, during = result[method]['exception']
                 logger.log_error(run_index=run_index, seed=seed, method_name=method, during=during, exception=exception)
 
 
-def benchmark(data: List[Tuple[np.array, np.array, str]],
+def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
+              features: List[Union[int, Tuple[int, int]]],
               n_runs: int,
-              train_size: Union[float, List[float]],
-              test_model: BaseEstimator,
               methods: List[Union[PointSelector, IntervalSelector, Tuple[Union[PointSelector, IntervalSelector], str]]],
+              test_model: BaseEstimator,
               reg_metrics: List[Callable[[np.ndarray, np.ndarray], float]],
               random_state: Union[int, RandomState],
               stab_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = [],
-              n_features: List[int] = None,
-              n_intervals: List[int] = None,
-              interval_widths: List[int] = None,
               n_jobs: int = 1,
               error_log_file: str = "./error_log.txt",
               verbose: bool = True):
@@ -465,16 +414,13 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
         Parameters
         ----------
         data
+        features
         n_runs
-        train_size
         test_model
         reg_metrics
         stab_metrics
         methods
         random_state
-        n_features
-        n_intervals
-        interval_widths
         n_jobs
         error_log_file
         verbose
@@ -483,16 +429,14 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
         -------
         pod: BenchmarkPOD
             TODO
-
     """
 
-    n_features, n_intervals, interval_widths = _check_feature_interval_consistency(methods, n_features,
-                                                                                   n_intervals, interval_widths)
+    features, feature_keys = _check_feature_consistency(methods, features)
 
     speaker = Speaker(verbose)
     logger = ErrorLogger(log_file=error_log_file)
 
-    data, dataset_names = _check_datasets(data)
+    xs, ys, dataset_names, train_sizes = _check_datasets(data)
     reg_metrics, reg_metric_names = _unpack_metrics(reg_metrics, compulsory=True)
     stab_metric, stab_metric_names = _unpack_metrics(stab_metrics)
     methods, method_names = _unpack_methods(methods)
@@ -502,7 +446,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
     _check_name_uniqueness(reg_metric_names, "reg_metrics")
     _check_name_uniqueness(stab_metric_names, "stab_metrics")
 
-    train_size = _check_train_size(train_size, data)
+    _check_train_size(train_sizes, xs, dataset_names)
     _check_n_runs(n_runs)
 
     # configure the methods to have a single-thread operation (parallelization is exploited at the benchmarking level)
@@ -512,7 +456,8 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
 
     pod = BenchmarkPOD(dataset_names,
                        method_names,
-                       n_features,
+                       features,
+                       feature_keys,
                        reg_metric_names,
                        stab_metric_names,
                        n_runs
@@ -523,19 +468,20 @@ def benchmark(data: List[Tuple[np.array, np.array, str]],
     # pregenerate seeds, such that the seeding of data splits does not depend on the arguments except random_state
     run_seeds = random_state.randint(0, 1000000, size=n_runs)
 
-    for d, (x, y, dataset_name) in enumerate(data):
-        speaker.announce(level=0, message=f'Started benchmark for dataset {dataset_name}')
-        for i, n in enumerate(n_features):
+    for d in range(len(dataset_names)):
+        speaker.announce(level=0, message=f'Started benchmark for dataset {dataset_names[d]}')
+        for i, n in enumerate(features):
             speaker.announce(level=1, message=f'Started cycle with {n} features to select:')
-            logger.set_meta(dataset=dataset_name, features=n)
+            logger.set_meta(dataset=dataset_names[d], features=n)
 
-            _parameterize(methods, n_features, n_intervals, interval_widths, i)
-            results = Parallel(n_jobs=n_jobs)(delayed(_benchmark_parallel)(x, y, train_size[d], test_model,
+            _parameterize(methods, n)
+            results = Parallel(n_jobs=n_jobs)(delayed(_benchmark_parallel)(xs[d], ys[d], train_sizes[d], test_model,
                                                                            methods, method_names, reg_metrics,
                                                                            run_seeds[r], r)
                                               for r in range(n_runs))
 
-            _pot(pod, dataset_name, n, method_names, reg_metric_names, results, logger)
+            # insert the results of the processes into the BenchmarkPOD object or the error log
+            _pot(pod, dataset_names[d], features[i], method_names, reg_metric_names, results, logger)
 
     # dump error log
     logger.write_log()

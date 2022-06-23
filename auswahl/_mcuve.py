@@ -1,6 +1,7 @@
-from typing import Union
 
 import numpy as np
+
+from typing import Union, List, Dict
 from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
@@ -70,15 +71,17 @@ class MCUVE(PointSelector):
                  n_subsets: int = 100,
                  n_samples_per_subset: Union[int, float] = None,
                  pls: PLSRegression = None,
+                 n_cv_folds: int = 5,
+                 model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
-        super().__init__(n_features_to_select)
+        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
         self.n_subsets = n_subsets
         self.n_samples_per_subset = n_samples_per_subset
         self.pls = pls
         self.random_state = random_state
 
     def _fit(self, X, y, n_features_to_select):
-        pls = PLSRegression() if self.pls is None else clone(self.pls)
+        _, model = self._evaluate(X, y, self.pls)
         random_state = check_random_state(self.random_state)
         self._check_n_subsets()
         n_samples_per_subset = self._check_n_samples_per_subset(X)
@@ -89,14 +92,16 @@ class MCUVE(PointSelector):
             idx = random_state.permutation(n_samples)[:n_samples_per_subset]
             X_i, y_i = X[idx], y[idx]
 
-            pls.fit(X_i, y_i)
-            coefs.append(pls.coef_.squeeze())
+            model.fit(X_i, y_i)
+            coefs.append(model.coef_.squeeze())
+
         self.coefs_ = np.array(coefs)
         self.stability_ = self.coefs_.mean(axis=0) / self.coefs_.std(axis=0)
 
         selected_idx = np.argsort(abs(self.stability_))[-n_features_to_select:]
         self.support_ = np.zeros(X.shape[1], dtype=bool)
         self.support_[selected_idx] = 1
+        self.best_model_ = model
 
         return self
 

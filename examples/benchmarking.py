@@ -31,21 +31,20 @@ ipls = IPLS(n_intervals_to_select=1, interval_width=10, n_jobs=2)
 ivissa = iVISSA(n_intervals_to_select=2, interval_width=10)
 ex = ExceptionalSelector(n_features_to_select=10)
 
-pod = benchmark([(x, n, 'nitrogen'),
-                 ],#(x, y, 'corn')],
-                n_features=[5],  # np.arange(10, 300, 5).tolist(),
-                #n_intervals=[1, 1, 1],
-                #interval_widths=[10, 11, 12],
+pod = benchmark((x, y, 'nitrogen', 0.9),
+                features=[(1, 10), (10, 1)],
                 n_runs=1,
-                train_size=0.9,
-                test_model=PLSRegression(n_components=1),
+                test_model=PLSRegression(n_components=2),
                 reg_metrics=[mean_squared_error],
-                #stab_metrics=[],
-                #methods=[cars, (cars, "cars_the_second")],
-                methods=[ex],
+                #stab_metrics=[zucknick_score],
+                methods=[mcuve, vip, ex],
                 random_state=11111111,
                 n_jobs=1,
                 verbose=True)
+
+print(pod.get_selection_data(sample_run=2))
+
+#plot_score_stability_box(pod, dataset='nitrogen', n_features="5")
 
 #print(pod.get_selection_data(method='VIP', n_features=10))
 #print(pod.get_regression_data(method='VIP', dataset='manure', n_features=10))

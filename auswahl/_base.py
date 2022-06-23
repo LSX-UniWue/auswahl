@@ -1,13 +1,43 @@
 from abc import ABCMeta, abstractmethod
-from typing import Union
+from typing import Union, List
 
+from sklearn import clone
 from sklearn.base import BaseEstimator
 from sklearn.feature_selection import SelectorMixin
 from sklearn.utils import check_scalar
+from sklearn.model_selection import GridSearchCV
+from sklearn.cross_decomposition import PLSRegression
+from sklearn.model_selection import cross_val_score
+
 
 import numpy as np
 
-class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
+
+class CVEvaluator:
+
+    def __init__(self, model_hyperparams, cv_folds):
+        self.model_hyperparams = model_hyperparams
+        if self.model_hyperparams is not None and not isinstance(self.model_hyperparams, (list, dict)):
+            raise ValueError("Keyword argument 'model_hyperparams' is expected to be of type dict or list of dicts")
+        self.cv_folds = cv_folds
+        if not isinstance(self.cv_folds, int) or self.cv_folds <= 0:
+            raise ValueError(f'Keyword argument "n_cv_folds" is expected to be a positive integer. Got {self.cv_folds}')
+
+    def _evaluate(self, X, y, model, do_cv=True):
+        model = PLSRegression() if model is None else clone(model)
+        if self.model_hyperparams is None:  # no hyperparameter optimization; conduct a simple CV
+            cv_scores = None
+            if do_cv:
+                cv_scores = np.mean(cross_val_score(model, X, y, cv=self.cv_folds, scoring='neg_mean_squared_error'))
+            model.fit(X, y)
+            return cv_scores, model
+        else:
+            cv = GridSearchCV(model, self.model_hyperparams, cv=self.cv_folds, scoring='neg_mean_squared_error')
+            cv.fit(X, y)
+            return cv.best_score_, cv.best_estimator_
+
+
+class PointSelector(CVEvaluator, SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     """Base class for feature selection methods that select features independently.
 
     Parameters
@@ -16,8 +46,12 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
         Number of features to select
     """
 
-    def __init__(self, n_features_to_select: Union[int, float] = None):
+    def __init__(self,
+                 n_features_to_select: Union[int, float] = None,
+                 model_hyperparams: Union[dict, List[dict]] = None,
+                 n_cv_folds: int = 1):
         self.n_features_to_select = n_features_to_select
+        super().__init__(model_hyperparams, n_cv_folds)
 
     def fit(self, X, y, mask=None):
         """Run the feature selection process.
@@ -81,8 +115,11 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
         return n_features_to_select
 
+    def set_n_features(self, n_features):
+        self.n_features_to_select = n_features
 
-class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
+
+class IntervalSelector(CVEvaluator, SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     """Base class for feature selection methods that select consecutive chunks (intervals) of features.
 
     Parameters
@@ -96,9 +133,11 @@ class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
     def __init__(self,
                  n_intervals_to_select: int = None,
-                 interval_width: Union[int, float] = None):
+                 interval_width: Union[int, float] = None, n_cv_folds: int = 1,
+                 model_hyperparams: Union[dict, List[dict]] = None):
         self.n_intervals_to_select = n_intervals_to_select
         self.interval_width = interval_width
+        super().__init__(model_hyperparams, n_cv_folds)
 
     def fit(self, X, y):
         """Run the feature selection process.
@@ -150,3 +189,7 @@ class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
                              f'or a float in (0, 1); got {self.interval_width}')
 
         return interval_width
+
+    def set_interval_params(self, n_intervals, interval_width):
+        self.interval_width = interval_width
+        self.n_intervals_to_select = n_intervals
