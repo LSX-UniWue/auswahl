@@ -65,11 +65,13 @@ class IPLS(IntervalSelector):
                  n_jobs: int = 1,
                  random_state: Union[int, np.random.RandomState] = None):
 
-        super().__init__(1, interval_width)
+        super().__init__(n_intervals_to_select=1, interval_width=interval_width * n_intervals_to_select)
 
         if n_intervals_to_select != 1:
             warnings.warn("""IPLS only supports the selection of a single interval. 
-                             n_intervals_to_select has been clipped to 1""")
+                             n_intervals_to_select has been clipped to 1 and the interval_width increased to 
+                             n_intervals_to_select * interval_width. Hence, IPLS models the special case of aranging
+                             the selected intervals as continuum.""")
 
         self.pls = pls
         self.n_cv_folds = n_cv_folds
@@ -105,5 +107,8 @@ class IPLS(IntervalSelector):
     def _get_support_mask(self):
         check_is_fitted(self)
         return self.support_
+
+    def set_interval_params(self, n_intervals, interval_width):
+        self.interval_width = n_intervals * interval_width
 
 

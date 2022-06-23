@@ -17,7 +17,8 @@ class BenchmarkPOD:
     def __init__(self,
                  datasets: List[str],
                  methods: List,
-                 n_features: List[int],
+                 n_features: List[Union[int, Tuple[int, int]]],
+                 feature_keys: List[str],
                  reg_metrics: List,
                  stab_metrics: List,
                  n_runs: int):
@@ -25,9 +26,10 @@ class BenchmarkPOD:
         datasets = np.array(sorted(datasets))  # canonical order of datasets
         methods = np.array(sorted(methods))  # canonical order of methods
 
+        # setup indices
         reg_index_arrays, reg_size = self._build_multiindex([
             datasets,
-            n_features,
+            feature_keys,
             reg_metrics,
             ['mean', 'std', 'median', 'max', 'min', *[i for i in range(n_runs)]]
         ])
@@ -35,7 +37,7 @@ class BenchmarkPOD:
 
         stab_index_arrays, stab_size = self._build_multiindex([
             datasets,
-            n_features,
+            feature_keys,
             stab_metrics,
         ])
         stab_index = pd.MultiIndex.from_arrays(stab_index_arrays, names=['dataset', 'n_features', 'stability_metric'])
@@ -43,33 +45,34 @@ class BenchmarkPOD:
         # should be fine here (automatic conversion)
         selection_index_arrays, selection_size = self._build_multiindex([
             datasets,
-            n_features,
+            feature_keys,
             [i for i in range(n_runs)],
-            [i for i in range(max(n_features))]
+            [i for i in range(self._max_n_features(n_features))]
         ])
-        selection_index = pd.MultiIndex.from_arrays(selection_index_arrays, names=['dataset', 'n_features', 'sample', 'feature'])
+        selection_index = pd.MultiIndex.from_arrays(selection_index_arrays, names=['dataset', 'n_features', 'run', 'feature'])
 
         measurement_index_arrays, measurement_size = self._build_multiindex([
             datasets,
-            n_features,
+            feature_keys,
             ['mean', 'std', 'median', 'max', 'min', *[i for i in range(n_runs)]]
         ])
         measurement_index = pd.MultiIndex.from_arrays(measurement_index_arrays, names=['dataset', 'n_features', 'item'])
 
+        # setup dataframes
         self.selection_data = pd.DataFrame(-1 * np.ones((len(methods), selection_size), dtype='int'),
                                            index=methods,
                                            columns=selection_index)
-        self.stab_data = pd.DataFrame(np.zeros((len(methods), stab_size), dtype='float'),
+        self.stab_data = pd.DataFrame(np.NaN * np.zeros((len(methods), stab_size), dtype='float'),
                                       index=methods,
                                       columns=stab_index)
-        self.reg_data = pd.DataFrame(np.zeros((len(methods), reg_size), dtype='float'),
+        self.reg_data = pd.DataFrame(np.NaN * np.zeros((len(methods), reg_size), dtype='float'),
                                      index=methods,
                                      columns=reg_index)
 
-        self.measurement_data = pd.DataFrame(np.zeros((len(methods), measurement_size), dtype='float'),
+        self.measurement_data = pd.DataFrame(np.NaN * np.zeros((len(methods), measurement_size), dtype='float'),
                                              index=methods,
                                              columns=measurement_index)
-
+        # meta data
         self.datasets = datasets
         self.methods = methods
         self.reg_metrics = reg_metrics
@@ -82,6 +85,7 @@ class BenchmarkPOD:
         self.meta = dict()
 
     def _build_multiindex(self, structure: List[Union[List[str], np.array]]):
+        # construct the hierarchical muliindex
         index = np.array([structure[-1]])
         for i in range(len(structure) - 2, -1, -1):
             index = np.concatenate([
@@ -90,14 +94,34 @@ class BenchmarkPOD:
             ])
         return index.tolist(), index.shape[1]
 
-    def register_meta(self, dataset_meta: List[Tuple[np.array, np.array, str]]):
-        for x, y, name in dataset_meta:
+    def register_meta(self, dataset_meta: List[Tuple[np.array, np.array, str, float]]):
+        if not isinstance(dataset_meta, list):
+            dataset_meta = [dataset_meta]
+        for x, y, name, _ in dataset_meta:
             self.meta[name] = (x, y, x.shape)
+
+    def _tuple_conversion(self, item):
+        if isinstance(item, tuple):
+            return f'{item[0]}/{item[1]}'
+        else:
+            return str(item)
 
     def _string_conversion(self, item):
         if type(item) == list:
-            return [str(i) for i in item]
-        return str(item)
+            return [self._tuple_conversion(i) for i in item]
+        return self._tuple_conversion(item)
+
+    def _resolve_if_interval(self, item):
+        if isinstance(item, tuple):
+            return item[0] * item[1]
+        else:
+            return item
+
+    def _max_n_features(self, n_features):
+        features = []
+        for f in n_features:
+            features.append(self._resolve_if_interval(f))
+        return max(features)
 
     def get_meta(self, dataset):
         """
@@ -116,13 +140,13 @@ class BenchmarkPOD:
         return self.meta[dataset]
 
     def _make_key(self,
-                             dataset: Union[str, List[str]] = None,
-                             method: Union[str, List[str]] = None,
-                             n_features: Union[int, List[int]] = None,
-                             reg_metric: Union[str, List[str]] = None,
-                             item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None,
-                             sample_number: Union[int, List[int]] = None,
-                             has_reg: bool = True):
+                  dataset: Union[str, List[str]] = None,
+                  method: Union[str, List[str]] = None,
+                  n_features: Union[int, List[int]] = None,
+                  reg_metric: Union[str, List[str]] = None,
+                  item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None,
+                  sample_number: Union[int, List[int]] = None,
+                  has_reg: bool = True):
         if item == 'samples':
             if sample_number is None:
                 item = [str(i) for i in range(self.n_runs)]
@@ -131,6 +155,7 @@ class BenchmarkPOD:
         method_key = method if method is not None else slice(None)
         key = [dataset if dataset is not None else slice(None),
                self._string_conversion(n_features) if n_features is not None else slice(None)]
+        # select regression metrics if requested
         if has_reg:
             key.append(reg_metric if reg_metric is not None else slice(None))
         key.append(item if item is not None else slice(None))
@@ -159,12 +184,12 @@ class BenchmarkPOD:
                            n_features: int,
                            sample: int,
                            selection: np.array):
-        with warnings.catch_warnings():  # TODO: do something about that
+        with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             self.selection_data.loc[method,
                                     (dataset,
                                      self._string_conversion(n_features),
-                                     self._string_conversion(sample))].iloc[:selection.shape[0]] = selection.tolist()
+                                     str(sample))].iloc[:selection.shape[0]] = selection.tolist()
 
     def register_stability(self,
                            dataset: str,
@@ -192,7 +217,6 @@ class BenchmarkPOD:
         else:
             self.measurement_data.loc[(method_key, key)] = value
 
-
     def get_regression_data(self,
                             dataset: Union[str, List[str]] = None,
                             method: Union[str, List[str]] = None,
@@ -209,7 +233,7 @@ class BenchmarkPOD:
                 dataset identifier or list of dataset identifiers
             method : str or list of str, default=None
                 method(s) to be retrieved. If None, all methods are retrieved
-            n_features : int or list of int, default=None
+            n_features : int, tuple of ints or list of int or of tuples of int, default=None
                 results for the runs with the respective number of selected features to be retrieved. If None,
                 the runs for all numbers of selected features are retrieved
             reg_metric : str or list of str, default=None
@@ -228,7 +252,7 @@ class BenchmarkPOD:
     def get_selection_data(self,
                            dataset: Union[str, List[str]] = None,
                            method: Union[str, List[str]] = None,
-                           n_features: Union[int, List[int]] = None,
+                           n_features: Union[int, Tuple[int], List[int], List[Tuple[int]]] = None,
                            sample_run: Union[int, List[int]] = None,
                            selected_features: Union[int, List[int]] = None):
         """
@@ -254,7 +278,7 @@ class BenchmarkPOD:
         if n_features is not None \
                 and type(n_features) != list \
                 and selected_features is None:
-            selected_features = [i for i in range(n_features)]
+            selected_features = [i for i in range(self._resolve_if_interval(n_features))]
 
         method_key = method if method is not None else slice(None)
         key = (
@@ -264,7 +288,7 @@ class BenchmarkPOD:
             self._string_conversion(selected_features) if selected_features is not None else slice(None)
         )
 
-        with warnings.catch_warnings():  #TODO: do something about that
+        with warnings.catch_warnings():
             warnings.filterwarnings("ignore")
             frame = self.selection_data.loc[method_key, key]
             return frame.sort_index(level=[0, 1])
@@ -309,13 +333,8 @@ class BenchmarkPOD:
         method_key, key = self._make_key(dataset, method, n_features, item=item, has_reg=False)
         return self.measurement_data.loc[(method_key, key)]
 
+
     def store(self, file_path: str, file_name: str):
-        #hdf = pd.HDFStore(os.path.join(file_path, f'{file_name}.h5'))
-        #hdf.put('regression', self.reg_data, data_columns=True)
-        #hdf.put('selection', self.selection_data, data_columns=True)
-        #hdf.put('measurement', self.measurement_data, data_columns=True)
-        #hdf.put('stability', self.stab_data, data_columns=True)
-        #hdf.close()
         path = os.path.join(file_path, f'{file_name}.pickle')
         with open(path, 'wb') as file:
             pickle.dump(self, file)

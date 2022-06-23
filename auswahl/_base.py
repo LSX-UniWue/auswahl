@@ -81,6 +81,9 @@ class PointSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
         return n_features_to_select
 
+    def set_n_features(self, n_features):
+        self.n_features_to_select = n_features
+
 
 class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     """Base class for feature selection methods that select consecutive chunks (intervals) of features.
@@ -150,3 +153,7 @@ class IntervalSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
                              f'or a float in (0, 1); got {self.interval_width}')
 
         return interval_width
+
+    def set_interval_params(self, n_intervals, interval_width):
+        self.interval_width = interval_width
+        self.n_intervals_to_select = n_intervals
