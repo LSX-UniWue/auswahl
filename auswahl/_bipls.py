@@ -50,10 +50,10 @@ class BiPLS(IntervalSelector):
     Examples
     --------
     >>> import numpy as np
-    >>> from auswahl import FiPLS
+    >>> from auswahl import BiPLS
     >>> X = np.random.randn(100, 10)
     >>> y = 5 * X[:, 0] - 4 * X[:,1] - 2 * X[:, 5] + 3 * X[:,6]  # y depends on two intervals
-    >>> selector = FiPLS(n_intervals_to_select=2, interval_width=2)
+    >>> selector = BiPLS(n_intervals_to_select=2, interval_width=2)
     >>> selector.fit(X, y)
     >>> selector.get_support()
     array([True, True, False, False, False, True, True, False, False, False])
