@@ -1,7 +1,7 @@
 """
-========================================
+================================
 VIP - Selection with a threshold
-========================================
+================================
 
 A Variable Importance in Projection example showing how to select features without defining the number of features to
 select.

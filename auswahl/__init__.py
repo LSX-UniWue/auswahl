@@ -11,9 +11,10 @@ from ._vip import VIP
 from ._vip_spa import VIP_SPA
 from ._vissa import VISSA, iVISSA
 from ._fipls import FiPLS
+from ._bipls import BiPLS
 from ._dummy import DummyIntervalSelector, DummyPointSelector, ExceptionalSelector
 
 __all__ = ['PointSelector', 'IntervalSelector',
            'CARS', 'MCUVE', 'RandomFrog', 'SPA', 'VIP', 'VIP_SPA', 'VISSA',
-           'IntervalRandomFrog', 'IPLS', 'FiPLS', 'iVISSA',
+           'IntervalRandomFrog', 'IPLS', 'FiPLS', 'BiPLS', 'iVISSA',
            '__version__']

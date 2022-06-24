@@ -1,9 +1,10 @@
-
 """
+======================
+Benchmarking - Example
+======================
 
-    Example demonstrating the feature selection benchmarking facilities.
-
-    TODO: extend
+Example demonstrating the feature selection benchmarking facilities.
+TODO: extend
 
 """
 import pickle

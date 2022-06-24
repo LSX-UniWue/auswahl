@@ -26,8 +26,24 @@ Forward Interval Partial Least Squares
 
 Forward interval Partial Least Squares (FiPLS) is available in :class:`FiPLS`.
 FiPLS is a variant of IPLS that sequentially selects intervals based on the cross-validated RMSE of a fitted PLS model.
-The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` but this methods selects continuous
-sequences of features instead of single features.
+The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` with :code:`direction='forward'` but
+this method selects continuous sequences of features instead of single features.
+
+.. topic:: References:
+
+    * Zou Xiaobo, Zhao Jiewen, Li Yanxiao,
+      'Selection of the efficient wavelength regions in FT-NIR spectroscopy for determination of SSC of ‘Fuji’
+      apple based on BiPLS and FiPLS models',
+      Vibrational Spectroscopy, vol. 44, no. 2, 220--227, 2007.
+
+.. _bipls:
+
+Backward Interval Partial Least Squares
+=======================================
+Backward interval Partial Least Squares (FiPLS) is available in :class:`BiPLS`.
+BiPLS is a variant of IPLS that sequentially removes intervals based on the cross-validated RMSE of a fitted PLS model.
+The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` with :code:`direction='backward'`
+but this method selects continuous sequences of features instead of single features.
 
 .. topic:: References:
 

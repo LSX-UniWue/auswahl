@@ -27,4 +27,5 @@ Wavelength Interval Selection
     IntervalSelector
     IPLS
     FiPLS
+    BiPLS
     IntervalRandomFrog
