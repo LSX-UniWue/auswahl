@@ -10,7 +10,6 @@ from typing import Union, List, Tuple, Callable
 from sklearn.utils import check_random_state
 from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator
-from sklearn import clone
 
 from auswahl import PointSelector, IntervalSelector
 from benchmark.util._data_handling import BenchmarkPOD
@@ -43,13 +42,13 @@ class ErrorLogger:
         self.dataset = None
         self.features = None
 
-
     def set_meta(self, dataset, features):
         self.dataset = dataset
         self.features = features
 
-    def log_error(self, run_index, seed: int, method_name: str, during: str, exception: Exception):
+    def log_error(self, severity: str, run_index: int, seed: int, method_name: str, during: str, exception: Exception):
         self.log[f'error {len(self.log) + 1}'] = {'dataset': self.dataset,
+                                                  'severity': severity,
                                                   'features': self.features,
                                                   'run': run_index,
                                                   'seed': str(seed),
@@ -319,6 +318,13 @@ def _check_n_runs(n_runs):
         raise ValueError(f'n_runs is required to be positive')
 
 
+def _copy_methods(methods, joblib_mem_segregation=True):
+    if joblib_mem_segregation:
+        return methods
+    else:
+        return [copy.deepcopy(method) for method in methods]
+
+
 def _drain_threads(methods):
 
     """
@@ -339,7 +345,7 @@ def _copy_methods(methods):
     return [copy.deepcopy(method) for method in methods]
 
 
-def _benchmark_parallel(x: np.array, y: np.array, train_size: float, model: BaseEstimator,
+def _benchmark_parallel(x: np.array, y: np.array, train_size: float,
                         methods, method_names, reg_metrics, seed: int, run_index: int):
 
     methods = _copy_methods(methods)
@@ -349,57 +355,74 @@ def _benchmark_parallel(x: np.array, y: np.array, train_size: float, model: Base
     for method_name, method in zip(method_names, methods):
         results[method_name] = dict()
         _reseed(method, seed)
+        # fit feature selector
         try:
             start = time.process_time()
             method.fit(train_x, train_y)
             end = time.process_time()
         except Exception as e:
             results[method_name]['exception'] = (e, run_index, seed, "Fitting of Selector")
-        else:
-            support = method.get_support(indices=True)
+            continue
+        # fit test model
+        support = method.get_support(indices=True)
+        model = method.best_model_
+        try:
+            model.fit(train_x[:, support], train_y)
+        except Exception as e:
+            results[method_name]['exception'] = (e, run_index, seed, 'Fitting of test model')
+            continue
+        # make test model prediction
+        try:
+            prediction = model.predict(test_x[:, support])
+        except Exception as e:
+            results[method_name]['exception'] = (e, run_index, seed, 'Prediction of test model')
+            continue
+        # execute stability metrics
+        metrics = []
+        for metric in reg_metrics:
             try:
-                test_regressor = clone(model)  # TODO: removal might be possible (data is copied for default joblib multiprocessing)
-                test_regressor.fit(train_x[:, support], train_y)
-                prediction = test_regressor.predict(test_x[:, support])
+                metrics.append(metric(test_y, prediction))
             except Exception as e:
-                results[method_name]['exception'] = (e, run_index, seed, 'Fitting/prediction of test model')
-            else:
-                try:
-                    metrics = []
-                    for metric in reg_metrics:
-                        metrics.append(metric(test_y, prediction))
-                except Exception as e:
-                    results[method_name]['exception'] = (e, run_index, seed, 'Metric evaluation')
-                else:
-                    results[method_name]['metrics'] = metrics
-                    results[method_name]['exec'] = end-start
-                    results[method_name]['selection'] = support
+                metrics.append(np.nan)
+                metric_errors = results[method_name].setdefault('metric_exception', [])
+                metric_errors.append((e, run_index, seed, f'Evaluation of: {metric.__name__}'))
+
+        results[method_name]['metrics'] = metrics
+        results[method_name]['exec'] = end-start
+        results[method_name]['selection'] = support
+        results[method_name]['run_index'] = run_index  # retain association of threads to runs
 
     return results
 
 
 def _pot(pod, dataset_name, feature, methods_names, reg_metrics_names, results, logger: ErrorLogger):
-    #  the actual index of the thread's run is irrelevant
-    for i, result in enumerate(results):
+    for result in results:
         for method in methods_names:
             if 'exception' not in result[method].keys():
+                run_index = result[method]['run_index']
                 pod.register_measurement(result[method]['exec'], dataset_name, method,
-                                         feature, 'samples', i)
+                                         feature, 'samples', run_index)
                 pod.register_selection(dataset_name, method,
-                                       feature, i, result[method]['selection'])
+                                       feature, run_index, result[method]['selection'])
                 for j, metric in enumerate(reg_metrics_names):
                     pod.register_regression(result[method]['metrics'][j], dataset_name, method,
-                                            feature, metric, 'samples', i)
+                                            feature, metric, 'samples', run_index)
             else:
                 exception, run_index, seed, during = result[method]['exception']
-                logger.log_error(run_index=run_index, seed=seed, method_name=method, during=during, exception=exception)
+                logger.log_error(severity='fatal', run_index=run_index, seed=seed,
+                                 method_name=method, during=during, exception=exception)
+
+            if 'metric_exception' in result[method].keys():
+                for ex in result[method]['metric_exception']:
+                    exception, run_index, seed, during = ex
+                    logger.log_error(severity='metric error', run_index=run_index, seed=seed,
+                                     method_name=method, during=during, exception=exception)
 
 
 def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
               features: List[Union[int, Tuple[int, int]]],
               n_runs: int,
               methods: List[Union[PointSelector, IntervalSelector, Tuple[Union[PointSelector, IntervalSelector], str]]],
-              test_model: BaseEstimator,
               reg_metrics: List[Callable[[np.ndarray, np.ndarray], float]],
               random_state: Union[int, RandomState],
               stab_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = [],
@@ -416,7 +439,6 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
         data
         features
         n_runs
-        test_model
         reg_metrics
         stab_metrics
         methods
@@ -468,14 +490,15 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
     # pregenerate seeds, such that the seeding of data splits does not depend on the arguments except random_state
     run_seeds = random_state.randint(0, 1000000, size=n_runs)
 
-    for d in range(len(dataset_names)):
-        speaker.announce(level=0, message=f'Started benchmark for dataset {dataset_names[d]}')
-        for i, n in enumerate(features):
-            speaker.announce(level=1, message=f'Started cycle with {n} features to select:')
-            logger.set_meta(dataset=dataset_names[d], features=n)
+    with Parallel(n_jobs=n_jobs) as parallel:
+        for d in range(len(dataset_names)):
+            speaker.announce(level=0, message=f'Started benchmark for dataset {dataset_names[d]}')
+            for i, n in enumerate(features):
+                speaker.announce(level=1, message=f'Started cycle with {n} features to select')
+                logger.set_meta(dataset=dataset_names[d], features=n)
 
-            _parameterize(methods, n)
-            results = Parallel(n_jobs=n_jobs)(delayed(_benchmark_parallel)(xs[d], ys[d], train_sizes[d], test_model,
+                _parameterize(methods, n)
+                results = parallel(delayed(_benchmark_parallel)(xs[d], ys[d], train_sizes[d],
                                                                            methods, method_names, reg_metrics,
                                                                            run_seeds[r], r)
                                               for r in range(n_runs))

@@ -81,7 +81,7 @@ class MCUVE(PointSelector):
         self.random_state = random_state
 
     def _fit(self, X, y, n_features_to_select):
-        _, model = self._evaluate(X, y, self.pls)
+        _, model = self._evaluate(X, y, self.pls, do_cv=False)
         random_state = check_random_state(self.random_state)
         self._check_n_subsets()
         n_samples_per_subset = self._check_n_samples_per_subset(X)

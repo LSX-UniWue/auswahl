@@ -12,7 +12,6 @@ import numpy as np
 from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, VISSA, RandomFrog, iVISSA, ExceptionalSelector
 from benchmark import *
 
-from sklearn.cross_decomposition import PLSRegression
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 
@@ -22,7 +21,7 @@ n = np.load("./data/nitrogen.npy")
 
 mcuve = MCUVE(n_features_to_select=10)
 cars = CARS(n_features_to_select=10, n_jobs=2)
-vip = VIP(n_features_to_select=10)
+vip = VIP(n_features_to_select=10, model_hyperparams={'n_components': [1, 2, 3]})
 ipls = IPLS(interval_width=10, n_jobs=2)
 vip_spa = VIP_SPA(n_features_to_select=10, n_jobs=2)
 rf = RandomFrog(n_features_to_select=10)
@@ -33,11 +32,10 @@ ex = ExceptionalSelector(n_features_to_select=10)
 
 pod = benchmark((x, y, 'nitrogen', 0.9),
                 features=[(1, 10), (10, 1)],
-                n_runs=1,
-                test_model=PLSRegression(n_components=2),
+                n_runs=3,
                 reg_metrics=[mean_squared_error],
                 #stab_metrics=[zucknick_score],
-                methods=[mcuve, vip, ex],
+                methods=[mcuve, vip],
                 random_state=11111111,
                 n_jobs=1,
                 verbose=True)
