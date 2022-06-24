@@ -1,7 +1,7 @@
 """
-===================
+=====================
 VISSA - Basic example
-===================
+=====================
 
 A Variable Iterative Subspace Shrinkage Approach example showing the feature importance for a synthetic regression task.
 
