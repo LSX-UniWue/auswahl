@@ -38,7 +38,7 @@ class _VISSA:
         # permute the Binary Sampling Matrix
         return np.reshape(bsm[(row_selector, p)], (n_feats, n_submodels))
 
-    def _evaluate(self, X, y, pls, submodel_index):
+    def _evaluate_submodule(self, X, y, pls, submodel_index):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             cv_scores = cross_val_score(pls,
@@ -49,10 +49,10 @@ class _VISSA:
         return np.mean(cv_scores), submodel_index
 
     def _evaluate_submodels(self, X, y, pls, bsm):
-        submodels = Parallel(n_jobs=self.n_jobs)(delayed(self._evaluate)(X[:, bsm[:, i]],
-                                                                         y,
-                                                                         PLSRegression() if pls is None else clone(pls),
-                                                                         i) for i in range(self.n_submodels))
+        submodels = Parallel(n_jobs=self.n_jobs)(delayed(self._evaluate_submodule)(X[:, bsm[:, i]],
+                                                                                   y,
+                                                                                   PLSRegression() if pls is None else clone(pls),
+                                                                                   i) for i in range(self.n_submodels))
         return submodels
 
     def _yield_best_weights(self, X, y, var_weights, n_submodels, random_state, selection_quantile):
