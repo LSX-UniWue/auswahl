@@ -15,12 +15,12 @@ import numpy as np
 
 class CVEvaluator:
 
-    def __init__(self, model_hyperparams, cv_folds):
+    def __init__(self, model_hyperparams, n_cv_folds):
         self.model_hyperparams = model_hyperparams
         if self.model_hyperparams is not None and not isinstance(self.model_hyperparams, (list, dict)):
             raise ValueError("Keyword argument 'model_hyperparams' is expected to be of type dict or list of dicts")
-        self.cv_folds = cv_folds
-        if not isinstance(self.cv_folds, int) or self.cv_folds <= 0:
+        self.n_cv_folds = n_cv_folds
+        if not isinstance(self.n_cv_folds, int) or self.n_cv_folds <= 0:
             raise ValueError(f'Keyword argument "n_cv_folds" is expected to be a positive integer. Got {self.cv_folds}')
 
     def _evaluate(self, X, y, model, do_cv=True):
@@ -28,11 +28,11 @@ class CVEvaluator:
         if self.model_hyperparams is None:  # no hyperparameter optimization; conduct a simple CV
             cv_scores = None
             if do_cv:
-                cv_scores = np.mean(cross_val_score(model, X, y, cv=self.cv_folds, scoring='neg_mean_squared_error'))
+                cv_scores = np.mean(cross_val_score(model, X, y, cv=self.n_cv_folds, scoring='neg_mean_squared_error'))
             model.fit(X, y)
             return cv_scores, model
         else:
-            cv = GridSearchCV(model, self.model_hyperparams, cv=self.cv_folds, scoring='neg_mean_squared_error')
+            cv = GridSearchCV(model, self.model_hyperparams, cv=self.n_cv_folds, scoring='neg_mean_squared_error')
             cv.fit(X, y)
             return cv.best_score_, cv.best_estimator_
 

@@ -1,4 +1,4 @@
-from typing import Union, Dict
+from typing import Union, Dict, List
 
 import numpy as np
 from sklearn import clone
@@ -142,14 +142,14 @@ class VISSA(PointSelector, _VISSA):
                  n_jobs: int = 1,
                  n_cv_folds: int = 5,
                  pls: PLSRegression = None,
+                 model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
 
-        super().__init__(n_features_to_select)
+        super().__init__(n_features_to_select, model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
 
         self.pls = pls
         self.n_submodels = n_submodels
         self.n_jobs = n_jobs
-        self.n_cv_folds = n_cv_folds
         self.random_state = random_state
 
     def _fit(self, X, y, n_features_to_select):
@@ -196,9 +196,11 @@ class iVISSA(IntervalSelector, _VISSA):
                  n_jobs: int = 1,
                  n_cv_folds: int = 5,
                  pls: PLSRegression = None,
+                 model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
 
-        super().__init__(n_intervals_to_select, interval_width)
+        super().__init__(n_intervals_to_select, interval_width,
+                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
 
         self.pls = pls
         self.n_submodels = n_submodels

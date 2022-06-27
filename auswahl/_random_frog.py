@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import Union
+from typing import Union, Dict, List
 from warnings import warn
 
 import numpy as np
@@ -365,8 +365,10 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
                  n_cv_folds: int = 5,
                  n_jobs: int = 1,
                  pls: PLSRegression = None,
+                 model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
-        super().__init__(n_intervals_to_select, interval_width)
+        super().__init__(n_intervals_to_select, interval_width,
+                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
         self.n_iterations = n_iterations
         self.n_initial_intervals = n_initial_intervals
         self.variance_factor = variance_factor
