@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 
-from _bipls import BiPLS
-
+from auswahl import BiPLS
 
 @pytest.fixture
 def data():

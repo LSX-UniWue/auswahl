@@ -42,7 +42,3 @@ def test_reproducible_run(data):
     selector1.fit(X, y)
     selector2.fit(X, y)
     assert_array_almost_equal(selector1.weights_, selector2.weights_)
-
-    selector1.fit(X, y)
-    selector2.fit(X, y)
-    assert_array_almost_equal(selector1.weights_, selector2.weights_)

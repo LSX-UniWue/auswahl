@@ -60,7 +60,7 @@ class VIP(PointSelector):
                  n_cv_folds: int = 5,
                  pls: PLSRegression = None,
                  model_hyperparams: Union[Dict, List[Dict]] = None):
-        super().__init__(n_features_to_select)
+        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
         self.pls = pls
 
     def _fit(self, X, y, n_features_to_select):

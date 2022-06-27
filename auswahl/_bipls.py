@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Union, Dict, List
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -64,16 +64,13 @@ class BiPLS(IntervalSelector):
                  interval_width: Union[int, float] = None,
                  pls: PLSRegression = None,
                  n_cv_folds: int = 10,
+                 model_hyperparams: Union[Dict, List[Dict]] = None,
                  n_jobs: int = 1):
-        super().__init__(n_intervals_to_select, interval_width)
+        super().__init__(n_intervals_to_select, interval_width,
+                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
         self.pls = pls
         self.n_cv_folds = n_cv_folds
         self.n_jobs = n_jobs
-
-    def _fit_interval(self, x, y):
-        pls = PLSRegression() if self.pls is None else clone(self.pls)
-        score = cross_val_score(pls, x, y, scoring='neg_root_mean_squared_error', cv=self.n_cv_folds)
-        return np.mean(score)
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         selection = np.ones(X.shape[1], dtype=bool)
@@ -82,12 +79,15 @@ class BiPLS(IntervalSelector):
             for n in range(len(free_idx) - n_intervals_to_select):
                 x_free = X[:, selection]
                 n_features = x_free.shape[1]
-                scores = parallel(delayed(self._fit_interval)
-                                  (np.delete(x_free, np.r_[i:min(n_features, i + interval_width)], axis=1), y)
+                evaluations = parallel(delayed(self._evaluate)
+                                  (np.delete(x_free, np.r_[i:min(n_features, i + interval_width)], axis=1), y, self.pls)
                                   for i in range(0, n_features, interval_width))
-                worst_idx = free_idx[np.argmax(scores)]
-                selection[worst_idx:worst_idx + interval_width] = 0
-                free_idx.remove(worst_idx)
+                scores, models = list(zip(*evaluations))
+                best = np.argmax(scores)
+                worst_interval = free_idx[best]
+                selection[worst_interval:worst_interval + interval_width] = 0
+                self.best_model_ = models[best]
+                free_idx.remove(worst_interval)
 
         self.support_ = selection
         return self

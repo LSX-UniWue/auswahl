@@ -49,7 +49,7 @@ class PointSelector(CVEvaluator, SelectorMixin, BaseEstimator, metaclass=ABCMeta
     def __init__(self,
                  n_features_to_select: Union[int, float] = None,
                  model_hyperparams: Union[dict, List[dict]] = None,
-                 n_cv_folds: int = 1):
+                 n_cv_folds: int = 2):
         self.n_features_to_select = n_features_to_select
         super().__init__(model_hyperparams, n_cv_folds)
 

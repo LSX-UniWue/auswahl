@@ -66,7 +66,7 @@ class IPLS(IntervalSelector):
                  model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
 
-        super().__init__(n_intervals_to_select=1, interval_width=interval_width * n_intervals_to_select,
+        super().__init__(n_intervals_to_select=1, interval_width=interval_width,
                          model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
 
         if n_intervals_to_select != 1:
@@ -88,7 +88,7 @@ class IPLS(IntervalSelector):
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         candidates = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_ipls)(X,
                                                                           y,
-                                                                          interval_width,
+                                                                          interval_width * n_intervals_to_select,
                                                                           self.pls,
                                                                           i) for i in range(X.shape[-1]-interval_width+1))
         score, best_model, start = max(candidates, key=lambda x: x[0])
