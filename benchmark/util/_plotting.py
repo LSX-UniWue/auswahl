@@ -3,10 +3,28 @@ import numpy as np
 import pandas as pd
 import matplotlib.patches as mpatches
 
-from typing import List, Union, Literal
+from typing import List, Union, Literal, Tuple
 from matplotlib import pyplot as plt
 
 from ._data_handling import BenchmarkPOD
+
+
+def _check_specified_or_singleton(pool, identifier):
+    if identifier is None:
+        if len(pool) > 1:
+            raise ValueError("Dataset is ambiguous. Specify a dataset")
+        return pool[0]
+    return identifier
+
+
+def _arrange_boxes(pod, n_features, methods):
+    x_coords = []
+    ticks = np.arange(len(n_features) if n_features is not None else len(pod.n_features)) + 1  #start with 1
+    n_methods = len(methods if methods is not None else pod.methods)
+    for i in range(n_methods):
+        x_coords.append(-0.1 + ticks + (0.2 / (n_methods - 1)) * i)
+    return x_coords, ticks
+
 
 def _box_plot(title: str,
               x_label: str,
@@ -55,6 +73,8 @@ def _errorbar_plot(title: str,
                    y_max: List[List[float]],
                    y_min: List[List[float]],
                    x_data: List[List[Union[float, int]]],
+                   tick_labels: List[List[Union[float, int]]],
+                   ticks: List[Union[int, float]],
                    legend: List[str],
                    plot_lines: bool = True,
                    save_path: str = None):
@@ -65,10 +85,9 @@ def _errorbar_plot(title: str,
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
     legend_handles = []
-
-    for i, y_data in enumerate(y_data):
+    for i, y in enumerate(y_data):
         ax.errorbar(x_data[i] if len(x_data) > 1 else x_data[0],
-                    y_data,
+                    y,
                     yerr=[y_min[i], y_max[i]],
                     color=colors[i],
                     marker=markers[i],
@@ -78,6 +97,8 @@ def _errorbar_plot(title: str,
     ax.set_title(title)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+    ax.set_xticklabels(tick_labels)
+    ax.set_xticks(ticks)
     ax.legend(handles=legend_handles)
 
     if save_path is not None:
@@ -115,13 +136,14 @@ def _line_plot(title: str,
         plt.savefig(save_path)
     plt.show()
 
-def plot_score_stability_box(pod: BenchmarkPOD,
-                             dataset: str,
-                             n_features: int,
-                             stability_metric: str,
-                             regression_metric: str,
-                             methods: Union[str, List[str]] = None,
-                             save_path: str = None):
+
+def plot_score_vs_stability(pod: BenchmarkPOD,
+                            dataset: str,
+                            n_features: Union[int, Tuple[int]],
+                            stability_metric: str,
+                            regression_metric: str,
+                            methods: Union[str, List[str]] = None,
+                            save_path: str = None):
     """
         Plotting a boxplot for the benchmarked methods displaying
             * the mean regression score on the y-axis
@@ -139,7 +161,7 @@ def plot_score_stability_box(pod: BenchmarkPOD,
         dataset: str
             dataset for which the data is to be plotted
 
-        n_features: int
+        n_features: int or tuple of int
             number of features, which were to be selected by the algorithms
 
         stability_metric : str
@@ -180,19 +202,37 @@ def plot_score_stability_box(pod: BenchmarkPOD,
               pod.methods,
               save_path)
 
+
 def plot_exec_time(pod: BenchmarkPOD,
-                   dataset: str,
+                   dataset: str = None,
                    methods: Union[str, List[str]] = None,
-                   n_features: Union[int, List[int]] = None,
+                   n_features: List[Union[int, Tuple[int]]] = None,
                    item: Literal['mean', 'median'] = 'mean',
                    save_path: str = None):
 
     """
 
-            TODO
+        Parameters
+        ----------
+    pod: BenchmarkPOD
+        BenchmarkPOD object containing the benchmarking data
+    dataset: str, default=None
+        identifier of the dataset of which to plot the execution time. If there is data for only one dataset
+        in the the BenchmarkPOD object, the argument does not have to be specified
+    methods: str or list of str
+        identifiers of methods for which to plot the execution time
+    n_features: list of integers or of tuples of integers
+        identifiers of the number of features or the configuration of intervals for which the execution time is to be plotted
+    item: Literal['mean', 'median']
+        specifies whether the mean or median is displayed in the plot
+    save_path: str
+        path at which the plot has to be saved
 
     """
-    if type(n_features) == int:
+
+    dataset = _check_specified_or_singleton(pod.datasets, dataset)
+
+    if n_features is not None and not isinstance(n_features, list):
         n_features = [n_features]
 
     exec_times = pod.get_measurement_data(dataset=dataset,
@@ -210,35 +250,47 @@ def plot_exec_time(pod: BenchmarkPOD,
                                         n_features=n_features,
                                         item='max').to_numpy().tolist()
 
+    x_coords, ticks = _arrange_boxes(pod, n_features, methods)
+
     _errorbar_plot(f'Execution time: {item} and ranges',
                    "n_features",
                    "Execution time [s]",
                    exec_times,
                    exec_max,
                    exec_mins,
-                   [n_features if n_features is not None else pod.n_features],
+                   x_coords,
+                   n_features if n_features is not None else pod.n_features,
+                   ticks,
                    methods if methods is not None else pod.methods,
                    save_path)
 
 
-def plot_performance_series(pod: BenchmarkPOD,
-                            dataset: str,
-                            regression_metric: str,
-                            methods: Union[str, List[str]] = None,
-                            n_features: Union[int, List[int]] = None,
-                            item: Literal['mean', 'median'] = 'mean',
-                            save_path: str = None):
+def plot_score(pod: BenchmarkPOD,
+               dataset: str = None,
+               regression_metric: str = None,
+               methods: Union[str, List[str]] = None,
+               n_features: List[Union[int, Tuple[int, int]]] = None,
+               item: Literal['mean', 'median'] = 'mean',
+               save_path: str = None):
+
+    regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric)
+    dataset = _check_specified_or_singleton(pod.datasets, dataset)
+
+    if n_features is not None and not isinstance(n_features, list):
+        n_features = [n_features]
 
     reg_scores = pod.get_regression_data(method=methods,
                                          n_features=n_features,
                                          dataset=dataset,
                                          reg_metric=regression_metric,
                                          item=item).to_numpy().tolist()
+
     reg_mins = pod.get_regression_data(method=methods,
                                        dataset=dataset,
                                        n_features=n_features,
                                        reg_metric=regression_metric,
                                        item='min').to_numpy().tolist()
+
     reg_max = pod.get_regression_data(method=methods,
                                       dataset=dataset,
                                       n_features=n_features,
@@ -246,12 +298,7 @@ def plot_performance_series(pod: BenchmarkPOD,
                                       item='max').to_numpy().tolist()
 
     # calculate offset x coordinates
-    x_coords = []
-    ticks = np.array(n_features if n_features is not None else pod.n_features)
-    n_methods = len(methods if methods is not None else pod.methods)
-    for i in range(n_methods):
-        x_coords.append(-0.1 + ticks + (0.2/(n_methods - 1)) * i)
-
+    x_coords, ticks = _arrange_boxes(pod, n_features, methods)
 
     _errorbar_plot(f'Regression performance: {item} and range on dataset {dataset}',
                    "n_features",
@@ -260,6 +307,8 @@ def plot_performance_series(pod: BenchmarkPOD,
                    reg_max,
                    reg_mins,
                    x_coords,
+                   n_features if n_features is not None else pod.n_features,
+                   ticks,
                    methods if methods is not None else pod.methods,
                    plot_lines=False,
                    save_path=save_path

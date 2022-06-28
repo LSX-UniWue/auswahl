@@ -32,7 +32,7 @@ ivissa = iVISSA(n_intervals_to_select=2, interval_width=10)
 ex = ExceptionalSelector(n_features_to_select=10)
 
 pod = benchmark((x, y, 'nitrogen', 0.9),
-                features=[(1, 10), (10, 1)],
+                features=[10, 11],
                 n_runs=3,
                 reg_metrics=[mean_squared_error],
                 #stab_metrics=[zucknick_score],
@@ -41,7 +41,10 @@ pod = benchmark((x, y, 'nitrogen', 0.9),
                 n_jobs=1,
                 verbose=True)
 
-print(pod.get_selection_data(sample_run=2))
+#print(pod.get_selection_data(sample_run=2))
+
+plot_score(pod)
+#print(pod.get_regression_data(n_features=11, item='samples'))
 
 #plot_score_stability_box(pod, dataset='nitrogen', n_features="5")
 

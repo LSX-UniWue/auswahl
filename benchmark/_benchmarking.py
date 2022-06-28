@@ -452,11 +452,10 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
         pod: BenchmarkPOD
             TODO
     """
-
-    features, feature_keys = _check_feature_consistency(methods, features)
-
     speaker = Speaker(verbose)
     logger = ErrorLogger(log_file=error_log_file)
+
+    features, feature_keys = _check_feature_consistency(methods, features)
 
     xs, ys, dataset_names, train_sizes = _check_datasets(data)
     reg_metrics, reg_metric_names = _unpack_metrics(reg_metrics, compulsory=True)
@@ -503,8 +502,8 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
                                                                            run_seeds[r], r)
                                               for r in range(n_runs))
 
-            # insert the results of the processes into the BenchmarkPOD object or the error log
-            _pot(pod, dataset_names[d], features[i], method_names, reg_metric_names, results, logger)
+                # insert the results of the processes into the BenchmarkPOD object or the error log
+                _pot(pod, dataset_names[d], features[i], method_names, reg_metric_names, results, logger)
 
     # dump error log
     logger.write_log()
