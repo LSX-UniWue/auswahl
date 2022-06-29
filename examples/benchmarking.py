@@ -31,11 +31,11 @@ ipls = IPLS(n_intervals_to_select=1, interval_width=10, n_jobs=2)
 ivissa = iVISSA(n_intervals_to_select=2, interval_width=10)
 ex = ExceptionalSelector(n_features_to_select=10)
 
-pod = benchmark((x, y, 'nitrogen', 0.9),
-                features=[10, 11],
-                n_runs=3,
+pod = benchmark([(x, y, 'nitrogen', 0.9)],
+                features=[i for i in range(10, 100, 5)],
+                n_runs=10,
                 reg_metrics=[mean_squared_error],
-                #stab_metrics=[zucknick_score],
+                stab_metrics=[deng_score],
                 methods=[mcuve, vip],
                 random_state=11111111,
                 n_jobs=1,
@@ -43,7 +43,13 @@ pod = benchmark((x, y, 'nitrogen', 0.9),
 
 #print(pod.get_selection_data(sample_run=2))
 
-plot_score(pod)
+#plot_score(pod)
+#plot_exec_time(pod, dataset='nitrogen')
+#plot_score(pod, dataset='nitrogen', regression_metric=mean_absolute_error, plot_type='box')
+#plot_score_vs_stability(pod, n_features=10)
+plot_stability(pod)
+
+
 #print(pod.get_regression_data(n_features=11, item='samples'))
 
 #plot_score_stability_box(pod, dataset='nitrogen', n_features="5")

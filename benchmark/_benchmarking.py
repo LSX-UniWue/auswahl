@@ -169,7 +169,7 @@ def _check_name_uniqueness(name_list: List[str], identifier):
             name of the list for reference in a possible exception to be raised
     """
     if len(name_list) != np.unique(name_list).size:
-        raise ValueError('The names in {identifier} need to be unique')
+        raise ValueError(f'The names in {identifier} need to be unique')
 
 
 def _unpack_methods(methods):
