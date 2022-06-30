@@ -10,7 +10,7 @@ TODO: extend
 import pickle
 
 import numpy as np
-from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, VISSA, RandomFrog, iVISSA, ExceptionalSelector
+from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, FiPLS
 from benchmark import *
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error
@@ -25,29 +25,27 @@ cars = CARS(n_features_to_select=10, n_jobs=2)
 vip = VIP(n_features_to_select=10, model_hyperparams={'n_components': [1, 2, 3]})
 ipls = IPLS(interval_width=10, n_jobs=2)
 vip_spa = VIP_SPA(n_features_to_select=10, n_jobs=2)
-rf = RandomFrog(n_features_to_select=10)
-ipls = IPLS(n_intervals_to_select=1, interval_width=10, n_jobs=2)
+ipls = IPLS(interval_width=10, n_jobs=2)
+fipls = FiPLS(interval_width=10)
 
-ivissa = iVISSA(n_intervals_to_select=2, interval_width=10)
-ex = ExceptionalSelector(n_features_to_select=10)
 
 pod = benchmark([(x, y, 'nitrogen', 0.9)],
-                features=[i for i in range(10, 100, 5)],
+                features=[(2, 10), (2, 11), (2, 12)],
                 n_runs=10,
                 reg_metrics=[mean_squared_error],
                 stab_metrics=[deng_score],
-                methods=[mcuve, vip],
+                methods=[mcuve, vip, cars, ipls, fipls],
                 random_state=11111111,
-                n_jobs=1,
+                n_jobs=2,
                 verbose=True)
 
 #print(pod.get_selection_data(sample_run=2))
 
-#plot_score(pod)
+plot_score(pod, save_path="./performance.png")
 #plot_exec_time(pod, dataset='nitrogen')
 #plot_score(pod, dataset='nitrogen', regression_metric=mean_absolute_error, plot_type='box')
 #plot_score_vs_stability(pod, n_features=10)
-plot_stability(pod)
+#plot_stability(pod)
 
 
 #print(pod.get_regression_data(n_features=11, item='samples'))

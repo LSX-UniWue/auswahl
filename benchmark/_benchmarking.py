@@ -498,9 +498,9 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
 
                 _parameterize(methods, n)
                 results = parallel(delayed(_benchmark_parallel)(xs[d], ys[d], train_sizes[d],
-                                                                           methods, method_names, reg_metrics,
-                                                                           run_seeds[r], r)
-                                              for r in range(n_runs))
+                                                                methods, method_names, reg_metrics,
+                                                                run_seeds[r], r)
+                                   for r in range(n_runs))
 
                 # insert the results of the processes into the BenchmarkPOD object or the error log
                 _pot(pod, dataset_names[d], features[i], method_names, reg_metric_names, results, logger)

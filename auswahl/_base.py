@@ -24,7 +24,7 @@ class CVEvaluator:
             raise ValueError(f'Keyword argument "n_cv_folds" is expected to be a positive integer. Got {self.cv_folds}')
 
     def _evaluate(self, X, y, model, do_cv=True):
-        model = PLSRegression() if model is None else clone(model)
+        model = PLSRegression(n_components=min(2, X.shape[1])) if model is None else clone(model)
         if self.model_hyperparams is None:  # no hyperparameter optimization; conduct a simple CV
             cv_scores = None
             if do_cv:

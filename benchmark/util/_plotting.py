@@ -21,12 +21,24 @@ def _check_specified_or_singleton(pool, argument, identifier):
 
 
 # go
+def _check_valid_feature_descriptor(feature):
+    if isinstance(feature, tuple):
+        if len(feature) != 2:
+            raise ValueError('A number of features is specified with a tuple of two integers. '
+                             f'Got {feature}')
+        # check integer? -> let that handle the data handling
+    elif not isinstance(feature, int):
+        raise ValueError('A number of features is specified with an integer. '
+                         f'Got {feature}')
+
+
+# go
 def _arrange_boxes(pod, n_features, methods):
     x_coords = []
     ticks = np.arange(len(n_features) if n_features is not None else len(pod.n_features)) + 1  #start with 1
     n_methods = len(methods if methods is not None else pod.methods)
     for i in range(n_methods):
-        x_coords.append((-0.1 + ticks + (0.2 / (n_methods - 1)) * i).tolist())
+        x_coords.append((-0.15 + ticks + (0.3 / (n_methods - 1)) * i).tolist())
     return x_coords, ticks
 
 
@@ -47,6 +59,9 @@ def _box_plot(title: str,
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
     legend_handles = []
 
+    # adapt box width to the offsetting and the number of methods
+    box_width = (0.3 * 0.9) / len(y_data)
+
     if legend is None:
         plotting_kwargs = dict()
         for entity in entities:
@@ -58,10 +73,7 @@ def _box_plot(title: str,
             for entity in entities:
                 plotting_kwargs[entity] = dict(color=colors(i))
 
-        #if not isinstance(data, list):  # only a single box per method
-            #data = [data]
-
-        ax.boxplot(data, positions=x_data[i], whis=(0, 100), widths=0.05, manage_ticks=False, **plotting_kwargs)
+        ax.boxplot(data, positions=x_data[i], whis=(0, 100), widths=box_width, manage_ticks=False, **plotting_kwargs)
 
         if legend is not None:
             legend_handles.append(mpatches.Patch(color=colors(i), label=legend[i]))
@@ -69,6 +81,7 @@ def _box_plot(title: str,
     ax.set_title(title)
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
+    ax.grid(axis='y')
 
     if ticks is not None:  # apply custom ticking and labelling
         ax.set_xticklabels(tick_labels)
@@ -122,6 +135,7 @@ def _errorbar_plot(title: str,
     ax.set_xticklabels(tick_labels)
     ax.set_xticks(ticks)
     ax.legend(handles=legend_handles)
+    ax.grid(axis='y')
 
     if save_path is not None:
         plt.savefig(save_path)
@@ -152,6 +166,7 @@ def _line_plot(title: str,
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.legend(handles=legend_handles)
+    ax.grid(axis='y')
 
     if save_path is not None:
         plt.savefig(save_path)
@@ -232,6 +247,7 @@ def plot_exec_time(pod: BenchmarkPOD,
                    save_path: str = None):
 
     """
+        Plots execution times of selectors across different number of features to be selected
 
     Parameters
     ----------
@@ -380,10 +396,11 @@ def plot_score(pod: BenchmarkPOD,
                methods: Union[str, List[str]] = None,
                n_features: List[Union[int, Tuple[int, int]]] = None,
                item: Literal['mean', 'median'] = 'mean',
-               plot_type: Literal['box', 'bar'] = 'bar',
+               plot_type: Literal['box', 'bar'] = 'box',
                save_path: str = None):
 
     """
+        Plot regression scores of selectors across different number of features to be selected as box or bar plot
 
     Parameters
     ----------
@@ -453,6 +470,7 @@ def plot_stability(pod: BenchmarkPOD,
                save_path)
 
 
+# go
 def _plot_selection_bar(pod: BenchmarkPOD,
                         dataset: str,
                         n_features: int,
@@ -464,10 +482,10 @@ def _plot_selection_bar(pod: BenchmarkPOD,
     fig = plt.figure()
     gs = fig.add_gridspec(len(methods), hspace=0)
     axs = gs.subplots(sharex=True, sharey=True)
-    fig.suptitle(f'Displaying selection probability P on dataset {dataset} for {n_features} features to be selected')
+    fig.suptitle(f'Selection probability P on dataset {dataset} for {n_features} features.')
 
     selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features)
-    n_wavelengths = pod.get_meta(dataset)[2][1]
+    n_wavelengths = pod.get_meta(dataset)[2][1]  # TODO: improve this interface
 
     if len(methods) == 1:
         axs = [axs]
@@ -479,7 +497,7 @@ def _plot_selection_bar(pod: BenchmarkPOD,
         bar_heights[unique_counts.index.to_numpy().astype('int')] = unique_counts.to_numpy()
 
         axs[i].bar(np.arange(n_wavelengths), bar_heights / pod.n_runs, color=colors[i % 2])
-        if i % 2 == 0:  # distribute y-axis ticks between left and right hand side
+        if i % 2 == 0:  # distribute y-axis ticks between left and right-hand side
             axs[i].yaxis.tick_right()
         else:
             axs[i].yaxis.set_label_position("right")
@@ -500,8 +518,8 @@ def _plot_selection_bar(pod: BenchmarkPOD,
 
 # TODO: probably to be discarded
 def _plot_selection_heatmap(pod: BenchmarkPOD,
-                            dataset: str,
                             n_features: int,
+                            dataset: str = None,
                             methods: Union[str, List[str]] = None,
                             save_path: str = None):
 
@@ -532,27 +550,38 @@ def _plot_selection_heatmap(pod: BenchmarkPOD,
 
 
 def plot_selection(pod: BenchmarkPOD,
-                   dataset: str,
-                   n_features: int,
+                   n_features: Union[int, Tuple[int, int]],
+                   dataset: str = None,
                    methods: Union[str, List[str]] = None,
                    plot_type: Literal['heatmap', 'bar'] = 'bar',
                    save_path: str = None):
 
     """
-            TODO
-    Parameters
-    ----------
-    pod
-    dataset
-    n_features
-    methods
-    plot_type
-    save_path
 
-    Returns
-    -------
+        Plots the selection probabililty for features of different selectors
+
+     Parameters
+     ----------
+    pod: BenchmarkPOD
+        BenchmarkPOD object containing the benchmarking data
+    dataset: str
+        dataset identifier
+    stability_metric: str
+        stability metric used for plotting
+    methods: Union[str, List[str]], default=None
+        method identifier or list of method identifiers for methods to be plotted. If None, all available methods
+        are plotted
+    plot_type: Literal['heatmap', 'bar'], default='bar'
+        plot type displayed
+    save_path: str, default=None
+        path on which to store the plot. If None, the plot is simply displayed
 
     """
+    dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
+    _check_valid_feature_descriptor(n_features)
+
+    if methods is None:
+        methods = pod.methods
 
     if plot_type == 'bar':
         _plot_selection_bar(pod, dataset, n_features, methods, save_path)

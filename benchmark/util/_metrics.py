@@ -5,14 +5,21 @@ import pandas as pd
 from ._data_handling import BenchmarkPOD
 
 
+def _resolve_tuple(n):
+    if isinstance(n, tuple):
+        return n[0] * n[1]
+    return n
+
+
 def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str):
     r = pod.n_runs
     for n in pod.n_features:
+        n_resolved = _resolve_tuple(n)
         for method in pod.methods:
             for dataset in pod.datasets:
                 # retrieve the samples of selected features
                 supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy()
-                supports = np.reshape(supports, newshape=(r, n))  # reshape to sample_runs x n_features selected
+                supports = np.reshape(supports, newshape=(r, n_resolved))  # reshape to sample_runs x n_features selected
 
                 pairwise_sim = []
                 dim0, dim1 = np.triu_indices(r)
@@ -21,7 +28,7 @@ def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str
                         pairwise_sim.append(pairwise_sim_function(pod,
                                                                   support_1=supports[dim0[i]],
                                                                   support_2=supports[dim1[i]],
-                                                                  n_features=n,
+                                                                  n_features=n_resolved,
                                                                   method=method,
                                                                   dataset=dataset))
                 score = np.sum(np.array(pairwise_sim)) * (2 / (r * (r - 1)))
@@ -133,5 +140,3 @@ def mean_std_statistics(pod: BenchmarkPOD):
     samples = pod.get_measurement_data(item='samples')
     grouped = samples.groupby(axis=1, level=['dataset', 'n_features'], sort=False)
     _register_stats(pod.register_measurement, grouped)
-
-
