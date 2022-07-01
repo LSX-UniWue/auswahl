@@ -3,3 +3,4 @@ numba
 scipy
 scikit-learn
 pandas
+matplotlib

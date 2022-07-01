@@ -1,6 +1,6 @@
 
 import numpy as np
-import pandas as pd
+import warnings
 import matplotlib.patches as mpatches
 
 from typing import List, Union, Literal, Tuple
@@ -37,8 +37,11 @@ def _arrange_boxes(pod, n_features, methods):
     x_coords = []
     ticks = np.arange(len(n_features) if n_features is not None else len(pod.n_features)) + 1  #start with 1
     n_methods = len(methods if methods is not None else pod.methods)
-    for i in range(n_methods):
-        x_coords.append((-0.15 + ticks + (0.3 / (n_methods - 1)) * i).tolist())
+    if len(methods) > 1:
+        for i in range(n_methods):
+            x_coords.append((-0.15 + ticks + (0.3 / (n_methods - 1)) * i).tolist())
+    else:
+        x_coords = [ticks]
     return x_coords, ticks
 
 
@@ -53,14 +56,17 @@ def _box_plot(title: str,
               ticks: List[Union[int, float]] = None,
               save_path: str = None):
 
-    colors = plt.cm.get_cmap('hsv', len(y_data) + 1)
+    colors = plt.cm.get_cmap('Accent', len(y_data) + 1)
     entities = ['boxprops', 'medianprops', 'flierprops', 'capprops', 'whiskerprops']
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
     legend_handles = []
 
-    # adapt box width to the offsetting and the number of methods
-    box_width = (0.3 * 0.9) / len(y_data)
+    # adapt box width to the offsetting and the number of methods if a custom ticking is used
+    if tick_labels is not None:
+        box_width = (0.3 * 0.9) / len(y_data)
+    else:
+        box_width = 0.05
 
     if legend is None:
         plotting_kwargs = dict()
@@ -84,15 +90,18 @@ def _box_plot(title: str,
     ax.grid(axis='y')
 
     if ticks is not None:  # apply custom ticking and labelling
-        ax.set_xticklabels(tick_labels)
-        ax.set_xticks(ticks)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore")
+            ax.set_xticklabels(tick_labels)
+            ax.set_xticks(ticks)
 
     if legend is not None:
         ax.legend(handles=legend_handles)
 
     if save_path is not None:
         plt.savefig(save_path)
-    plt.show()
+    else:
+        plt.show()
 
 
 # go
@@ -109,7 +118,7 @@ def _errorbar_plot(title: str,
                    plot_lines: bool = True,
                    save_path: str = None):
 
-    colors = plt.cm.get_cmap('hsv', y_data.shape[0] + 1)
+    colors = plt.cm.get_cmap('Accent', y_data.shape[0] + 1)
     markers = [c for c in ".ov^<>12348sp*hH+xDd|"]
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
@@ -129,48 +138,57 @@ def _errorbar_plot(title: str,
                     linestyle='dotted' if plot_lines else 'none')
         legend_handles.append(mpatches.Patch(color=colors(i), label=legend[i]))
 
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.set_xticklabels(tick_labels)
-    ax.set_xticks(ticks)
-    ax.legend(handles=legend_handles)
-    ax.grid(axis='y')
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        ax.set_title(title)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        ax.set_xticklabels(tick_labels)
+        ax.set_xticks(ticks)
+        ax.legend(handles=legend_handles)
+        ax.grid(axis='y')
 
     if save_path is not None:
         plt.savefig(save_path)
-    plt.show()
+    else:
+        plt.show()
 
 def _line_plot(title: str,
                x_label: str,
                y_label: str,
                y_data: List[List[float]],
-               x_data: List[List[Union[float, int]]],
+               x_data: List[Union[int, Tuple[int, int]]],
                legend: List[str],
                save_path: str = None):
 
-    colors = plt.cm.get_cmap('hsv', len(y_data) + 1)
+    colors = plt.cm.get_cmap('Accent', len(y_data) + 1)
     markers = [c for c in ".ov^<>12348sp*hH+xDd|"]
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
     legend_handles = []
 
+    positions = np.arange(len(x_data))
     for i, y_data in enumerate(y_data):
-        ax.errorbar(x_data[i] if len(x_data) > 1 else x_data[0],
+        ax.errorbar(positions,
                     y_data,
                     color=colors(i),
                     marker=markers[i])
         legend_handles.append(mpatches.Patch(color=colors(i), label=legend[i]))
 
-    ax.set_title(title)
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.legend(handles=legend_handles)
-    ax.grid(axis='y')
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        ax.set_title(title)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        ax.set_xticks(positions)
+        ax.set_xticklabels(x_data)
+        ax.legend(handles=legend_handles)
+        ax.grid(axis='y')
 
     if save_path is not None:
         plt.savefig(save_path)
-    plt.show()
+    else:
+        plt.show()
 
 
 # go
@@ -219,15 +237,16 @@ def plot_score_vs_stability(pod: BenchmarkPOD,
     stability_metric = _check_specified_or_singleton(pod.stab_metrics, stability_metric, identifier='stability metric')
 
     reg_data = pod.get_regression_data(dataset=dataset,
-                                          method=methods,
-                                          n_features=n_features,
-                                          reg_metric=regression_metric,
-                                          item='samples').to_numpy().tolist()
+                                       method=methods,
+                                       n_features=n_features,
+                                       reg_metric=regression_metric,
+                                       item='samples').to_numpy().tolist()
 
     stab_data = pod.get_stability_data(dataset=dataset,
                                        method=methods,
                                        n_features=n_features,
                                        stab_metric=stability_metric).to_numpy().tolist()
+    stab_data = np.expand_dims(stab_data, axis=-1).tolist()
 
     _box_plot("Regression-Stability-Plot",
               stability_metric,
@@ -268,10 +287,13 @@ def plot_exec_time(pod: BenchmarkPOD,
 
     """
 
-    dataset = _check_specified_or_singleton(pod.datasets, dataset)
+    dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
 
     if n_features is not None and not isinstance(n_features, list):
         n_features = [n_features]
+
+    if methods is None:
+        methods = pod.methods
 
     exec_times = pod.get_measurement_data(dataset=dataset,
                                           method=methods,
@@ -298,7 +320,8 @@ def plot_exec_time(pod: BenchmarkPOD,
                    n_features if n_features is not None else pod.n_features,
                    ticks,
                    methods if methods is not None else pod.methods,
-                   save_path)
+                   plot_lines=False,
+                   save_path=save_path)
 
 
 # go
@@ -312,6 +335,9 @@ def _plot_score_box(pod: BenchmarkPOD,
     regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric,
                                                       identifier='regression metric')
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
+
+    if methods is None:
+        methods = pod.methods
 
     if n_features is not None and not isinstance(n_features, list):
         n_features = [n_features]
@@ -459,7 +485,7 @@ def plot_stability(pod: BenchmarkPOD,
     stability_metric = _check_specified_or_singleton(pod.stab_metrics, stability_metric, identifier='stability metric')
 
     y_data = pod.get_stability_data(method=methods, dataset=dataset, stab_metric=stability_metric).to_numpy().tolist()
-    x_data = [pod.n_features]
+    x_data = pod.n_features
 
     _line_plot(f'Stability across n_features to select: Dataset {dataset}',
                "n_features",
@@ -513,7 +539,8 @@ def _plot_selection_bar(pod: BenchmarkPOD,
 
     if save_path is not None:
         plt.savefig(save_path)
-    plt.show()
+    else:
+        plt.show()
 
 
 # TODO: probably to be discarded
@@ -546,7 +573,8 @@ def _plot_selection_heatmap(pod: BenchmarkPOD,
 
     if save_path is not None:
         plt.savefig(save_path)
-    plt.show()
+    else:
+        plt.show()
 
 
 def plot_selection(pod: BenchmarkPOD,

@@ -222,8 +222,7 @@ class BenchmarkPOD:
                             method: Union[str, List[str]] = None,
                             n_features: Union[int, List[int]] = None,
                             reg_metric: Union[str, List[str]] = None,
-                            item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None
-                            ):
+                            item: Literal['mean', 'std', 'median', 'max', 'min', 'samples'] = None) -> pd.DataFrame:
         """
             Retrieve data related to the regression performance of feature selection methods
 
@@ -254,7 +253,7 @@ class BenchmarkPOD:
                            method: Union[str, List[str]] = None,
                            n_features: Union[int, Tuple[int], List[int], List[Tuple[int]]] = None,
                            sample_run: Union[int, List[int]] = None,
-                           selected_features: Union[int, List[int]] = None):
+                           selected_features: Union[int, List[int]] = None) -> pd.DataFrame:
         """
             Retrieve data related to the regression performance of feature selection methods.
 
@@ -297,7 +296,7 @@ class BenchmarkPOD:
                            dataset: Union[str, List[str]] = None,
                            method: Union[str, List[str]] = None,
                            n_features: Union[int, List[int]] = None,
-                           stab_metric: Union[str, List[str]] = None):
+                           stab_metric: Union[str, List[str]] = None) -> pd.DataFrame:
         """
             Retrieve data related to the stability of feature selection methods
 
