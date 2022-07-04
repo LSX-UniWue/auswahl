@@ -16,7 +16,7 @@ URL = 'https://github.com/mcFloskel/auswahl'
 LICENSE = 'MIT'
 DOWNLOAD_URL = 'https://github.com/mcFloskel/auswahl'
 VERSION = __version__
-INSTALL_REQUIRES = ['numpy', 'scipy', 'scikit-learn']
+INSTALL_REQUIRES = open('requirements.txt').read().split('\n')
 CLASSIFIERS = ['Intended Audience :: Science/Research',
                'Intended Audience :: Developers',
                'License :: OSI Approved',
