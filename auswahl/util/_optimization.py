@@ -1,13 +1,12 @@
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 
-def optimize_intervals(n_intervals: int, interval_width: int, feature_scores: np.array):
 
-    """
-        The algorithm calculates the optimal non-overlapping placement of n_intervals of width interval_width into
-        the range of features. The feature scores are specified in feature_scores (greater better).
-        The algorithm can be used for instance to turn every point selection algorithm yielding a score for each feature (such as VIP)
-        into an interval selection algorithm
+def optimize_intervals(n_intervals: int, interval_width: int, feature_scores: np.array):
+    """The algorithm calculates the optimal non-overlapping placement of n_intervals of width interval_width into
+    the range of features. The feature scores are specified in feature_scores (greater better).
+    The algorithm can be used for instance to turn every point selection algorithm yielding a score for each feature
+    (such as VIP) into an interval selection algorithm
 
     Parameters
     ----------
@@ -36,10 +35,10 @@ def optimize_intervals(n_intervals: int, interval_width: int, feature_scores: np
     interval_starts = [[[] for _ in range(n_intervals + 1)] for _ in range(feature_scores.size)]
 
     for i in range(interval_width - 1, feature_scores.size):
-        for k in range(1, min((i+1) // interval_width, n_intervals) + 1):
+        for k in range(1, min((i + 1) // interval_width, n_intervals) + 1):
             # iterate through placements of the last interval in the considered interval
             scores = [(p, interval_scores[p] + table[p - 1, k - 1]) for p in range(i - interval_width + 1,
-                                                                         (k - 1) * interval_width - 1, -1)]
+                                                                                   (k - 1) * interval_width - 1, -1)]
             pos, score = max(scores, key=lambda x: x[1])
             table[i, k] = score
             interval_starts[i][k] = interval_starts[pos - 1][k - 1] + [pos]
