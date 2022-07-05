@@ -1,5 +1,6 @@
 # Python
 __pycache__/
+*.pyc
 
 # Distribution / packaging
 .Python
