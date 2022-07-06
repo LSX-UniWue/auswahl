@@ -3,4 +3,5 @@ numba
 scipy
 scikit-learn
 pandas
+joblib
 matplotlib
