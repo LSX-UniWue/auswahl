@@ -7,14 +7,13 @@ Example demonstrating the feature selection benchmarking facilities.
 TODO: extend
 
 """
-import pickle
 
 import numpy as np
-import pandas as pd
-from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, FiPLS
-from benchmark import *
+from sklearn.metrics import mean_squared_error
 
-from sklearn.metrics import mean_squared_error, mean_absolute_error
+from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, FiPLS
+from auswahl.benchmarking import benchmark, deng_score, plot_score, plot_score_vs_stability, plot_stability, \
+    plot_exec_time, plot_selection, load_pod
 
 # load sample dataset
 x = np.load("./data/spectra.npy")

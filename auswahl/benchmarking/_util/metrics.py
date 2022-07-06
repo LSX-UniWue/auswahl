@@ -1,8 +1,6 @@
 import numpy as np
-import pandas
-import pandas as pd
 
-from ._data_handling import BenchmarkPOD
+from .data_handling import BenchmarkPOD
 
 
 def _resolve_tuple(n):

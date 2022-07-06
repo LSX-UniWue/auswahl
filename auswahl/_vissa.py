@@ -1,17 +1,16 @@
+import warnings
 from typing import Union, Dict, List
 
 import numpy as np
+from joblib import Parallel, delayed
 from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
+from sklearn.model_selection import cross_val_score
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_is_fitted
-from sklearn.model_selection import cross_val_score
-from joblib import Parallel, delayed
 
-import warnings
-
-from auswahl.util._optimization import optimize_intervals
-from auswahl._base import PointSelector, IntervalSelector
+from ._base import PointSelector, IntervalSelector
+from .util import optimize_intervals
 
 
 class _VISSA:

@@ -1,12 +1,11 @@
-
-import numpy as np
 import warnings
-import matplotlib.patches as mpatches
-
 from typing import List, Union, Literal, Tuple
+
+import matplotlib.patches as mpatches
+import numpy as np
 from matplotlib import pyplot as plt
 
-from ._data_handling import BenchmarkPOD
+from .data_handling import BenchmarkPOD
 
 
 # go

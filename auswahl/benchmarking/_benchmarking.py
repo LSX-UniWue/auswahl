@@ -1,21 +1,19 @@
-import numpy as np
-import time
 import copy
-import traceback
 import json
-
-from numpy.random import RandomState
+import time
+import traceback
 from typing import Union, List, Tuple, Callable
 
-from sklearn.utils import check_random_state
-from sklearn.model_selection import train_test_split
-from sklearn.base import BaseEstimator
-
-from auswahl import PointSelector, IntervalSelector
-from benchmark.util._data_handling import BenchmarkPOD
-from benchmark.util._metrics import mean_std_statistics
-
+import numpy as np
 from joblib import Parallel, delayed
+from numpy.random import RandomState
+from sklearn.base import BaseEstimator
+from sklearn.model_selection import train_test_split
+from sklearn.utils import check_random_state
+
+from ._util.data_handling import BenchmarkPOD
+from ._util.metrics import mean_std_statistics
+from .. import PointSelector, IntervalSelector
 
 
 class Speaker:

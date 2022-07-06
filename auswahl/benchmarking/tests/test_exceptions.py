@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.cross_decomposition import PLSRegression
 
 from auswahl import VIP, IPLS
-from benchmark import benchmark, deng_score
+from auswahl.benchmarking import deng_score, benchmark
 
 
 def _benchmark_interface_reduced_dof(data=[(np.zeros((50, 100)), np.zeros((50,)), 'test_dataset')],

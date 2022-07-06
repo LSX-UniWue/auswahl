@@ -1,7 +1,4 @@
-
 import pickle
-
-from ._data_handling import BenchmarkPOD
 
 
 def load_pod(file_path: str):
