@@ -1,13 +1,11 @@
-
-import numpy as np
-
 from typing import Union, List, Dict
 from warnings import warn
-from sklearn import clone
+
+import numpy as np
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
 
-from auswahl._base import PointSelector
+from ._base import PointSelector
 
 
 class VIP(PointSelector):

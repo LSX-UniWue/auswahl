@@ -10,7 +10,7 @@ from sklearn.feature_selection import SelectorMixin
 from sklearn.model_selection import cross_val_score, KFold
 from sklearn.utils.validation import check_is_fitted, check_random_state, check_scalar
 
-from auswahl._base import PointSelector, IntervalSelector
+from ._base import PointSelector, IntervalSelector
 
 
 class _RandomFrog(SelectorMixin, BaseEstimator, metaclass=ABCMeta):

@@ -1,15 +1,13 @@
+from typing import Union, Dict, List
 
 import numpy as np
-
-from typing import Union, Dict, List
-from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
-from sklearn.utils import check_random_state
-from sklearn.utils.validation import check_is_fitted, check_scalar
+from sklearn.utils.validation import check_is_fitted
 
-from auswahl._base import PointSelector
-from auswahl._vip import VIP
-from auswahl._spa import SPA
+from ._base import PointSelector
+from ._spa import SPA
+from ._vip import VIP
+
 
 class VIP_SPA(PointSelector):
 

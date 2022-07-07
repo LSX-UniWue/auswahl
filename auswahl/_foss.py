@@ -1,14 +1,14 @@
-from typing import Union, Dict
+from typing import Union
 
 import numpy as np
 from numba import jit
 from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
-from sklearn.utils.validation import check_is_fitted
-from sklearn.utils import check_random_state
 from sklearn.model_selection import cross_val_score
+from sklearn.utils import check_random_state
+from sklearn.utils.validation import check_is_fitted
 
-from auswahl._base import IntervalSelector
+from ._base import IntervalSelector
 
 
 @jit(nopython=True)

@@ -1,13 +1,11 @@
+from typing import Union, List, Dict
 
 import numpy as np
-
-from typing import Union, List, Dict
-from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_is_fitted, check_scalar
 
-from auswahl._base import PointSelector
+from ._base import PointSelector
 
 
 class MCUVE(PointSelector):

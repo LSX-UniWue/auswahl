@@ -1,15 +1,12 @@
+import warnings
 from typing import Union, Dict, List
 
-import warnings
 import numpy as np
-from sklearn import clone
+from joblib import Parallel, delayed
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
-from sklearn.model_selection import cross_val_score
 
-from joblib import Parallel, delayed
-
-from auswahl._base import IntervalSelector
+from ._base import IntervalSelector
 
 
 class IPLS(IntervalSelector):

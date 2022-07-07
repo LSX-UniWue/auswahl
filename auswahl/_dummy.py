@@ -1,5 +1,6 @@
 from typing import Union
-from auswahl._base import PointSelector, IntervalSelector
+
+from ._base import PointSelector, IntervalSelector
 
 
 class DummyPointSelector(PointSelector):

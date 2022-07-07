@@ -1,16 +1,14 @@
 from abc import ABCMeta, abstractmethod
 from typing import Union, List
 
+import numpy as np
 from sklearn import clone
 from sklearn.base import BaseEstimator
-from sklearn.feature_selection import SelectorMixin
-from sklearn.utils import check_scalar
-from sklearn.model_selection import GridSearchCV
 from sklearn.cross_decomposition import PLSRegression
+from sklearn.feature_selection import SelectorMixin
+from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
-
-
-import numpy as np
+from sklearn.utils import check_scalar
 
 
 class CVEvaluator:

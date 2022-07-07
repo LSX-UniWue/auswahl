@@ -1,14 +1,11 @@
+from typing import Union, List, Dict
 
 import numpy as np
-
-from sklearn import clone
+from joblib import Parallel, delayed
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
-from sklearn.model_selection import cross_val_score
-from typing import Union, List, Dict
-from joblib import Parallel, delayed
 
-from auswahl._base import PointSelector
+from ._base import PointSelector
 
 
 class SPA(PointSelector):

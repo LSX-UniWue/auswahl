@@ -2,12 +2,10 @@ from typing import Union, Dict, List
 
 import numpy as np
 from joblib import Parallel, delayed
-from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
-from sklearn.model_selection import cross_val_score
 from sklearn.utils.validation import check_is_fitted
 
-from auswahl import IntervalSelector
+from ._base import IntervalSelector
 
 
 class BiPLS(IntervalSelector):
@@ -80,8 +78,9 @@ class BiPLS(IntervalSelector):
                 x_free = X[:, selection]
                 n_features = x_free.shape[1]
                 evaluations = parallel(delayed(self._evaluate)
-                                  (np.delete(x_free, np.r_[i:min(n_features, i + interval_width)], axis=1), y, self.pls)
-                                  for i in range(0, n_features, interval_width))
+                                       (np.delete(x_free, np.r_[i:min(n_features, i + interval_width)], axis=1), y,
+                                        self.pls)
+                                       for i in range(0, n_features, interval_width))
                 scores, models = list(zip(*evaluations))
                 best = np.argmax(scores)
                 worst_interval = free_idx[best]

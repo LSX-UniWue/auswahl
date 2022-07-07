@@ -2,12 +2,10 @@ from typing import Union, List, Dict
 
 import numpy as np
 from joblib import Parallel, delayed
-from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
-from sklearn.model_selection import cross_val_score
 from sklearn.utils.validation import check_is_fitted
 
-from auswahl import IntervalSelector
+from ._base import IntervalSelector
 
 
 class FiPLS(IntervalSelector):

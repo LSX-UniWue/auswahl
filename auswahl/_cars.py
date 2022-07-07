@@ -1,16 +1,14 @@
+import warnings
 from typing import Union, Dict, List
 
 import numpy as np
+from joblib import Parallel, delayed
 from sklearn import clone
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_is_fitted
-from sklearn.model_selection import cross_val_score
-from joblib import Parallel, delayed
 
-import warnings
-
-from auswahl._base import PointSelector
+from ._base import PointSelector
 
 
 class CARS(PointSelector):
@@ -79,8 +77,8 @@ class CARS(PointSelector):
         array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
     
     """
-    
-    def __init__(self, 
+
+    def __init__(self,
                  n_features_to_select: int = None,
                  n_cars_runs: int = 20,
                  n_jobs: int = 1,
@@ -90,40 +88,40 @@ class CARS(PointSelector):
                  pls: PLSRegression = None,
                  model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
-        
+
         super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
-        
+
         self.pls = pls
         self.n_jobs = n_jobs
         self.n_cars_runs = n_cars_runs
         self.n_sample_runs = n_sample_runs
         self.fit_samples_ratio = fit_samples_ratio
         self.random_state = random_state
-        
+
     def _prepare_edf_schedule(self, n_wavelengths, ):
         a = (n_wavelengths/2)**(1/(self.n_sample_runs-1))
         k = np.log(n_wavelengths/2) / (self.n_sample_runs-1)
-        
+
         iterations = -k * (np.arange(0, self.n_sample_runs) + 1)
         selection_ratios = a * np.exp(iterations)
-        
+
         return (selection_ratios*n_wavelengths + 1e-10).astype('int')
-    
+
     def _get_wavelength_weights(self, X, y, n_fit_samples, wavelengths, pls, random_state):
         fitting_samples = random_state.choice(X.shape[0],
                                               n_fit_samples,
                                               replace=False)
-        
+
         x_pls_fit = X[fitting_samples, :][:, wavelengths]
         y_pls_fit = y[fitting_samples]
-        
+
         _, model = self._evaluate(x_pls_fit, y_pls_fit, pls, do_cv=False)
         weights = np.abs(model.coef_).flatten()
         wavelength_weights = np.zeros(X.shape[1])
         wavelength_weights[wavelengths] = weights
-        
+
         return wavelength_weights
-        
+
     def _fit_cars(self, X, y, n_features_to_select, edf_schedule, pls, seed):
         pls = PLSRegression() if pls is None else clone(pls)
         random_state = check_random_state(seed)
@@ -132,7 +130,7 @@ class CARS(PointSelector):
 
         wavelengths = np.arange(X.shape[1])
         for i in range(self.n_sample_runs):
-            
+
             weights = self._get_wavelength_weights(X, y,
                                                    n_fit_samples, wavelengths,
                                                    pls, random_state)
@@ -190,8 +188,8 @@ class CARS(PointSelector):
 
     def _get_support_mask(self):
         check_is_fitted(self)
-        return self.support_ 
-    
+        return self.support_
+
     def _check_fit_samples_ratio(self):
         if self.fit_samples_ratio < 0:
             raise ValueError('fit_sample_ratio is required to be in [0,1]. ' 
@@ -199,7 +197,7 @@ class CARS(PointSelector):
         if self.fit_samples_ratio > 1:
             warnings.warn(f'fit_samples_ratio clipped to 1. Got {self.fit_samples_ratio}')
             self.fit_samples_ratio = 1
-            
+
     def _check_n_sample_runs(self):
         if self.n_sample_runs < 2:
             raise ValueError('n_sample_runs is required to be >= 2. '
