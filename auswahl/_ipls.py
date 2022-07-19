@@ -7,6 +7,7 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
 
 from ._base import IntervalSelector
+from ._base import FeatureDescriptor
 
 
 class IPLS(IntervalSelector):
@@ -97,7 +98,8 @@ class IPLS(IntervalSelector):
         check_is_fitted(self)
         return self.support_
 
-    def set_interval_params(self, n_intervals, interval_width):
-        self.interval_width = n_intervals * interval_width
+    def reparameterize(self, feature_descriptor: FeatureDescriptor):
+        n_intervals_to_select, interval_width = feature_descriptor.get_params_for(self)
+        self.interval_width = n_intervals_to_select * interval_width
 
 

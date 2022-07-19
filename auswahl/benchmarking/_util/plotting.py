@@ -1,11 +1,20 @@
+
 import warnings
-from typing import List, Union, Literal, Tuple
+import pandas as pd
 
 import matplotlib.patches as mpatches
 import numpy as np
+
+from typing import List, Union, Literal, Tuple
+
 from matplotlib import pyplot as plt
 
 from .data_handling import BenchmarkPOD
+from ..._base import FeatureDescriptor
+
+
+def _to_string(items: list):
+    return [str(i) for i in items]
 
 
 # go
@@ -16,25 +25,13 @@ def _check_specified_or_singleton(pool, argument, identifier):
         elif len(pool) == 0:
             raise ValueError(f'No {identifier} specified during configuration of the benchmarking.')
         return pool[0]
-    return argument if isinstance(argument, str) else argument.__name__
-
-
-# go
-def _check_valid_feature_descriptor(feature):
-    if isinstance(feature, tuple):
-        if len(feature) != 2:
-            raise ValueError('A number of features is specified with a tuple of two integers. '
-                             f'Got {feature}')
-        # check integer? -> let that handle the data handling
-    elif not isinstance(feature, int):
-        raise ValueError('A number of features is specified with an integer. '
-                         f'Got {feature}')
+    return argument #argument if isinstance(argument, str) else argument.__name__
 
 
 # go
 def _arrange_boxes(pod, n_features, methods):
     x_coords = []
-    ticks = np.arange(len(n_features) if n_features is not None else len(pod.n_features)) + 1  #start with 1
+    ticks = np.arange(len(n_features) if n_features is not None else len(pod.feature_descriptors)) + 1  #start with 1
     n_methods = len(methods if methods is not None else pod.methods)
     if len(methods) > 1:
         for i in range(n_methods):
@@ -190,9 +187,9 @@ def _line_plot(title: str,
         plt.show()
 
 
-# go
+# go -> confirmed
 def plot_score_vs_stability(pod: BenchmarkPOD,
-                            n_features: Union[int, Tuple[int]],
+                            n_features: Union[int, Tuple[int]] = None,
                             dataset: str = None,
                             stability_metric: str = None,
                             regression_metric: str = None,
@@ -232,20 +229,19 @@ def plot_score_vs_stability(pod: BenchmarkPOD,
     """
 
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
+    n_features = _check_specified_or_singleton(pod.feature_descriptors, n_features, identifier='n_features')
     regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric, identifier='regression metric')
     stability_metric = _check_specified_or_singleton(pod.stab_metrics, stability_metric, identifier='stability metric')
 
     reg_data = pod.get_regression_data(dataset=dataset,
                                        method=methods,
                                        n_features=n_features,
-                                       reg_metric=regression_metric,
-                                       item='samples').to_numpy().tolist()
+                                       reg_metric=regression_metric).to_numpy().tolist()
 
     stab_data = pod.get_stability_data(dataset=dataset,
                                        method=methods,
                                        n_features=n_features,
                                        stab_metric=stability_metric).to_numpy().tolist()
-    stab_data = np.expand_dims(stab_data, axis=-1).tolist()
 
     _box_plot("Regression-Stability-Plot",
               stability_metric,
@@ -256,7 +252,7 @@ def plot_score_vs_stability(pod: BenchmarkPOD,
               save_path=save_path)
 
 
-# go
+# go -> confirmed
 def plot_exec_time(pod: BenchmarkPOD,
                    dataset: str = None,
                    methods: Union[str, List[str]] = None,
@@ -296,16 +292,19 @@ def plot_exec_time(pod: BenchmarkPOD,
 
     exec_times = pod.get_measurement_data(dataset=dataset,
                                           method=methods,
-                                          n_features=n_features,
-                                          item=item).to_numpy()
-    exec_mins = pod.get_measurement_data(dataset=dataset,
-                                         method=methods,
-                                         n_features=n_features,
-                                         item='min').to_numpy()
-    exec_max = pod.get_measurement_data(dataset=dataset,
-                                        method=methods,
-                                        n_features=n_features,
-                                        item='max').to_numpy()
+                                          n_features=n_features)
+
+    grouped = exec_times.groupby(axis=1, level=['dataset', 'n_features'])
+
+    exec_mins = grouped.min().to_numpy()
+    exec_max = grouped.max().to_numpy()
+
+    if item == 'mean':
+        exec_times = grouped.mean().to_numpy()
+    elif item == 'median':
+        exec_times = grouped.median().to_numpy()
+    else:
+        raise ValueError("f'Unknown item {item}. Use median or mean'")
 
     x_coords, ticks = _arrange_boxes(pod, n_features, methods)
 
@@ -316,14 +315,14 @@ def plot_exec_time(pod: BenchmarkPOD,
                    exec_max,
                    exec_mins,
                    x_coords,
-                   n_features if n_features is not None else pod.n_features,
+                   n_features if n_features is not None else _to_string(pod.feature_descriptors),
                    ticks,
                    methods if methods is not None else pod.methods,
                    plot_lines=False,
                    save_path=save_path)
 
 
-# go
+# go -> confirmed
 def _plot_score_box(pod: BenchmarkPOD,
                     dataset: str,
                     regression_metric,
@@ -341,13 +340,13 @@ def _plot_score_box(pod: BenchmarkPOD,
     if n_features is not None and not isinstance(n_features, list):
         n_features = [n_features]
 
+    n_features = [FeatureDescriptor(feature, pod.resolve_tuples) for feature in n_features]
+
     reg_scores = pod.get_regression_data(method=methods,
                                          n_features=n_features,
                                          dataset=dataset,
-                                         reg_metric=regression_metric,
-                                         item='samples').to_numpy()
-
-    reg_scores = np.reshape(reg_scores, newshape=(reg_scores.shape[0], -1, pod.n_runs)).tolist()
+                                         reg_metric=regression_metric).to_numpy()
+    reg_scores = np.reshape(reg_scores, (len(methods), -1, pod.n_runs)).tolist()  # shape: methods x n_features x n_runs
 
     # calculate offset x coordinates
     x_coords, ticks = _arrange_boxes(pod, n_features, methods)
@@ -358,12 +357,12 @@ def _plot_score_box(pod: BenchmarkPOD,
               reg_scores,
               x_coords,
               methods if methods is not None else pod.methods,
-              n_features if n_features is not None else pod.n_features,
+              n_features if _to_string(n_features) is not None else _to_string(pod.feature_descriptors),
               ticks,
               save_path=save_path)
 
 
-# go
+# TODO: adapt
 def _plot_score_bar(pod: BenchmarkPOD,
                     dataset: str = None,
                     regression_metric: str = None,
@@ -371,6 +370,7 @@ def _plot_score_bar(pod: BenchmarkPOD,
                     n_features: List[Union[int, Tuple[int, int]]] = None,
                     item: Literal['mean', 'median'] = 'mean',
                     save_path: str = None):
+
     regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric,
                                                       identifier='regression metric')
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
@@ -414,7 +414,7 @@ def _plot_score_bar(pod: BenchmarkPOD,
                    )
 
 
-# go
+# go -> confirmed
 def plot_score(pod: BenchmarkPOD,
                dataset: str = None,
                regression_metric: str = None,
@@ -455,7 +455,7 @@ def plot_score(pod: BenchmarkPOD,
         raise ValueError(f'Unknown plot type {plot_type}.')
 
 
-# go
+# go -> confirmed
 def plot_stability(pod: BenchmarkPOD,
                    dataset: str = None,
                    stability_metric: str = None,
@@ -484,7 +484,7 @@ def plot_stability(pod: BenchmarkPOD,
     stability_metric = _check_specified_or_singleton(pod.stab_metrics, stability_metric, identifier='stability metric')
 
     y_data = pod.get_stability_data(method=methods, dataset=dataset, stab_metric=stability_metric).to_numpy().tolist()
-    x_data = pod.n_features
+    x_data = _to_string(pod.feature_descriptors)
 
     _line_plot(f'Stability across n_features to select: Dataset {dataset}',
                "n_features",
@@ -498,18 +498,23 @@ def plot_stability(pod: BenchmarkPOD,
 # go
 def _plot_selection_bar(pod: BenchmarkPOD,
                         dataset: str,
-                        n_features: int,
+                        n_features: Union[int, Tuple[int]],
                         methods: Union[str, List[str]] = None,
                         save_path: str = None):
 
-    colors = ['darkorange', 'cornflowerblue']
+    if methods is None:
+        methods = pod.methods
+
+    colors = plt.cm.get_cmap('Accent', len(methods) + 1)
 
     fig = plt.figure()
     gs = fig.add_gridspec(len(methods), hspace=0)
     axs = gs.subplots(sharex=True, sharey=True)
     fig.suptitle(f'Selection probability P on dataset {dataset} for {n_features} features.')
 
-    selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features)
+    selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features).to_numpy().tolist()
+    selections = pd.DataFrame([sum([s.selected_features for s in sel], []) for sel in selections])
+
     n_wavelengths = pod.get_meta(dataset)[2][1]  # TODO: improve this interface
 
     if len(methods) == 1:
@@ -521,7 +526,7 @@ def _plot_selection_bar(pod: BenchmarkPOD,
         bar_heights = np.zeros((n_wavelengths,))
         bar_heights[unique_counts.index.to_numpy().astype('int')] = unique_counts.to_numpy()
 
-        axs[i].bar(np.arange(n_wavelengths), bar_heights / pod.n_runs, color=colors[i % 2])
+        axs[i].bar(np.arange(n_wavelengths), bar_heights / pod.n_runs, color=colors(i))
         if i % 2 == 0:  # distribute y-axis ticks between left and right-hand side
             axs[i].yaxis.tick_right()
         else:
@@ -530,9 +535,9 @@ def _plot_selection_bar(pod: BenchmarkPOD,
         axs[i].set_xlabel("wavelength")
         axs[i].set_ylabel("P")
 
-        axs[i].legend(handles=[mpatches.Patch(color=colors[i % 2], label=methods[i])])
+        axs[i].legend(handles=[mpatches.Patch(color=colors(i), label=methods[i])])
 
-    # Hide x labels and tick labels for all but bottom plot.
+    # Hide x labels and tick labels for all but the bottom plot.
     for ax in axs:
         ax.label_outer()
 
@@ -576,6 +581,7 @@ def _plot_selection_heatmap(pod: BenchmarkPOD,
         plt.show()
 
 
+# go -> confirmed
 def plot_selection(pod: BenchmarkPOD,
                    n_features: Union[int, Tuple[int, int]],
                    dataset: str = None,
@@ -605,7 +611,6 @@ def plot_selection(pod: BenchmarkPOD,
 
     """
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
-    _check_valid_feature_descriptor(n_features)
 
     if methods is None:
         methods = pod.methods

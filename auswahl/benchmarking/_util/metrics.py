@@ -3,21 +3,15 @@ import numpy as np
 from .data_handling import BenchmarkPOD
 
 
-def _resolve_tuple(n):
-    if isinstance(n, tuple):
-        return n[0] * n[1]
-    return n
-
-
+# go
 def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str):
     r = pod.n_runs
-    for n in pod.n_features:
-        n_resolved = _resolve_tuple(n)
+    for n in pod.feature_descriptors:  # FeatureDescriptor
         for method in pod.methods:
             for dataset in pod.datasets:
-                # retrieve the samples of selected features
-                supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy()
-                supports = np.reshape(supports, newshape=(r, n_resolved))  # reshape to sample_runs x n_features selected
+                # retrieve the samples of selected features (list of objects of type Selection)
+                supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy().tolist()
+                supports = np.array([selection.selected_features for selection in supports])
 
                 pairwise_sim = []
                 dim0, dim1 = np.triu_indices(r)
@@ -26,7 +20,7 @@ def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str
                         pairwise_sim.append(pairwise_sim_function(pod,
                                                                   support_1=supports[dim0[i]],
                                                                   support_2=supports[dim1[i]],
-                                                                  n_features=n_resolved,
+                                                                  n_features=len(n),  # number of features selected
                                                                   method=method,
                                                                   dataset=dataset))
                 score = np.sum(np.array(pairwise_sim)) * (2 / (r * (r - 1)))
@@ -38,6 +32,7 @@ def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str
                                        value=score)
 
 
+# go
 def _deng_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.array, **kwargs):
     n_wavelengths = pod.get_meta(kwargs['dataset'])[2][1]
     n = kwargs['n_features']
@@ -45,6 +40,7 @@ def _deng_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.
     return (np.intersect1d(support_1, support_2).size - e) / (n - e)
 
 
+# go
 def deng_score(pod: BenchmarkPOD):
     """
             Calculates the selection stability score for randomized selection methods, according to Deng et al. [1]_.
@@ -69,6 +65,7 @@ def deng_score(pod: BenchmarkPOD):
     _pairwise_scoring(pod, _deng_stability_score, 'deng_score')
 
 
+# TODO: fix
 def _thresholded_correlation(spectra, support_1: np.array, support_2: np.array, threshold: float):
     set_diff = np.setdiff1d(support_2, support_1)
     if set_diff.size == 0:
@@ -80,6 +77,7 @@ def _thresholded_correlation(spectra, support_1: np.array, support_2: np.array, 
     return (1/support_2.size) * np.sum(correlation[:support_1.size, support_1.size:])
 
 
+# TODO: fix
 def _zucknick_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.array, **kwargs):
     n = kwargs['n_features']
     spectra = pod.get_meta(kwargs['dataset'])[0]
@@ -90,6 +88,7 @@ def _zucknick_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2:
     return (intersection_size + c_12 + c_21) / union_size
 
 
+# TODO: fix
 def zucknick_score(pod: BenchmarkPOD):
     """
             Calculates the stability score according to Zucknick et al. _[1]
@@ -107,34 +106,3 @@ def zucknick_score(pod: BenchmarkPOD):
     """
     _pairwise_scoring(pod, _zucknick_stability_score, 'zucknick_score')
 
-
-def _register_stats(function, grouped):
-    function(value=grouped.mean(), item='mean')
-    function(value=grouped.std(), item='std')
-    function(value=grouped.min(), item='min')
-    function(value=grouped.max(), item='max')
-    function(value=grouped.median(), item='median')
-
-
-def mean_std_statistics(pod: BenchmarkPOD):
-
-    """
-
-        Calculates mean and standard deviation for all methods, metrics, datasets, feature numbers, runtime measurements
-        contained the BenchmarkPOD object
-
-        Parameters
-        ----------
-        pod : BenchmarkPOD
-            data container produced by benchmarking
-
-    """
-    # register means, stds, mins, max and medians for regression
-    samples = pod.get_regression_data(item='samples')
-    grouped = samples.groupby(axis=1, level=['dataset', 'n_features', 'regression_metric'], sort=False)
-    _register_stats(pod.register_regression, grouped)
-
-    # register means, stds, mins, max and medians for runtime measurements
-    samples = pod.get_measurement_data(item='samples')
-    grouped = samples.groupby(axis=1, level=['dataset', 'n_features'], sort=False)
-    _register_stats(pod.register_measurement, grouped)

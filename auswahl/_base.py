@@ -1,5 +1,10 @@
+
+from __future__ import annotations
+
 from abc import ABCMeta, abstractmethod
-from typing import Union, List
+
+from typing import Union, Tuple, List
+from functools import cached_property
 
 import numpy as np
 from sklearn import clone
@@ -11,7 +16,157 @@ from sklearn.model_selection import cross_val_score
 from sklearn.utils import check_scalar
 
 
-class CVEvaluator:
+class FeatureDescriptor:
+
+    """
+        TODO: all docstrings
+    """
+
+    def __init__(self, key: Union[int, Tuple[int, int], FeatureDescriptor], resolve_tuples: bool = False):
+        if isinstance(key, FeatureDescriptor):
+            self._build_from_descriptor(key)
+        else:
+            self._check_consistency(key)
+            self.org_key = key
+            self.key = self._resolve_tuples(key, resolve_tuples)
+            self.resolve_tuples = resolve_tuples
+
+    def _build_from_descriptor(self, descriptor):
+        self.key = descriptor.key
+        self.org_key = descriptor.key
+        self.resolve_tuples = descriptor.resolve_tuples
+
+    def __len__(self):
+        return self.comparator[0]
+
+    @cached_property
+    def string_rep(self):
+        if isinstance(self.key, int):
+            return str(self.key)
+        return f'{self.key[0]}/{self.key[1]}'
+
+    @cached_property
+    def comparator(self):
+        if isinstance(self.key, int):
+            return [self.key]
+        return [self.key[0] * self.key[1], self.key[0], self.key[1]]
+
+    #
+    # Consistency checks
+    #
+
+    def _check_consistency(self, x):
+        if isinstance(x, int):
+            self._check_positive_integer(x)
+        elif isinstance(x, tuple):
+            self._check_diploid_positive_integer_tuple(x)
+        else:
+            raise ValueError(f'The specification of features requires either a positive integer'
+                             f' or a tuple of two positive integers')
+
+    def _check_positive_integer(self, x):
+        if not isinstance(x, int):
+            raise ValueError(f'The specification of features requires integers. Got {type(x)}')
+        if x <= 0:
+            raise ValueError(f'The specification of features requires positive integers. Got {x}')
+
+    def _check_diploid_positive_integer_tuple(self, x):
+        if len(x) != 2:
+            raise ValueError("Feature specification with tuples requires a tuple of length 2.")
+        v1, v2 = x
+        self._check_positive_integer(v1)
+        self._check_positive_integer(v2)
+        return x
+
+    def _resolve_tuples(self, key, resolve_tuple):
+        if resolve_tuple and isinstance(key, tuple):
+            return key[0] * key[1]  # consistency has already been checked at this point
+        return key
+
+    #
+    # Make the class hashable
+    #
+    def __hash__(self):
+        return self.key.__hash__()
+
+    #
+    # Comparator implementations
+    #
+    def __le__(self, x: FeatureDescriptor):
+        for i in range(len(self.comparator)):
+            if self.comparator[i] < x.comparator[i]:
+                return True
+            elif self.comparator[i] > x.comparator[i]:
+                return False
+        return True
+
+    def __ge__(self, x: FeatureDescriptor):
+        for i in range(len(self.comparator)):
+            if self.comparator[i] > x.comparator[i]:
+                return True
+            elif self.comparator[i] < x.comparator[i]:
+                return False
+        return True
+
+    #
+    # Comparison arbitrage section
+    #
+
+    def __eq__(self, x: FeatureDescriptor):
+        return self.__le__(x) and self.__ge__(x)
+
+    def __gt__(self, x: FeatureDescriptor):
+        return not self.__le__(x)
+
+    def __ne__(self, x: FeatureDescriptor):
+        return not self.__eq__(x)
+
+    def __lt__(self, x: FeatureDescriptor):
+        return not self.__ge__(x)
+
+    #
+    # Printing
+    #
+    def __repr__(self):
+        return self.string_rep
+
+    def __str__(self):
+       return self.string_rep
+
+    #
+    # Interface for selectors
+    #
+    def get_params_for(self, selector: SpectralSelector):
+        if isinstance(selector, PointSelector):
+            if self.resolve_tuples:
+                return self.key
+            else:
+                return self.key[0] * self.key[1]
+        else:
+            return self.key[0], self.key[1]
+
+
+class Selection:
+
+    """
+        TODO
+    """
+
+    def __init__(self, selected_features: List = None):
+        self.selected_features = selected_features
+
+    def __repr__(self):
+        return str(self.selected_features)
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class SpectralSelector(metaclass=ABCMeta):
+
+    """
+        TODO
+    """
 
     def __init__(self, model_hyperparams, n_cv_folds):
         self.model_hyperparams = model_hyperparams
@@ -34,8 +189,12 @@ class CVEvaluator:
             cv.fit(X, y)
             return cv.best_score_, cv.best_estimator_
 
+    @abstractmethod
+    def reparameterize(self, feature_descriptor: FeatureDescriptor):
+        ...
 
-class PointSelector(CVEvaluator, SelectorMixin, BaseEstimator, metaclass=ABCMeta):
+
+class PointSelector(SpectralSelector, SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     """Base class for feature selection methods that select features independently.
 
     Parameters
@@ -113,11 +272,11 @@ class PointSelector(CVEvaluator, SelectorMixin, BaseEstimator, metaclass=ABCMeta
 
         return n_features_to_select
 
-    def set_n_features(self, n_features):
-        self.n_features_to_select = n_features
+    def reparameterize(self, feature_descriptor: FeatureDescriptor):
+        self.n_features_to_select = feature_descriptor.get_params_for(self)
 
 
-class IntervalSelector(CVEvaluator, SelectorMixin, BaseEstimator, metaclass=ABCMeta):
+class IntervalSelector(SpectralSelector, SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     """Base class for feature selection methods that select consecutive chunks (intervals) of features.
 
     Parameters
@@ -188,6 +347,5 @@ class IntervalSelector(CVEvaluator, SelectorMixin, BaseEstimator, metaclass=ABCM
 
         return interval_width
 
-    def set_interval_params(self, n_intervals, interval_width):
-        self.interval_width = interval_width
-        self.n_intervals_to_select = n_intervals
+    def reparameterize(self, feature_descriptor: FeatureDescriptor):
+        self.n_intervals_to_select, self.interval_width = feature_descriptor.get_params_for(self)

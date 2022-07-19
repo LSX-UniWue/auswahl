@@ -1,5 +1,4 @@
-from ._base import IntervalSelector
-from ._base import PointSelector
+from ._base import IntervalSelector, PointSelector, SpectralSelector, FeatureDescriptor, Selection
 from ._cars import CARS
 from ._ipls import IPLS
 from ._mcuve import MCUVE

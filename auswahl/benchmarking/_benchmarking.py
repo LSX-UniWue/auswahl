@@ -1,19 +1,21 @@
+
 import copy
 import json
 import time
 import traceback
-from typing import Union, List, Tuple, Callable
-
 import numpy as np
+import warnings
+
+from typing import Union, List, Tuple, Callable
 from joblib import Parallel, delayed
 from numpy.random import RandomState
 from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
+from sklearn.metrics import mean_squared_error
 
 from ._util.data_handling import BenchmarkPOD
-from ._util.metrics import mean_std_statistics
-from .. import PointSelector, IntervalSelector
+from .._base import PointSelector, IntervalSelector, SpectralSelector, FeatureDescriptor
 
 
 class Speaker:
@@ -47,7 +49,7 @@ class ErrorLogger:
     def log_error(self, severity: str, run_index: int, seed: int, method_name: str, during: str, exception: Exception):
         self.log[f'error {len(self.log) + 1}'] = {'dataset': self.dataset,
                                                   'severity': severity,
-                                                  'features': self.features,
+                                                  'features': str(self.features),
                                                   'run': run_index,
                                                   'seed': str(seed),
                                                   'method': method_name,
@@ -61,27 +63,15 @@ class ErrorLogger:
             json.dump(self.log, file, indent=4)
 
 
-def _check_positive_integer(x):
-    if not isinstance(x, int):
-        raise ValueError(f'The specification of features requires integers. Got {type(x)}')
-    if x <= 0:
-        raise ValueError(f'The specification of features requires positive integers. Got {x}')
-
-
-def _check_diploid_positive_integer_tuple(x):
-    if len(x) != 2:
-        raise ValueError("Feature specification with tuples requires a tuple of length 2.")
-    v1, v2 = x
-    _check_positive_integer(v1)
-    _check_positive_integer(v2)
-    return x
-
-
+# go
 def _check_feature_consistency(methods, features):
 
     # make a list
     if not isinstance(features, list):
         features = [features]
+
+    if not isinstance(methods, list):
+        methods = [methods]
 
     # check presence of an IntervalSelector and non-interval-like feature specification
     contains_interval_selector = np.any([isinstance(method, IntervalSelector) for method in methods])
@@ -90,54 +80,23 @@ def _check_feature_consistency(methods, features):
     if contains_interval_selector and contains_non_tuple:
         raise ValueError("An IntervalSelector has been passed to benchmarking. The specification of n_intervals "
                          "and interval_width as features is mandatory")
-    feature_keys = []
-    if contains_interval_selector:
-        # resolve tuples to keys
-        features = [_check_diploid_positive_integer_tuple(f) for f in features]
-        features = sorted(features, key=lambda x: x[0] * x[1])
-        for tup in features:
-            feature_keys.append(f'{tup[0]}/{tup[1]}')
-    else:
-        # resolve possible tuples (PointSelectors only)
-        for i, f in enumerate(features):
-            if isinstance(f, tuple):
-                _check_diploid_positive_integer_tuple(f)
-                feature_keys.append(str(f[0] * f[1]))
-                features[i] = f[0] * f[1]
-            else:
-                _check_positive_integer(f)
-                feature_keys.append(str(f))
-        feature_keys = sorted(feature_keys, key=lambda x: int(x))
-        feature = sorted(features)
 
-    # possible resolve duplicates
+    features = [FeatureDescriptor(feature, resolve_tuples=(not contains_interval_selector)) for feature in features]
+
+    # remove possible duplicates
     features = list(dict.fromkeys(features))
-    feature_keys = list(dict.fromkeys(feature_keys))
-    return features, feature_keys
+
+    # construct the FeatureDescriptors handling further consistency checking
+    return features
 
 
-def _parameterize(methods, features):
-    """
-            Reconfigure parameterization of methods.
-
-        Parameters
-        ----------
-        method: List[Union[PointSelector, IntervalSelector]]
-            method to be reparameterized
-        features: str
-            identifer for the features to be selected in this parameterization
-
-    """
+# go
+def _parameterize(methods: List[SpectralSelector], n: FeatureDescriptor):
     for method in methods:
-        if isinstance(method, PointSelector):
-            if isinstance(features, tuple):
-                method.set_n_features(features[0] * features[1])
-            else:
-                method.set_n_features(features)
-        else:
-            method.set_interval_params(features[0], features[1])
+        method.reparameterize(n)
 
 
+# TODO: pythonize this
 def _reseed(method, seed):
     """
             Update seed of method
@@ -154,6 +113,7 @@ def _reseed(method, seed):
         method.random_state = seed
 
 
+# go
 def _check_name_uniqueness(name_list: List[str], identifier):
 
     """
@@ -170,6 +130,7 @@ def _check_name_uniqueness(name_list: List[str], identifier):
         raise ValueError(f'The names in {identifier} need to be unique')
 
 
+# go
 def _unpack_methods(methods):
     """
 
@@ -212,6 +173,7 @@ def _unpack_methods(methods):
     return selectors, names
 
 
+# go
 def _unpack_metrics(metrics, compulsory=False):
     """
 
@@ -246,6 +208,7 @@ def _unpack_metrics(metrics, compulsory=False):
     return metric_functions, names
 
 
+# go
 def _check_datasets(data):
     """
 
@@ -281,6 +244,7 @@ def _check_datasets(data):
     return zip(*data)
 
 
+# go
 def _check_train_size(train_sizes, data, dataset_names):
 
     """
@@ -308,14 +272,20 @@ def _check_train_size(train_sizes, data, dataset_names):
                              f'an empty test set.')
 
 
+# go
 def _check_n_runs(n_runs):
 
     if not isinstance(n_runs, int):
         raise ValueError(f'n_runs is required to be an integer')
     if n_runs <= 0:
         raise ValueError(f'n_runs is required to be positive')
+    if n_runs == 1:
+        warnings.warn(f'n_runs is required to be at least 2, but got 1 instead. n_runs is set to 2')
+        return 2
+    return n_runs
 
 
+# go
 def _copy_methods(methods, joblib_mem_segregation=True):
     if joblib_mem_segregation:
         return methods
@@ -323,6 +293,7 @@ def _copy_methods(methods, joblib_mem_segregation=True):
         return [copy.deepcopy(method) for method in methods]
 
 
+# TODO: pythonize that
 def _drain_threads(methods):
 
     """
@@ -337,10 +308,6 @@ def _drain_threads(methods):
     for method in methods:
         if hasattr(method, 'n_jobs'):
             method.n_jobs = 1
-
-
-def _copy_methods(methods):
-    return [copy.deepcopy(method) for method in methods]
 
 
 def _benchmark_parallel(x: np.array, y: np.array, train_size: float,
@@ -399,12 +366,12 @@ def _pot(pod, dataset_name, feature, methods_names, reg_metrics_names, results, 
             if 'exception' not in result[method].keys():
                 run_index = result[method]['run_index']
                 pod.register_measurement(result[method]['exec'], dataset_name, method,
-                                         feature, 'samples', run_index)
+                                         feature, run_index)
                 pod.register_selection(dataset_name, method,
-                                       feature, run_index, result[method]['selection'])
+                                       feature, run_index, result[method]['selection'].tolist())
                 for j, metric in enumerate(reg_metrics_names):
                     pod.register_regression(result[method]['metrics'][j], dataset_name, method,
-                                            feature, metric, 'samples', run_index)
+                                            feature, metric, run_index)
             else:
                 exception, run_index, seed, during = result[method]['exception']
                 logger.log_error(severity='fatal', run_index=run_index, seed=seed,
@@ -419,10 +386,10 @@ def _pot(pod, dataset_name, feature, methods_names, reg_metrics_names, results, 
 
 def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
               features: List[Union[int, Tuple[int, int]]],
-              n_runs: int,
-              methods: List[Union[PointSelector, IntervalSelector, Tuple[Union[PointSelector, IntervalSelector], str]]],
-              reg_metrics: List[Callable[[np.ndarray, np.ndarray], float]],
-              random_state: Union[int, RandomState],
+              methods: List[Union[SpectralSelector, Tuple[SpectralSelector, str]]],
+              n_runs: int = 10,
+              reg_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = mean_squared_error,
+              random_state: Union[int, RandomState] = None,
               stab_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = [],
               n_jobs: int = 1,
               error_log_file: str = "./error_log.txt",
@@ -453,11 +420,11 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
     speaker = Speaker(verbose)
     logger = ErrorLogger(log_file=error_log_file)
 
-    features, feature_keys = _check_feature_consistency(methods, features)
+    features = _check_feature_consistency(methods, features)
 
     xs, ys, dataset_names, train_sizes = _check_datasets(data)
     reg_metrics, reg_metric_names = _unpack_metrics(reg_metrics, compulsory=True)
-    stab_metric, stab_metric_names = _unpack_metrics(stab_metrics)
+    stab_metrics, stab_metric_names = _unpack_metrics(stab_metrics)
     methods, method_names = _unpack_methods(methods)
 
     _check_name_uniqueness(dataset_names, "datasets")
@@ -466,7 +433,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
     _check_name_uniqueness(stab_metric_names, "stab_metrics")
 
     _check_train_size(train_sizes, xs, dataset_names)
-    _check_n_runs(n_runs)
+    n_runs = _check_n_runs(n_runs)
 
     # configure the methods to have a single-thread operation (parallelization is exploited at the benchmarking level)
     _drain_threads(methods)
@@ -476,11 +443,9 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
     pod = BenchmarkPOD(dataset_names,
                        method_names,
                        features,
-                       feature_keys,
                        reg_metric_names,
                        stab_metric_names,
-                       n_runs
-                       )
+                       n_runs)
 
     pod.register_meta(data)
 
@@ -505,9 +470,6 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
 
     # dump error log
     logger.write_log()
-
-    # mean and std over all regression metrics, runs and datasets
-    mean_std_statistics(pod)
 
     # stability scores
     for metric_name, metric in zip(stab_metric_names, stab_metrics):
