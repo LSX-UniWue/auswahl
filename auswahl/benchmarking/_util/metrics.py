@@ -65,7 +65,6 @@ def deng_score(pod: BenchmarkPOD):
     _pairwise_scoring(pod, _deng_stability_score, 'deng_score')
 
 
-# TODO: fix
 def _thresholded_correlation(spectra, support_1: np.array, support_2: np.array, threshold: float):
     set_diff = np.setdiff1d(support_2, support_1)
     if set_diff.size == 0:
@@ -77,7 +76,6 @@ def _thresholded_correlation(spectra, support_1: np.array, support_2: np.array, 
     return (1/support_2.size) * np.sum(correlation[:support_1.size, support_1.size:])
 
 
-# TODO: fix
 def _zucknick_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.array, **kwargs):
     n = kwargs['n_features']
     spectra = pod.get_meta(kwargs['dataset'])[0]
@@ -88,7 +86,6 @@ def _zucknick_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2:
     return (intersection_size + c_12 + c_21) / union_size
 
 
-# TODO: fix
 def zucknick_score(pod: BenchmarkPOD):
     """
             Calculates the stability score according to Zucknick et al. _[1]

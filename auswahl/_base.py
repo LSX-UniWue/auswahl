@@ -33,7 +33,7 @@ class FeatureDescriptor:
 
     def _build_from_descriptor(self, descriptor):
         self.key = descriptor.key
-        self.org_key = descriptor.key
+        self.org_key = descriptor.org_key
         self.resolve_tuples = descriptor.resolve_tuples
 
     def __len__(self):

@@ -9,6 +9,36 @@ import pandas as pd
 from ..._base import FeatureDescriptor, Selection
 
 
+def _identify_key_error(key, multiindex):
+    for level, k in enumerate(key):
+        if isinstance(k, slice):
+            continue
+        else:
+            if not isinstance(k, list):
+                k = [k]
+            for item in k:
+                res = multiindex.isin([item], level=level)
+                if not np.any(res):
+                    return f'Item {item if not isinstance(item, FeatureDescriptor) else item.org_key} ' \
+                           f'not present in level {multiindex.names[level]}'
+    return None
+
+
+def protected(func):
+    def wrapper(s, *args, **kwargs):
+        try:
+            res, key, multiindex = func(s, *args, **kwargs)
+        except KeyError as e:
+            # tentative measure for future pandas versions
+            raise KeyError() from e
+        # current version of pandas requires that
+        key_error = _identify_key_error(key, multiindex)
+        if key_error is not None:
+            raise KeyError(key_error)
+        return res
+    return wrapper
+
+
 class BenchmarkPOD:
 
     """
@@ -155,6 +185,7 @@ class BenchmarkPOD:
                              sample: int = None):
         self.measurement_data.loc[(method, (dataset, n_features, sample))] = value
 
+    @protected
     def get_regression_data(self,
                             dataset: Union[str, List[str]] = None,
                             method: Union[str, List[str]] = None,
@@ -184,8 +215,9 @@ class BenchmarkPOD:
             pandas multiIndex DataFrame sliced to the requested data
         """
         method_key, key = self._make_key(dataset, method, n_features, reg_metric=reg_metric, sample=sample)
-        return self.reg_data.loc[(method_key, key)]
+        return self.reg_data.loc[(method_key, key)], key, self.reg_data.columns
 
+    @protected
     def get_selection_data(self,
                            dataset: Union[str, List[str]] = None,
                            method: Union[str, List[str]] = None,
@@ -210,8 +242,9 @@ class BenchmarkPOD:
             pandas multiIndex DataFrame sliced to the requested data
         """
         method_key, key = self._make_key(dataset, method, n_features, sample=sample)
-        return self.selection_data.loc[(method_key, key)]
+        return self.selection_data.loc[(method_key, key)], key, self.selection_data.columns
 
+    @protected
     def get_stability_data(self,
                            dataset: Union[str, List[str]] = None,
                            method: Union[str, List[str]] = None,
@@ -235,15 +268,16 @@ class BenchmarkPOD:
             pandas multiindex DataFrame sliced to the requested data
         """
         method_key, key = self._make_key(dataset, method, n_features, stab_metric=stab_metric)
-        return self.stab_data.loc[(method_key, key)]
+        return self.stab_data.loc[(method_key, key)], key, self.stab_data.columns
 
+    @protected
     def get_measurement_data(self,
                              dataset: Union[str, List[str]] = None,
                              method: Union[str, List[str]] = None,
                              n_features: Union[int, List[int]] = None,
                              sample: Union[int, List[int]] = None):
         method_key, key = self._make_key(dataset, method, n_features, sample=sample)
-        return self.measurement_data.loc[(method_key, key)]
+        return self.measurement_data.loc[(method_key, key)], key, self.measurement_data.columns
 
     def store(self, file_path: str, file_name: str):
         path = os.path.join(file_path, f'{file_name}.pickle')

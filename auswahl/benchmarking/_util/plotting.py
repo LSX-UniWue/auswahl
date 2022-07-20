@@ -62,7 +62,8 @@ def _box_plot(title: str,
     if tick_labels is not None:
         box_width = (0.3 * 0.9) / len(y_data)
     else:
-        box_width = 0.05
+        pos = [data[0] for data in x_data]
+        box_width = (max(pos) - min(pos)) / 20
 
     if legend is None:
         plotting_kwargs = dict()
@@ -534,6 +535,13 @@ def _plot_selection_bar(pod: BenchmarkPOD,
 
         axs[i].set_xlabel("wavelength")
         axs[i].set_ylabel("P")
+
+        # plot vertical lines
+        #axs[i].hlines(y=[0.25, 0.5, 0.75], xmin=axs[i].get_xlim()[0], xmax=axs[i].get_xlim()[1],
+                      #linewidth=0.5, color='k', alpha=.5)
+        #axs[i].grid(axis='y')
+        axs[i].set_yticks([0.25, 0.5, 0.75])
+        axs[i].yaxis.grid(True)
 
         axs[i].legend(handles=[mpatches.Patch(color=colors(i), label=methods[i])])
 

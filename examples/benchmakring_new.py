@@ -13,7 +13,7 @@ from sklearn.metrics import mean_squared_error
 
 from auswahl import MCUVE, CARS, VIP, IPLS, VIP_SPA, FiPLS
 from auswahl.benchmarking import benchmark, deng_score, plot_score, plot_score_vs_stability, plot_stability, \
-    plot_exec_time, plot_selection, load_pod
+    plot_exec_time, plot_selection, load_pod, zucknick_score
 
 # load sample dataset
 x = np.load("./data/spectra.npy")
@@ -41,8 +41,8 @@ pod = benchmark((x, y, 'nitrogen', 0.9),  # spectrum, target, dataset name, trai
                 features=[(2, 2), (3, 8), (2, 12)],  # integer or tuple of integers (n_intervals, width) for IntervalSelectors
                 n_runs=10,
                 reg_metrics=mean_squared_error,
-                stab_metrics=deng_score,
-                methods=[mcuve, vip, ipls],
+                stab_metrics=zucknick_score,
+                methods=[mcuve, vip],
                 random_state=11111111,
                 n_jobs=2,
                 error_log_file="./error_log.txt",
@@ -51,7 +51,8 @@ pod = benchmark((x, y, 'nitrogen', 0.9),  # spectrum, target, dataset name, trai
 
 #print(pod.get_selection_data(n_features=(2, 2), sample=[0]))
 plot_score_vs_stability(pod, n_features=(2, 12), save_path="./score_stability.png")
+#print(pod.get_regression_data(n_features=[(2, 2), (2, 20)]))
 #plot_exec_time(pod, save_path="./execution_time.png")
 #plot_score(pod, save_path="./score.png")
 #plot_stability(pod, save_path="./stability.png")
-#plot_selection(pod, n_features=(2, 13), save_path="./selection.png")
+#plot_selection(pod, n_features=(2, 12), save_path="./selection.png")
