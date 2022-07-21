@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
 
-from ._base import PointSelector
+from ._base import PointSelector, FeatureDescriptor
 from ._spa import SPA
 from ._vip import VIP
 
@@ -44,3 +44,8 @@ class VIP_SPA(PointSelector):
     def _get_support_mask(self):
         check_is_fitted(self)
         return self.support_
+
+    def reparameterize(self, feature_descriptor: FeatureDescriptor):
+        self.n_features_to_select = feature_descriptor.get_params_for(self)
+        self.vip.reparameterize(feature_descriptor)
+        self.spa.reparameterize(feature_descriptor)

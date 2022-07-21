@@ -9,7 +9,6 @@ import warnings
 from typing import Union, List, Tuple, Callable
 from joblib import Parallel, delayed
 from numpy.random import RandomState
-from sklearn.base import BaseEstimator
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
 from sklearn.metrics import mean_squared_error
@@ -190,6 +189,11 @@ def _unpack_metrics(metrics, compulsory=False):
         tuple: Tuple[List[Callable], List[str]]
 
         """
+    if metrics is None:
+        if compulsory:
+            raise ValueError('At least one regression metric has to be specified.')
+        return []
+
     if not isinstance(metrics, list):
         metrics = [metrics]
 
@@ -330,7 +334,7 @@ def _benchmark_parallel(x: np.array, y: np.array, train_size: float,
             continue
         # fit test model
         support = method.get_support(indices=True)
-        model = method.best_model_
+        model = method.get_best_estimator()
         try:
             model.fit(train_x[:, support], train_y)
         except Exception as e:
@@ -384,13 +388,13 @@ def _pot(pod, dataset_name, feature, methods_names, reg_metrics_names, results, 
                                      method_name=method, during=during, exception=exception)
 
 
-def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
+def benchmark(data: List[Tuple[np.array, np.array, str, float]],
               features: List[Union[int, Tuple[int, int]]],
               methods: List[Union[SpectralSelector, Tuple[SpectralSelector, str]]],
               n_runs: int = 10,
               reg_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = mean_squared_error,
               random_state: Union[int, RandomState] = None,
-              stab_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = [],
+              stab_metrics: List[Callable[[BenchmarkPOD], float]] = None,
               n_jobs: int = 1,
               error_log_file: str = "./error_log.txt",
               verbose: bool = True):
@@ -401,22 +405,39 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float, BaseEstimator]],
 
         Parameters
         ----------
-        data
-        features
-        n_runs
-        reg_metrics
-        stab_metrics
-        methods
-        random_state
-        n_jobs
-        error_log_file
-        verbose
+        data: List of tuples (np.array, np.array, str, float)
+            list of tuples describing datasets (x, y, dataset_name, train_size)
+        features: List of integers or tuple of integers (int, int)
+            Descriptor of the number of features to be selected. If an integer, the integer describes the number of
+            feautres to be selected. If a tuple, the tuple is interpreted as (#intervals to select, interval width).
+            If an IntervalSelector is included in the benchmarking, the feautres have to be described as tuples.
+        n_runs: int, default=10
+            Number of runs per method, dataset and number of features to be selected. Used to elucidate
+            method performance and selection stability.
+        reg_metrics: List of Callable[[np.ndarray, np.ndarray], float], default=sklearn.metrics.mean_square_error
+            List of regression metrics to be evaluated and made available after the benchmarking
+        stab_metrics: List of Callable[[BenchmarkPOD], float], default=None
+            List of stability metrics to be evaluated and made available after the benchmarking
+        methods: List of SpectralSelector or tuples (SpectralSelector, str)
+            List of instances of classes subtyping SpectralSelector. If the class names of the instance's classes
+            are not unique a tuple can be passed specifying the name (instance, name)
+        random_state: int or numpy.random.RandomState, default=None
+            RandomState for reproducibility of the benchmarking results
+        n_jobs: int, default=1
+            Number of jobs to be used during benchmarking. It is recommended to provide jobs to the benchmarking
+            instead of individual selectors
+        error_log_file: str, default="./error_log.txt"
+            location and name of the file, in which errors are to be logged
+        verbose: bool, default=True
+            If True, basic information of the state of benchmarking are plotted
 
         Returns
         -------
         pod: BenchmarkPOD
-            TODO
+            BenchmarkPOD object containing the result data of the benchmark. The BenchmarkPOD object contains
+            data regarding regression, stability, selection and run time measurement.
     """
+
     speaker = Speaker(verbose)
     logger = ErrorLogger(log_file=error_log_file)
 

@@ -53,7 +53,7 @@ def _box_plot(title: str,
               save_path: str = None):
 
     colors = plt.cm.get_cmap('Accent', len(y_data) + 1)
-    entities = ['boxprops', 'medianprops', 'flierprops', 'capprops', 'whiskerprops']
+    entities = ['boxprops', 'flierprops', 'capprops', 'whiskerprops']
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
     legend_handles = []
@@ -70,16 +70,23 @@ def _box_plot(title: str,
         for entity in entities:
             plotting_kwargs[entity] = dict(color='k')
 
+    box_subplots = []
     for i, data in enumerate(y_data):
         if legend is not None:
             plotting_kwargs = dict()
             for entity in entities:
                 plotting_kwargs[entity] = dict(color=colors(i))
 
-        ax.boxplot(data, positions=x_data[i], whis=(0, 100), widths=box_width, manage_ticks=False, **plotting_kwargs)
+        box_subplots.append(ax.boxplot(data, positions=x_data[i], whis=(0, 100), widths=box_width,
+                                manage_ticks=False, patch_artist=True, **plotting_kwargs))
 
         if legend is not None:
             legend_handles.append(mpatches.Patch(color=colors(i), label=legend[i]))
+
+    # fill boxes
+    for i, box_plot in enumerate(box_subplots):
+        for patch in box_plot['boxes']:
+            patch.set_facecolor(colors(i))
 
     ax.set_title(title)
     ax.set_xlabel(x_label)
@@ -244,7 +251,7 @@ def plot_score_vs_stability(pod: BenchmarkPOD,
                                        n_features=n_features,
                                        stab_metric=stability_metric).to_numpy().tolist()
 
-    _box_plot("Regression-Stability-Plot",
+    _box_plot(f'Regression-Stability-Plot for {FeatureDescriptor(n_features)} features',
               stability_metric,
               regression_metric,
               reg_data,
@@ -338,10 +345,10 @@ def _plot_score_box(pod: BenchmarkPOD,
     if methods is None:
         methods = pod.methods
 
-    if n_features is not None and not isinstance(n_features, list):
-        n_features = [n_features]
-
-    n_features = [FeatureDescriptor(feature, pod.resolve_tuples) for feature in n_features]
+    if n_features is not None:
+        if not isinstance(n_features, list):
+            n_features = [n_features]
+        n_features = [FeatureDescriptor(feature, pod.resolve_tuples) for feature in n_features]
 
     reg_scores = pod.get_regression_data(method=methods,
                                          n_features=n_features,
@@ -358,7 +365,7 @@ def _plot_score_box(pod: BenchmarkPOD,
               reg_scores,
               x_coords,
               methods if methods is not None else pod.methods,
-              n_features if _to_string(n_features) is not None else _to_string(pod.feature_descriptors),
+              _to_string(n_features) if n_features is not None else _to_string(pod.feature_descriptors),
               ticks,
               save_path=save_path)
 
@@ -511,7 +518,8 @@ def _plot_selection_bar(pod: BenchmarkPOD,
     fig = plt.figure()
     gs = fig.add_gridspec(len(methods), hspace=0)
     axs = gs.subplots(sharex=True, sharey=True)
-    fig.suptitle(f'Selection probability P on dataset {dataset} for {n_features} features.')
+    fig.suptitle(f'Selection probability P on dataset {dataset} '
+                 f'for {FeatureDescriptor(n_features, pod.resolve_tuples)} features.')
 
     selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features).to_numpy().tolist()
     selections = pd.DataFrame([sum([s.selected_features for s in sel], []) for sel in selections])

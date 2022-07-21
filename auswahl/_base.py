@@ -14,6 +14,8 @@ from sklearn.feature_selection import SelectorMixin
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
 from sklearn.utils import check_scalar
+from sklearn.utils.validation import check_is_fitted
+
 
 
 class FeatureDescriptor:
@@ -162,7 +164,7 @@ class Selection:
         return self.__repr__()
 
 
-class SpectralSelector(metaclass=ABCMeta):
+class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
     """
         TODO
@@ -188,27 +190,6 @@ class SpectralSelector(metaclass=ABCMeta):
             cv = GridSearchCV(model, self.model_hyperparams, cv=self.n_cv_folds, scoring='neg_mean_squared_error')
             cv.fit(X, y)
             return cv.best_score_, cv.best_estimator_
-
-    @abstractmethod
-    def reparameterize(self, feature_descriptor: FeatureDescriptor):
-        ...
-
-
-class PointSelector(SpectralSelector, SelectorMixin, BaseEstimator, metaclass=ABCMeta):
-    """Base class for feature selection methods that select features independently.
-
-    Parameters
-    ----------
-    n_features_to_select : int or float, default=None
-        Number of features to select
-    """
-
-    def __init__(self,
-                 n_features_to_select: Union[int, float] = None,
-                 model_hyperparams: Union[dict, List[dict]] = None,
-                 n_cv_folds: int = 2):
-        self.n_features_to_select = n_features_to_select
-        super().__init__(model_hyperparams, n_cv_folds)
 
     def fit(self, X, y, mask=None):
         """Run the feature selection process.
@@ -237,8 +218,7 @@ class PointSelector(SpectralSelector, SelectorMixin, BaseEstimator, metaclass=AB
             X = X[:, mask_indices]
 
         X, y = self._validate_data(X, y, accept_sparse=False, ensure_min_samples=2, ensure_min_features=2)
-        n_features_to_select = self._check_n_features_to_select(X)
-        self._fit(X, y, n_features_to_select)
+        self._dispatch_fit(X, y)
 
         if mask is not None:
             selected = mask_indices[np.nonzero(self.support_)]
@@ -246,6 +226,46 @@ class PointSelector(SpectralSelector, SelectorMixin, BaseEstimator, metaclass=AB
             self.support_[selected] = 1
 
         return self
+
+    def get_best_estimator(self):
+        """
+            TODO
+        """
+        check_is_fitted(self)
+        if not hasattr(self, 'best_model_'):
+            raise NotImplementedError("Make sure, that after fit has been called on the selector, the selector "
+                                      "provides the optimally configured estimator for the selected features as "
+                                      "attribute 'best_model_'")
+        return self.best_model_
+
+    @abstractmethod
+    def _dispatch_fit(self, X, y):
+        ...
+
+    @abstractmethod
+    def reparameterize(self, feature_descriptor: FeatureDescriptor):
+        ...
+
+
+class PointSelector(SpectralSelector, metaclass=ABCMeta):
+    """Base class for feature selection methods that select features independently.
+
+    Parameters
+    ----------
+    n_features_to_select : int or float, default=None
+        Number of features to select
+    """
+
+    def __init__(self,
+                 n_features_to_select: Union[int, float] = None,
+                 model_hyperparams: Union[dict, List[dict]] = None,
+                 n_cv_folds: int = 2):
+        self.n_features_to_select = n_features_to_select
+        super().__init__(model_hyperparams, n_cv_folds)
+
+    def _dispatch_fit(self, X, y):
+        n_features_to_select = self._check_n_features_to_select(X)
+        self._fit(X, y, n_features_to_select)
 
     @abstractmethod
     def _fit(self, X, y, n_features_to_select):
@@ -276,7 +296,7 @@ class PointSelector(SpectralSelector, SelectorMixin, BaseEstimator, metaclass=AB
         self.n_features_to_select = feature_descriptor.get_params_for(self)
 
 
-class IntervalSelector(SpectralSelector, SelectorMixin, BaseEstimator, metaclass=ABCMeta):
+class IntervalSelector(SpectralSelector, metaclass=ABCMeta):
     """Base class for feature selection methods that select consecutive chunks (intervals) of features.
 
     Parameters
@@ -296,28 +316,10 @@ class IntervalSelector(SpectralSelector, SelectorMixin, BaseEstimator, metaclass
         self.interval_width = interval_width
         super().__init__(model_hyperparams, n_cv_folds)
 
-    def fit(self, X, y):
-        """Run the feature selection process.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input samples.
-
-        y : array-like of shape (n_samples,)
-            The target values.
-
-        Returns
-        -------
-        self : object
-            Returns the instance itself.
-        """
-        X, y = self._validate_data(X, y, accept_sparse=False, ensure_min_samples=2, ensure_min_features=2)
+    def _dispatch_fit(self, X, y):
         self._check_n_intervals_to_select(X)
         interval_width = self._check_interval_width(X)
-
         self._fit(X, y, self.n_intervals_to_select, interval_width)
-        return self
 
     @abstractmethod
     def _fit(self, X, y, n_intervals_to_select, interval_width):

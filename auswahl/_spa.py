@@ -104,7 +104,7 @@ class SPA(PointSelector):
         return score, model, wavelengths
 
     def _fit(self, X, y, n_features_to_select):
-
+        print(f'to be selected {n_features_to_select}')
         candidates = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_spa)(X,
                                                   y,
                                                   n_features_to_select,
