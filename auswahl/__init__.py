@@ -5,13 +5,14 @@ from ._mcuve import MCUVE
 from ._random_frog import IntervalRandomFrog
 from ._random_frog import RandomFrog
 from ._spa import SPA
-from ._version import __version__
 from ._vip import VIP
 from ._vip_spa import VIP_SPA
 from ._vissa import VISSA, iVISSA
 from ._fipls import FiPLS
 from ._bipls import BiPLS
 from ._dummy import DummyIntervalSelector, DummyPointSelector, ExceptionalSelector
+
+__version__ = '0.0.1'
 
 __all__ = ['PointSelector', 'IntervalSelector',
            'CARS', 'MCUVE', 'RandomFrog', 'SPA', 'VIP', 'VIP_SPA', 'VISSA',
