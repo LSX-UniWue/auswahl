@@ -57,7 +57,16 @@ but this method selects continuous sequences of features instead of single featu
 Interval Random Frog
 ====================
 
-Interval Random Frog (iRF) is available in :class:`IntervalRandomFrog`.
+Interval Random Frog (iRF) is and adaption of the :ref:`rf` method that selects intervals instead of single features.
+It is an iterative selection method that starts with randomly selected intervals which are adapted during the iteration
+process.
+Each iteration, a random sub- or superset is created and compared against the previously selected intervals by
+cross-validation.
+The RF method keeps track of a counter for each interval and the counters for all intervals in the "winning" set
+(i.e. higher cv score) are increased after each iteration.
+After performing all iterations, the intervals with the highest selection frequencies are selected.
+
+iRF is available in :class:`IntervalRandomFrog`.
 
 .. topic:: References:
 
