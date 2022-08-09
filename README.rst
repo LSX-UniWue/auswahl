@@ -19,16 +19,32 @@ Methods
 The libraray provides methods for selecting wavelengths without spatial constraints and methods for selecting continuous bands of wavelengths.
 The following methods are implemented:
 
-- Wavelength Point Selection: VIP, MC-UVE, CARS
-- Wavelength Interval Selection: I-RF
+- Wavelength Point Selection: VIP, MC-UVE, Random Frog, CARS, SPA
+- Wavelength Interval Selection: iPLS, FiPLS, BiPLS, iRF
 
 Installation
 ------------
 
-Work in Progress
+AUSWAHL is currently not available through PyPi. We are working on releasing it in the near future. Right now, you can install it from source::
+
+  git clone https://github.com/mcfloskel/auswahl.git
+  cd auswahl
+  pip install .
 
 
 Usage
 -----
 
-Work in Progress
+The provided feature selection methods implement the ``SelectorMixin`` base class from sklearn and can by used in the same way as the sklearn feature selection methods. Below you can find a simple example for the ``VIP`` selection method::
+
+  import numpy as np
+  from auswahl import VIP
+  
+  x = np.random.randn(100, 10) # 100 samples and 10 features
+  y = 5 * x[:,0] - 2 * x[:,5]  # y depends only on two features
+  
+  vip = VIP(n_features_to_select=2)
+  vip.fit(x,y)
+  
+  vip.get_support()
+  >>> array([True, False, False, False, False,  True, False, False, False, False])
