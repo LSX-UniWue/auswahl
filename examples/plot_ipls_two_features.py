@@ -10,10 +10,6 @@ The example uses a synthetic dataset with 50 standard normally distributed featu
 The target values only depend on two features: #21 and #24.
 If the VIP method is tasked with selecting an interval of width 5, it identifies
 an interval containing the features #21 and #24
-
-.. note::
-    See also :ref:`sphx_glr_auto_examples_plot_ipls_threshold.py`
-
 """
 import matplotlib.pyplot as plt
 import numpy as np

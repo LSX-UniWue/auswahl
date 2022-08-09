@@ -8,10 +8,6 @@ multiple CARS runs for a synthetic regression task.
 
 The example uses a synthetic dataset with 10 standard normally distributed features.
 The target values only depend on two features: #0 and #5.
-
-.. note::
-    See also :ref:`sphx_glr_auto_examples_plot_cars_threshold.py`
-
 """
 import matplotlib.pyplot as plt
 import numpy as np

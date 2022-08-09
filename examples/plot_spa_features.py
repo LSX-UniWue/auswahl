@@ -10,10 +10,6 @@ VIP to construct a set of a linearly independent set of features with a VIP scor
 
 The example uses a synthetic dataset with 10 standard normally distributed features.
 The target values only depend on two features: #0 and #5.
-
-.. note::
-    See also :ref:`sphx_glr_auto_examples_plot_spa_threshold.py`
-
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,6 +36,6 @@ colors[spa.get_support()] = 'C01'
 plt.bar(x=np.arange(X.shape[1]), height=vip.vips_, color=colors)
 
 plt.xlabel('Feature')
-plt.ylabel('CARS')
+plt.ylabel('VIP')
 
 plt.show()

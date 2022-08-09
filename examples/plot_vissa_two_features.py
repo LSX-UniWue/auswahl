@@ -27,6 +27,6 @@ colors[vissa.get_support()] = 'C01'
 plt.bar(x=np.arange(X.shape[1]), height=vissa.weights_, color=colors)
 
 plt.xlabel('Feature')
-plt.ylabel('VIP')
+plt.ylabel('Weights')
 
 plt.show()
