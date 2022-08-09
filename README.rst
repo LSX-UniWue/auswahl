@@ -40,11 +40,22 @@ The provided feature selection methods implement the ``SelectorMixin`` base clas
   import numpy as np
   from auswahl import VIP
   
-  x = np.random.randn(100, 10) # 100 samples and 10 features
-  y = 5 * x[:,0] - 2 * x[:,5]  # y depends only on two features
+  rs = np.random.RandomState(1337) # Sample seed for reproducibility
+  x = rs.randn(100, 10)            # 100 samples and 10 features
+  y = 5 * x[:,0] - 2 * x[:,5]      # y depends only on two features
   
-  vip = VIP(n_features_to_select=2)
+  selector = VIP(n_features_to_select=2)
+  selector.fit(x,y)
+  
+  selector.get_support()
+  >>> array([True, False, False, False, False, True, False, False, False, False])
+
+If you want to use another feature selection method, you can simply replace ``VIP(...)`` with any other method.
+
+The ``VIP`` method also allows to select the number of features after the model has been fitted.
+An example is given below::
+
+  vip = VIP(n_features_to_select=x.shape[1]-1)
   vip.fit(x,y)
-  
-  vip.get_support()
-  >>> array([True, False, False, False, False,  True, False, False, False, False])
+  vip.get_support_for_threshold(threshold=1)
+  >>> array([True, False, False, False, False, True, False, False, False, False])
