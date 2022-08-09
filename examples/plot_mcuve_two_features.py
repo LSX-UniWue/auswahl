@@ -1,7 +1,7 @@
 """
-===================
+======================
 MC-UVE - Basic example
-===================
+======================
 
 An MC-UVE example showing the feature importance for a synthetic regression task.
 
