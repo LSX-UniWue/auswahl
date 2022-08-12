@@ -2,8 +2,11 @@
 Quick Start
 ===========
 
-The provided feature selection methods implement the :mod:`sklearn.feature_selection.SelectorMixin` base class and can by used in the same way as the sklearn feature selection methods.
-Below you can find a simple example for the :class:`auswahl.VIP` selection method::
+The provided feature selection methods implement the :class:`SelectorMixin <sklearn.feature_selection.SelectorMixin>`
+base class from the :mod:`sklearn.feature_selection` module  and can by used in the same way as other feature selection
+methods from sklearn.
+
+Below you can find a simple example for the :class:`VIP <auswahl.VIP>` selection method::
 
   import numpy as np
   from auswahl import VIP
@@ -20,7 +23,7 @@ Below you can find a simple example for the :class:`auswahl.VIP` selection metho
 
 If you want to use another feature selection method, you can simply replace ``VIP(...)`` with any other method.
 
-The :class:`auswahl.VIP` method also allows to select the number of features after the model has been fitted.
+The :class:`VIP <auswahl.VIP>` method also allows to select the number of features after the model has been fitted.
 An example is given below::
 
   vip = VIP(n_features_to_select=x.shape[1]-1)
