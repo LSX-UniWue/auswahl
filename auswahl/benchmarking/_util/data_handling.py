@@ -1,12 +1,14 @@
+
 import os
 import pickle
 import warnings
-from typing import List, Union, Literal, Tuple
-
 import numpy as np
 import pandas as pd
 
-from ..._base import FeatureDescriptor, Selection
+from typing import List, Union, Literal, Tuple
+
+from ..._base import FeatureDescriptor
+from .helpers import Selection
 
 
 def _identify_key_error(key, multiindex):
@@ -123,7 +125,7 @@ class BenchmarkPOD:
         return self.meta[dataset]
 
     def _feature_descriptor_conversion(self, features):
-        return [FeatureDescriptor(feature, resolve_tuples=self.resolve_tuples) for feature in features]
+        return [FeatureDescriptor(feature, resolve_intervals=self.resolve_tuples) for feature in features]
 
     def _make_key(self,
                   dataset: Union[str, List[str]] = None,

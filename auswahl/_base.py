@@ -1,12 +1,13 @@
 
 from __future__ import annotations
 
+import numpy as np
+
 from abc import ABCMeta, abstractmethod
 
 from typing import Union, Tuple, List
 from functools import cached_property
 
-import numpy as np
 from sklearn import clone
 from sklearn.base import BaseEstimator
 from sklearn.cross_decomposition import PLSRegression
@@ -17,21 +18,44 @@ from sklearn.utils import check_scalar
 from sklearn.utils.validation import check_is_fitted
 
 
-
 class FeatureDescriptor:
 
     """
-        TODO: all docstrings
+        The class FeatureDescriptor abstracts the configuration of features the selection methods
+        are to retrieve from the spectral data. The FeatureDescriptor wraps either a number of
+        arbitrarily features to be selected or a specific number of intervals of features of a fix length.
+
+        Parameters
+        ----------
+        key: int, Tuple[int, int], FeatureDescriptor
+            feature configuration to be abstracted by the object. A single integer is interpreted as
+            a number of arbitrarily selectable features. A tuple is (#intervals, width of intervals) configuration
+            of features to be selected. If a FeatureDescriptor is passed, it is copied.
+            All passed integers are required to be non-negative.
+        resolve_intervals: bool, default=False
+            flag indicating whether interval feature configurations are to be resolved to a single integer
+            of arbitrary features to be selected.
+
+        Attributes
+        ----------
+        org_key: int, Tuple[int, int]
+            originally passed feature configuration
+        key: int, Tuple[int, int]
+            resolved key. Equal to org_key, if org_key is not a tuple or if argument resolve_tuples is
+            False
+        resolve_intervals: bool
+            passed argument resolve_intervals
+
     """
 
-    def __init__(self, key: Union[int, Tuple[int, int], FeatureDescriptor], resolve_tuples: bool = False):
+    def __init__(self, key: Union[int, Tuple[int, int], FeatureDescriptor], resolve_intervals: bool = False):
         if isinstance(key, FeatureDescriptor):
             self._build_from_descriptor(key)
         else:
             self._check_consistency(key)
             self.org_key = key
-            self.key = self._resolve_tuples(key, resolve_tuples)
-            self.resolve_tuples = resolve_tuples
+            self.key = self._resolve_intervals(key, resolve_intervals)
+            self.resolve_tuples = resolve_intervals
 
     def _build_from_descriptor(self, descriptor):
         self.key = descriptor.key
@@ -43,12 +67,23 @@ class FeatureDescriptor:
 
     @cached_property
     def string_rep(self):
+        """
+            Provides a printing representation for the FeatureDescriptor, printing
+            interval configurations as number of intervals and interval width separated vy a forward slash
+
+            Returns
+            -------
+            string representation: str
+        """
         if isinstance(self.key, int):
             return str(self.key)
         return f'{self.key[0]}/{self.key[1]}'
 
     @cached_property
     def comparator(self):
+        """
+            Provides a feature configuration representation allowing comparison of FeatureDescriptors.
+        """
         if isinstance(self.key, int):
             return [self.key]
         return [self.key[0] * self.key[1], self.key[0], self.key[1]]
@@ -80,21 +115,24 @@ class FeatureDescriptor:
         self._check_positive_integer(v2)
         return x
 
-    def _resolve_tuples(self, key, resolve_tuple):
+    def _resolve_intervals(self, key, resolve_tuple):
         if resolve_tuple and isinstance(key, tuple):
             return key[0] * key[1]  # consistency has already been checked at this point
         return key
 
-    #
-    # Make the class hashable
-    #
     def __hash__(self):
         return self.key.__hash__()
 
     #
     # Comparator implementations
     #
+
     def __le__(self, x: FeatureDescriptor):
+        """
+            A FeatureDescriptor is less or equal to another FeatureDescriptor, if
+            it selects more features (intervals resolved to the number of constituent features) or, in case
+            of equality, if the number of intervals is smaller.
+        """
         for i in range(len(self.comparator)):
             if self.comparator[i] < x.comparator[i]:
                 return True
@@ -103,6 +141,11 @@ class FeatureDescriptor:
         return True
 
     def __ge__(self, x: FeatureDescriptor):
+        """
+            A FeatureDescriptor is greater or equal to another FeatureDescriptor, if
+            it selects more features (intervals resolved to the number of constituent features) or, in case
+            of equality, if the number of intervals is larger.
+        """
         for i in range(len(self.comparator)):
             if self.comparator[i] > x.comparator[i]:
                 return True
@@ -111,7 +154,7 @@ class FeatureDescriptor:
         return True
 
     #
-    # Comparison arbitrage section
+    # Derived comparison functions
     #
 
     def __eq__(self, x: FeatureDescriptor):
@@ -135,50 +178,71 @@ class FeatureDescriptor:
     def __str__(self):
        return self.string_rep
 
-    #
-    # Interface for selectors
-    #
-    def get_params_for(self, selector: SpectralSelector):
+    def get_configuration_for(self, selector: SpectralSelector):
+        """
+            Translate and return the feature configuration for a given SpectralSelector.
+
+            Parameters
+            ----------
+            selector: SpectralSelector
+                SpectralSelector instance
+        """
         if isinstance(selector, PointSelector):
             if self.resolve_tuples:
                 return self.key
             else:
+                # return the number of overall features to be selected
                 return self.key[0] * self.key[1]
         else:
+            # return the interval configuration
             return self.key[0], self.key[1]
-
-
-class Selection:
-
-    """
-        TODO
-    """
-
-    def __init__(self, selected_features: List = None):
-        self.selected_features = selected_features
-
-    def __repr__(self):
-        return str(self.selected_features)
-
-    def __str__(self):
-        return self.__repr__()
 
 
 class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
     """
-        TODO
+        Top level base class for all Auswahl selectors. Provides subclassing of all relevant
+        sklearn classes and common cross validationa and hyperparameter optimization functionality.
+
+        Parameters
+        ----------
+        model_hyperparams: dict
+            dictionary of estimator hyperparameters following the sklearn convention.
+        n_cv_folds: int
+            number of cross validation runs during model fitting
+
     """
 
-    def __init__(self, model_hyperparams, n_cv_folds):
-        self.model_hyperparams = model_hyperparams
-        if self.model_hyperparams is not None and not isinstance(self.model_hyperparams, (list, dict)):
+    def __init__(self, model_hyperparams: Union[dict, List[dict]], n_cv_folds: int):
+        if model_hyperparams is not None and not isinstance(model_hyperparams, (list, dict)):
             raise ValueError("Keyword argument 'model_hyperparams' is expected to be of type dict or list of dicts")
+        self.model_hyperparams = model_hyperparams
+        if not isinstance(n_cv_folds, int) or n_cv_folds <= 0:
+            raise ValueError(f'Keyword argument "n_cv_folds" is expected to be a positive integer. Got {n_cv_folds}')
         self.n_cv_folds = n_cv_folds
-        if not isinstance(self.n_cv_folds, int) or self.n_cv_folds <= 0:
-            raise ValueError(f'Keyword argument "n_cv_folds" is expected to be a positive integer. Got {self.cv_folds}')
 
     def _evaluate(self, X, y, model, do_cv=True):
+
+        """
+            Conduct a cross validating and hyperparamter optimizing estimatro fitting
+
+            Parameters
+            ----------
+            X: array-like, shape (n_samples, n_features)
+                spectral data to be fitted
+            y: array-like, shape (n_samples,)
+                regression targets
+            model: BaseEstimator
+                regression model
+            do_cv: bool, default=True
+                If True, the model is fitted to the data and a cross validation score is provided
+
+            Returns
+            -------
+            tuple: float, BaseEstimator
+                cross validation score if requested (otherwise None) and fitted estimator
+        """
+
         model = PLSRegression(n_components=min(2, X.shape[1])) if model is None else clone(model)
         if self.model_hyperparams is None:  # no hyperparameter optimization; conduct a simple CV
             cv_scores = None
@@ -192,6 +256,7 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
             return cv.best_score_, cv.best_estimator_
 
     def fit(self, X, y, mask=None):
+
         """Run the feature selection process.
 
         Parameters
@@ -202,14 +267,15 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
         y : array-like of shape (n_samples,)
             The target values.
 
-        mask: np.array of shape (n_features,)
+        mask: array-like of shape (n_features,)
             Mask indicating (values == 0), which features are not to be taken into account during the feature selection
 
         Returns
         -------
-        self : object
+        SpectralSelector : self
             Returns the instance itself.
         """
+
         if mask is not None:
             if mask.shape != (X.shape[1],):
                 raise ValueError(f'Expected mask to have shape {(X.shape[1],)}. Got {mask.shape}')
@@ -229,7 +295,7 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
     def get_best_estimator(self):
         """
-            TODO
+            Retrieve the best estimator model fitted on the selected features
         """
         check_is_fitted(self)
         if not hasattr(self, 'best_model_'):
@@ -293,7 +359,7 @@ class PointSelector(SpectralSelector, metaclass=ABCMeta):
         return n_features_to_select
 
     def reparameterize(self, feature_descriptor: FeatureDescriptor):
-        self.n_features_to_select = feature_descriptor.get_params_for(self)
+        self.n_features_to_select = feature_descriptor.get_configuration_for(self)
 
 
 class IntervalSelector(SpectralSelector, metaclass=ABCMeta):
@@ -350,4 +416,21 @@ class IntervalSelector(SpectralSelector, metaclass=ABCMeta):
         return interval_width
 
     def reparameterize(self, feature_descriptor: FeatureDescriptor):
-        self.n_intervals_to_select, self.interval_width = feature_descriptor.get_params_for(self)
+        self.n_intervals_to_select, self.interval_width = feature_descriptor.get_configuration_for(self)
+
+
+class Convertible(metaclass=ABCMeta):
+
+    """
+        PointSelector approaches, which provide, apart from the feature selection, a global score
+        for each feature can be made eligible for a PointSelector to IntervalSelector conversion
+        through the class PseudoIntervalSelector.
+    """
+
+    @abstractmethod
+    def get_feature_scores(self):
+        """
+            Provide scores of all features
+        """
+        ...
+

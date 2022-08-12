@@ -80,7 +80,7 @@ def _check_feature_consistency(methods, features):
         raise ValueError("An IntervalSelector has been passed to benchmarking. The specification of n_intervals "
                          "and interval_width as features is mandatory")
 
-    features = [FeatureDescriptor(feature, resolve_tuples=(not contains_interval_selector)) for feature in features]
+    features = [FeatureDescriptor(feature, resolve_intervals=(not contains_interval_selector)) for feature in features]
 
     # remove possible duplicates
     features = list(dict.fromkeys(features))

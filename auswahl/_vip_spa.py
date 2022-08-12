@@ -46,6 +46,6 @@ class VIP_SPA(PointSelector):
         return self.support_
 
     def reparameterize(self, feature_descriptor: FeatureDescriptor):
-        self.n_features_to_select = feature_descriptor.get_params_for(self)
+        self.n_features_to_select = feature_descriptor.get_configuration_for(self)
         self.vip.reparameterize(feature_descriptor)
         self.spa.reparameterize(feature_descriptor)

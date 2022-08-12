@@ -2,12 +2,13 @@ import numpy as np
 import pytest
 from sklearn.utils.estimator_checks import check_estimator
 
-from auswahl import CARS, VIP, MCUVE, RandomFrog, SPA, IPLS, VISSA, DummyPointSelector, DummyIntervalSelector
+from auswahl import CARS, VIP, MCUVE, RandomFrog, SPA, IPLS, DummyPointSelector, DummyIntervalSelector
 
 
-@pytest.mark.parametrize("estimator", [VISSA(n_submodels=50), CARS(), IPLS(), SPA(), VIP(), MCUVE(), RandomFrog(n_iterations=10)])
+@pytest.mark.parametrize("estimator", [CARS(), IPLS(), SPA(), VIP(), MCUVE(), RandomFrog(n_iterations=10)])
 def test_all_estimators(estimator):
     return check_estimator(estimator)
+
 
 def test_exceptions_interval_selection():
     x = np.zeros((50, 100))
@@ -29,6 +30,7 @@ def test_exceptions_interval_selection():
     for est in dummies[1:]:
         with pytest.raises(ValueError):
             est.fit(x, y)
+
 
 def test_exceptions_point_selection():
     x = np.zeros((50, 100))

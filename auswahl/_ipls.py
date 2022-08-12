@@ -99,7 +99,7 @@ class IPLS(IntervalSelector):
         return self.support_
 
     def reparameterize(self, feature_descriptor: FeatureDescriptor):
-        n_intervals_to_select, interval_width = feature_descriptor.get_params_for(self)
+        n_intervals_to_select, interval_width = feature_descriptor.get_configuration_for(self)
         self.interval_width = n_intervals_to_select * interval_width
 
 

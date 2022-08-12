@@ -5,10 +5,10 @@ import numpy as np
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
 
-from ._base import PointSelector
+from ._base import PointSelector, Convertible
 
 
-class VIP(PointSelector):
+class VIP(PointSelector, Convertible):
     """Feature Selection with Variable Importance in Projection.
 
     The VIP scores are computed according to Favilla et al. [1]_.
@@ -112,3 +112,7 @@ class VIP(PointSelector):
             mask[np.argmax(self.vips_)] = 1
 
         return mask if not indices else np.where(mask)[0]
+
+    def get_feature_scores(self):
+        check_is_fitted(self)
+        return self.vips_
