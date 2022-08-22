@@ -31,9 +31,6 @@ class SPA(PointSelector):
 
         n_jobs : int, default=1
             Number of jobs used for parallel calculation of SPA
-
-        random_state : int or numpy.random.RandomState, default=None
-            Seed for the random subset sampling. Pass an int for reproducible output across function calls.  
     
         
         Attributes
@@ -70,14 +67,11 @@ class SPA(PointSelector):
                  n_cv_folds: int = 5,
                  pls: PLSRegression = None,
                  n_jobs: int = 1,
-                 model_hyperparams: Union[Dict, List[Dict]] = None,
-                 random_state: Union[int, np.random.RandomState] = None):
+                 model_hyperparams: Union[Dict, List[Dict]] = None):
         
-        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
+        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds, n_jobs=n_jobs)
         
         self.pls = pls
-        self.n_jobs = n_jobs
-        self.random_state = random_state
 
     def _fit_spa(self, X, y, n_features_to_select, pls, seed):
 

@@ -1,10 +1,10 @@
 import numpy as np
 
-from .data_handling import BenchmarkPOD
+from .data_handling import DataHandler
 
 
 # go
-def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str):
+def _pairwise_scoring(pod: DataHandler, pairwise_sim_function, metric_name: str):
     r = pod.n_runs
     for n in pod.feature_descriptors:  # FeatureDescriptor
         for method in pod.methods:
@@ -25,15 +25,15 @@ def _pairwise_scoring(pod: BenchmarkPOD, pairwise_sim_function, metric_name: str
                                                                   dataset=dataset))
                 score = np.sum(np.array(pairwise_sim)) * (2 / (r * (r - 1)))
 
-                pod.register_stability(method=method,
-                                       n_features=n,
-                                       dataset=dataset,
-                                       metric_name=metric_name,
-                                       value=score)
+                pod._register_stability(method=method,
+                                        n_features=n,
+                                        dataset=dataset,
+                                        metric_name=metric_name,
+                                        value=score)
 
 
 # go
-def _deng_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.array, **kwargs):
+def _deng_stability_score(pod: DataHandler, support_1: np.array, support_2: np.array, **kwargs):
     n_wavelengths = pod.get_meta(kwargs['dataset'])[2][1]
     n = kwargs['n_features']
     e = n ** 2 / n_wavelengths
@@ -41,13 +41,13 @@ def _deng_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.
 
 
 # go
-def deng_score(pod: BenchmarkPOD):
+def deng_score(pod: DataHandler):
     """
             Calculates the selection stability score for randomized selection methods, according to Deng et al. [1]_.
 
             Parameters
             ----------
-            pod : BenchmarkPOD
+            pod : DataHandler
                 data container produced by benchmarking
 
             Returns
@@ -76,7 +76,7 @@ def _thresholded_correlation(spectra, support_1: np.array, support_2: np.array, 
     return (1/support_2.size) * np.sum(correlation[:support_1.size, support_1.size:])
 
 
-def _zucknick_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2: np.array, **kwargs):
+def _zucknick_stability_score(pod: DataHandler, support_1: np.array, support_2: np.array, **kwargs):
     n = kwargs['n_features']
     spectra = pod.get_meta(kwargs['dataset'])[0]
     intersection_size = np.intersect1d(support_1, support_2).size
@@ -86,13 +86,13 @@ def _zucknick_stability_score(pod: BenchmarkPOD, support_1: np.array, support_2:
     return (intersection_size + c_12 + c_21) / union_size
 
 
-def zucknick_score(pod: BenchmarkPOD):
+def zucknick_score(pod: DataHandler):
     """
             Calculates the stability score according to Zucknick et al. _[1]
 
         Parameters
         ----------
-        pod: BenchmarkPOD
+        pod: DataHandler
             BenchmarkPOD object containing benchmarking data
 
         References

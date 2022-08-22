@@ -9,7 +9,7 @@ from typing import List, Union, Literal, Tuple
 
 from matplotlib import pyplot as plt
 
-from .data_handling import BenchmarkPOD
+from .data_handling import DataHandler
 from ..._base import FeatureDescriptor
 
 
@@ -196,7 +196,7 @@ def _line_plot(title: str,
 
 
 # go -> confirmed
-def plot_score_vs_stability(pod: BenchmarkPOD,
+def plot_score_vs_stability(pod: DataHandler,
                             n_features: Union[int, Tuple[int]] = None,
                             dataset: str = None,
                             stability_metric: str = None,
@@ -214,7 +214,7 @@ def plot_score_vs_stability(pod: BenchmarkPOD,
         Parameters
         ----------
 
-        pod : BenchmarkPOD
+        pod : DataHandler
             data container produced by benchmarking
 
         dataset: str
@@ -261,7 +261,7 @@ def plot_score_vs_stability(pod: BenchmarkPOD,
 
 
 # go -> confirmed
-def plot_exec_time(pod: BenchmarkPOD,
+def plot_exec_time(pod: DataHandler,
                    dataset: str = None,
                    methods: Union[str, List[str]] = None,
                    n_features: List[Union[int, Tuple[int]]] = None,
@@ -273,7 +273,7 @@ def plot_exec_time(pod: BenchmarkPOD,
 
     Parameters
     ----------
-    pod: BenchmarkPOD
+    pod: DataHandler
         BenchmarkPOD object containing the benchmarking data
     dataset: str, default=None
         identifier of the dataset of which to plot the execution time. If there is data for only one dataset
@@ -331,7 +331,7 @@ def plot_exec_time(pod: BenchmarkPOD,
 
 
 # go -> confirmed
-def _plot_score_box(pod: BenchmarkPOD,
+def _plot_score_box(pod: DataHandler,
                     dataset: str,
                     regression_metric,
                     methods: Union[str, List[str]],
@@ -371,7 +371,7 @@ def _plot_score_box(pod: BenchmarkPOD,
 
 
 # TODO: adapt
-def _plot_score_bar(pod: BenchmarkPOD,
+def _plot_score_bar(pod: DataHandler,
                     dataset: str = None,
                     regression_metric: str = None,
                     methods: Union[str, List[str]] = None,
@@ -423,7 +423,7 @@ def _plot_score_bar(pod: BenchmarkPOD,
 
 
 # go -> confirmed
-def plot_score(pod: BenchmarkPOD,
+def plot_score(pod: DataHandler,
                dataset: str = None,
                regression_metric: str = None,
                methods: Union[str, List[str]] = None,
@@ -437,7 +437,7 @@ def plot_score(pod: BenchmarkPOD,
 
     Parameters
     ----------
-    pod: BenchmarkPOD
+    pod: DataHandler
         BenchmarkPOD object containing the benchmarking data
     dataset: str, default=None
         identifier of the dataset of which to plot the execution time. If there is data for only one dataset
@@ -464,7 +464,7 @@ def plot_score(pod: BenchmarkPOD,
 
 
 # go -> confirmed
-def plot_stability(pod: BenchmarkPOD,
+def plot_stability(pod: DataHandler,
                    dataset: str = None,
                    stability_metric: str = None,
                    methods: Union[str, List[str]] = None,
@@ -475,7 +475,7 @@ def plot_stability(pod: BenchmarkPOD,
 
         Parameters
         ----------
-        pod: BenchmarkPOD
+        pod: DataHandler
             BenchmarkPOD object containing the benchmarking data
         dataset: str
             dataset identifier
@@ -504,7 +504,7 @@ def plot_stability(pod: BenchmarkPOD,
 
 
 # go
-def _plot_selection_bar(pod: BenchmarkPOD,
+def _plot_selection_bar(pod: DataHandler,
                         dataset: str,
                         n_features: Union[int, Tuple[int]],
                         methods: Union[str, List[str]] = None,
@@ -564,7 +564,7 @@ def _plot_selection_bar(pod: BenchmarkPOD,
 
 
 # TODO: probably to be discarded
-def _plot_selection_heatmap(pod: BenchmarkPOD,
+def _plot_selection_heatmap(pod: DataHandler,
                             n_features: int,
                             dataset: str = None,
                             methods: Union[str, List[str]] = None,
@@ -598,7 +598,7 @@ def _plot_selection_heatmap(pod: BenchmarkPOD,
 
 
 # go -> confirmed
-def plot_selection(pod: BenchmarkPOD,
+def plot_selection(pod: DataHandler,
                    n_features: Union[int, Tuple[int, int]],
                    dataset: str = None,
                    methods: Union[str, List[str]] = None,

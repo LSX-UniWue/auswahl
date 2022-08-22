@@ -72,11 +72,10 @@ class MCUVE(PointSelector):
                  n_cv_folds: int = 5,
                  model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
-        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
+        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds, random_state)
         self.n_subsets = n_subsets
         self.n_samples_per_subset = n_samples_per_subset
         self.pls = pls
-        self.random_state = random_state
 
     def _fit(self, X, y, n_features_to_select):
         _, model = self._evaluate(X, y, self.pls, do_cv=False)

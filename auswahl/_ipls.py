@@ -65,7 +65,7 @@ class IPLS(IntervalSelector):
                  random_state: Union[int, np.random.RandomState] = None):
 
         super().__init__(n_intervals_to_select=1, interval_width=interval_width,
-                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
+                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds, n_jobs=n_jobs)
 
         if n_intervals_to_select != 1:
             warnings.warn("""IPLS only supports the selection of a single interval. 
@@ -74,7 +74,6 @@ class IPLS(IntervalSelector):
                              the selected intervals as continuum.""")
 
         self.pls = pls
-        self.n_jobs = n_jobs
         self.random_state = random_state
 
     def _fit_ipls(self, X, y, interval_width, pls, start):

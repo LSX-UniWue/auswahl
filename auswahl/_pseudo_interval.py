@@ -6,6 +6,7 @@ import numpy as np
 from joblib import Parallel, delayed
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
+from numpy.random import RandomState
 
 from ._base import IntervalSelector, Convertible, SpectralSelector
 from ._base import FeatureDescriptor
@@ -35,8 +36,7 @@ class PseudoIntervalSelector(IntervalSelector):
                  n_intervals_to_select: int = None,
                  interval_width: Union[int, float] = None):
 
-        super().__init__(n_intervals_to_select=n_intervals_to_select, interval_width=interval_width,
-                         model_hyperparams=None, n_cv_folds=2)  # these two parameters are compliance only
+        super().__init__(n_intervals_to_select=n_intervals_to_select, interval_width=interval_width)
 
         if not isinstance(selector, Convertible):
             raise ValueError('PseudoIntervalSelector requires a selector subclassing Convertible.')
@@ -62,3 +62,9 @@ class PseudoIntervalSelector(IntervalSelector):
     def reparameterize(self, feature_descriptor: FeatureDescriptor):
         self.n_intervals_to_select, self.interval_width = feature_descriptor.get_configuration_for(self)
         self.selector.reparameterize(feature_descriptor)
+
+    def reseed(self, seed: Union[int, RandomState]):
+        self.selector.reseed(seed)
+
+    def rethread(self, n_jobs: int):
+        self.selector.rethread(n_jobs)

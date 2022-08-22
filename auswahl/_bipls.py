@@ -65,10 +65,9 @@ class BiPLS(IntervalSelector):
                  model_hyperparams: Union[Dict, List[Dict]] = None,
                  n_jobs: int = 1):
         super().__init__(n_intervals_to_select, interval_width,
-                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
+                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds, n_jobs=n_jobs)
         self.pls = pls
         self.n_cv_folds = n_cv_folds
-        self.n_jobs = n_jobs
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         selection = np.ones(X.shape[1], dtype=bool)

@@ -89,14 +89,12 @@ class CARS(PointSelector):
                  model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
 
-        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
+        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds, random_state, n_jobs)
 
         self.pls = pls
-        self.n_jobs = n_jobs
         self.n_cars_runs = n_cars_runs
         self.n_sample_runs = n_sample_runs
         self.fit_samples_ratio = fit_samples_ratio
-        self.random_state = random_state
 
     def _prepare_edf_schedule(self, n_wavelengths, ):
         a = (n_wavelengths/2)**(1/(self.n_sample_runs-1))

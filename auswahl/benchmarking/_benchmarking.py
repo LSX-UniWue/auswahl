@@ -13,7 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
 from sklearn.metrics import mean_squared_error
 
-from ._util.data_handling import BenchmarkPOD
+from ._util.data_handling import DataHandler
 from .._base import PointSelector, IntervalSelector, SpectralSelector, FeatureDescriptor
 
 
@@ -93,23 +93,6 @@ def _check_feature_consistency(methods, features):
 def _parameterize(methods: List[SpectralSelector], n: FeatureDescriptor):
     for method in methods:
         method.reparameterize(n)
-
-
-# TODO: pythonize this
-def _reseed(method, seed):
-    """
-            Update seed of method
-
-    Parameters
-    ----------
-    method: Union[PointSelector, IntervalSelector]
-        method to be re-seeded
-    seed: int
-        random seed
-
-    """
-    if hasattr(method, 'random_state'):
-        method.random_state = seed
 
 
 # go
@@ -297,21 +280,19 @@ def _copy_methods(methods, joblib_mem_segregation=True):
         return [copy.deepcopy(method) for method in methods]
 
 
-# TODO: pythonize that
+# go
 def _drain_threads(methods):
 
     """
-            Configure the methods to be single-thread operating
+        Configure the methods to be single-thread operating
 
     Parameters
     ----------
-    methods: List[Union[PointSelector, IntervalSelector]]
+    methods: List[SpectralSelector]
 
     """
-
     for method in methods:
-        if hasattr(method, 'n_jobs'):
-            method.n_jobs = 1
+       method.rethread(n_jobs=1)
 
 
 def _benchmark_parallel(x: np.array, y: np.array, train_size: float,
@@ -323,7 +304,7 @@ def _benchmark_parallel(x: np.array, y: np.array, train_size: float,
     results = dict()
     for method_name, method in zip(method_names, methods):
         results[method_name] = dict()
-        _reseed(method, seed)
+        method.reseed(seed)
         # fit feature selector
         try:
             start = time.process_time()
@@ -369,13 +350,13 @@ def _pot(pod, dataset_name, feature, methods_names, reg_metrics_names, results, 
         for method in methods_names:
             if 'exception' not in result[method].keys():
                 run_index = result[method]['run_index']
-                pod.register_measurement(result[method]['exec'], dataset_name, method,
-                                         feature, run_index)
-                pod.register_selection(dataset_name, method,
-                                       feature, run_index, result[method]['selection'].tolist())
+                pod._register_measurement(result[method]['exec'], dataset_name, method,
+                                          feature, run_index)
+                pod._register_selection(dataset_name, method,
+                                        feature, run_index, result[method]['selection'].tolist())
                 for j, metric in enumerate(reg_metrics_names):
-                    pod.register_regression(result[method]['metrics'][j], dataset_name, method,
-                                            feature, metric, run_index)
+                    pod._register_regression(result[method]['metrics'][j], dataset_name, method,
+                                             feature, metric, run_index)
             else:
                 exception, run_index, seed, during = result[method]['exception']
                 logger.log_error(severity='fatal', run_index=run_index, seed=seed,
@@ -394,7 +375,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
               n_runs: int = 10,
               reg_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = mean_squared_error,
               random_state: Union[int, RandomState] = None,
-              stab_metrics: List[Callable[[BenchmarkPOD], float]] = None,
+              stab_metrics: List[Callable[[DataHandler], float]] = None,
               n_jobs: int = 1,
               error_log_file: str = "./error_log.txt",
               verbose: bool = True):
@@ -433,7 +414,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
 
         Returns
         -------
-        pod: BenchmarkPOD
+        pod: DataHandler
             BenchmarkPOD object containing the result data of the benchmark. The BenchmarkPOD object contains
             data regarding regression, stability, selection and run time measurement.
     """
@@ -461,12 +442,12 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
 
     random_state = check_random_state(random_state)
 
-    pod = BenchmarkPOD(dataset_names,
-                       method_names,
-                       features,
-                       reg_metric_names,
-                       stab_metric_names,
-                       n_runs)
+    pod = DataHandler(dataset_names,
+                      method_names,
+                      features,
+                      reg_metric_names,
+                      stab_metric_names,
+                      n_runs)
 
     pod.register_meta(data)
 

@@ -232,16 +232,14 @@ class RandomFrog(PointSelector, _RandomFrog):
                  n_cv_folds: int = 5,
                  n_jobs: int = 1,
                  random_state: Union[int, np.random.RandomState] = None):
-        super().__init__(n_features_to_select)
+        super().__init__(n_features_to_select, random_state=random_state, n_jobs=n_jobs)
         self.n_iterations = n_iterations
         self.n_initial_features = n_initial_features
         self.variance_factor = variance_factor
         self.subset_expansion_factor = subset_expansion_factor
         self.acceptance_factor = acceptance_factor
         self.n_cv_folds = n_cv_folds
-        self.n_jobs = n_jobs
         self.pls = pls
-        self.random_state = random_state
 
     def _fit(self, X, y, n_features_to_select):
         self.n_features_ = X.shape[1]
@@ -368,16 +366,15 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
                  model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
         super().__init__(n_intervals_to_select, interval_width,
-                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds)
+                         model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds,
+                         random_state=random_state, n_jobs=n_jobs)
         self.n_iterations = n_iterations
         self.n_initial_intervals = n_initial_intervals
         self.variance_factor = variance_factor
         self.subset_expansion_factor = subset_expansion_factor
         self.acceptance_factor = acceptance_factor
         self.n_cv_folds = n_cv_folds
-        self.n_jobs = n_jobs
         self.pls = pls
-        self.random_state = random_state
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         self.n_windows_ = X.shape[1] - interval_width

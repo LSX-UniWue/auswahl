@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 from scipy.stats import mannwhitneyu
 
-from .data_handling import BenchmarkPOD
+from .data_handling import DataHandler
 
 
-def mw_ranking(pod: BenchmarkPOD, regression_metric: str, greater_better: bool = False, significance: float = 0.05):
+def mw_ranking(pod: DataHandler, regression_metric: str, greater_better: bool = False, significance: float = 0.05):
     """
         Calculates a partial order of methods across all datasets and number of features to be selected for the given
         regression metric. The Mann-Whitney U-test is used to assess statistical significance of differences in regression
@@ -13,7 +13,7 @@ def mw_ranking(pod: BenchmarkPOD, regression_metric: str, greater_better: bool =
 
         Parameters
         ----------
-        pod: BenchmarkPOD
+        pod: DataHandler
             BenchmarkPOD object returned by the benchmarking function
         regression_metric: str
             name of the regression metric w.r.t which the partial order of methods will be calculated

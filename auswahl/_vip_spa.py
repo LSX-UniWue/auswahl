@@ -3,6 +3,7 @@ from typing import Union, Dict, List
 import numpy as np
 from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils.validation import check_is_fitted
+from numpy.random import RandomState
 
 from ._base import PointSelector, FeatureDescriptor
 from ._spa import SPA
@@ -21,7 +22,7 @@ class VIP_SPA(PointSelector):
                  n_jobs: int = 1,
                  pls: PLSRegression = None,
                  model_hyperparams: Union[Dict, List[Dict]] = None):
-        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds)
+        super().__init__(n_features_to_select, model_hyperparams, n_cv_folds, n_jobs=n_jobs)
 
         self.vip = VIP(n_features_to_select=n_features_to_select,
                        pls=pls,
@@ -49,3 +50,11 @@ class VIP_SPA(PointSelector):
         self.n_features_to_select = feature_descriptor.get_configuration_for(self)
         self.vip.reparameterize(feature_descriptor)
         self.spa.reparameterize(feature_descriptor)
+
+    def reseed(self, seed: Union[int, RandomState]):
+        self.vip.reseed(seed)
+        self.spa.reseed(seed)
+
+    def rethread(self, n_jobs: int):
+        self.vip.rethread(n_jobs)
+        self.spa.rethread(n_jobs)

@@ -16,6 +16,7 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import cross_val_score
 from sklearn.utils import check_scalar
 from sklearn.utils.validation import check_is_fitted
+from numpy.random import RandomState
 
 
 class FeatureDescriptor:
@@ -210,16 +211,22 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
             dictionary of estimator hyperparameters following the sklearn convention.
         n_cv_folds: int
             number of cross validation runs during model fitting
-
+        random_state: Union[int, np.random.RandomState]
+            random state of the selector
+        n_jobs: int, default=1
+             number of threads to be used to execute the selection method
     """
 
-    def __init__(self, model_hyperparams: Union[dict, List[dict]], n_cv_folds: int):
+    def __init__(self, model_hyperparams: Union[dict, List[dict]], n_cv_folds: int,
+                 random_state: Union[int, RandomState] = None, n_jobs: int = 1):
         if model_hyperparams is not None and not isinstance(model_hyperparams, (list, dict)):
             raise ValueError("Keyword argument 'model_hyperparams' is expected to be of type dict or list of dicts")
         self.model_hyperparams = model_hyperparams
         if not isinstance(n_cv_folds, int) or n_cv_folds <= 0:
             raise ValueError(f'Keyword argument "n_cv_folds" is expected to be a positive integer. Got {n_cv_folds}')
         self.n_cv_folds = n_cv_folds
+        self.random_state = random_state
+        self.n_jobs = n_jobs
 
     def _evaluate(self, X, y, model, do_cv=True, *args):
 
@@ -307,6 +314,20 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
                                       "attribute 'best_model_'")
         return self.best_model_
 
+    def reseed(self, seed: Union[int, RandomState]):
+        """
+            Random state updating function. Selector methods with more complex internal structure (such that
+            methods wrapping other methods) are required to override this function accordingly.
+        """
+        self.random_state = seed
+
+    def rethread(self, n_jobs: int):
+        """
+            n_jobs updating function. Selector methods with more complex internal structure (such that
+            methods wrapping other methods) are required to override this function accordingly.
+        """
+        self.n_jobs = n_jobs
+
     @abstractmethod
     def _dispatch_fit(self, X, y):
         ...
@@ -321,16 +342,26 @@ class PointSelector(SpectralSelector, metaclass=ABCMeta):
 
     Parameters
     ----------
-    n_features_to_select : int or float, default=None
+    n_features_to_select : int or float, default=1
         Number of features to select
+    model_hyperparams: dict
+        dictionary of estimator hyperparameters following the sklearn convention.
+    n_cv_folds: int
+        number of cross validation runs during model fitting
+    random_state: Union[int, np.random.RandomState]
+        random state of the selector
+    n_jobs: int, default=1
+         number of threads to be used to execute the selection method
     """
 
     def __init__(self,
-                 n_features_to_select: Union[int, float] = None,
+                 n_features_to_select: Union[int, float] = 1,
                  model_hyperparams: Union[dict, List[dict]] = None,
-                 n_cv_folds: int = 2):
+                 n_cv_folds: int = 2,
+                 random_state: Union[int, RandomState] = None,
+                 n_jobs: int = 1):
         self.n_features_to_select = n_features_to_select
-        super().__init__(model_hyperparams, n_cv_folds)
+        super().__init__(model_hyperparams, n_cv_folds, random_state, n_jobs)
 
     def _dispatch_fit(self, X, y):
         n_features_to_select = self._check_n_features_to_select(X)
@@ -370,20 +401,30 @@ class IntervalSelector(SpectralSelector, metaclass=ABCMeta):
 
     Parameters
     ----------
-    n_intervals_to_select : int, default=None
+    n_intervals_to_select : int, default=1
         Number of intervals to select.
 
-    interval_width : int or float, default=None
+    interval_width : int or float, default=1
         Number of features that form an interval
+    model_hyperparams: dict
+        dictionary of estimator hyperparameters following the sklearn convention.
+    n_cv_folds: int
+        number of cross validation runs during model fitting
+    random_state: Union[int, np.random.RandomState]
+        random state of the selector
+    n_jobs: int, default=1
+         number of threads to be used to execute the selection method
     """
 
     def __init__(self,
-                 n_intervals_to_select: int = None,
-                 interval_width: Union[int, float] = None, n_cv_folds: int = 1,
-                 model_hyperparams: Union[dict, List[dict]] = None):
+                 n_intervals_to_select: int = 1,
+                 interval_width: Union[int, float] = 1, n_cv_folds: int = 1,
+                 model_hyperparams: Union[dict, List[dict]] = None,
+                 random_state: Union[int, RandomState] = None,
+                 n_jobs: int = 1):
         self.n_intervals_to_select = n_intervals_to_select
         self.interval_width = interval_width
-        super().__init__(model_hyperparams, n_cv_folds)
+        super().__init__(model_hyperparams, n_cv_folds, random_state, n_jobs)
 
     def _dispatch_fit(self, X, y):
         self._check_n_intervals_to_select(X)
@@ -427,7 +468,7 @@ class Convertible(metaclass=ABCMeta):
     """
         PointSelector approaches, which provide, apart from the feature selection, a global score
         for each feature can be made eligible for a PointSelector to IntervalSelector conversion
-        through the class PseudoIntervalSelector.
+        through the class PseudoIntervalSelector by inheriting from this class.
     """
 
     @abstractmethod
