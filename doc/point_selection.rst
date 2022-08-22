@@ -95,10 +95,10 @@ Competitive Adaptive Reweighted Sampling
 
 Competitive Adaptive Reweighted Sampling (CARS) is available in :class:`CARS`.
 CARS is an iterative algorithm, producing a candidate feature set with monotonly decreasing size in each iteration.
-For **Auswahl**, the algorithm has been adapted to the use case of producing feature sets of a prespecified size, by modifying
+For **Auswahl**, the algorithm has been adapted to the use case of producing feature sets of a pre-specified size, by modifying
 the shrinkage approach to eventually produce a set of the requested size.
 The space of appropriately sized sets is explored through repeated runs of the CARS algorithm, exploiting the
-competitive sampling of th algorithm:
+competitive sampling of the algorithm:
 
 The CARS algorithm combines a competitive sampling of features with a scheduled shrinkage of the number of features
 selected:

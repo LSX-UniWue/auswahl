@@ -9,7 +9,7 @@ from ._random_frog import RandomFrog
 from ._spa import SPA
 from ._vip import VIP
 from ._vip_spa import VIP_SPA
-from ._vissa import VISSA, iVISSA
+from ._vissa import VISSA
 from ._fipls import FiPLS
 from ._bipls import BiPLS
 from ._pseudo_interval import PseudoIntervalSelector

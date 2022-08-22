@@ -221,26 +221,29 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
             raise ValueError(f'Keyword argument "n_cv_folds" is expected to be a positive integer. Got {n_cv_folds}')
         self.n_cv_folds = n_cv_folds
 
-    def _evaluate(self, X, y, model, do_cv=True):
+    def _evaluate(self, X, y, model, do_cv=True, *args):
 
         """
             Conduct a cross validating and hyperparamter optimizing estimatro fitting
 
             Parameters
             ----------
-            X: array-like, shape (n_samples, n_features)
-                spectral data to be fitted
-            y: array-like, shape (n_samples,)
-                regression targets
-            model: BaseEstimator
-                regression model
-            do_cv: bool, default=True
-                If True, the model is fitted to the data and a cross validation score is provided
+                X: array-like, shape (n_samples, n_features)
+                    spectral data to be fitted
+                y: array-like, shape (n_samples,)
+                    regression targets
+                model: BaseEstimator
+                    regression model
+                do_cv: bool, default=True
+                    If True, the model is fitted to the data and a cross validation score is provided
+                *args: arbitrary payload
+                    arbitrary payload returned with the evaluation result. Used for instance for
+                    identification of threads, if multiple models are evaluated in parallel
 
-            Returns
-            -------
-            tuple: float, BaseEstimator
-                cross validation score if requested (otherwise None) and fitted estimator
+                Returns
+                -------
+                tuple: float, BaseEstimator
+                    cross validation score if requested (otherwise None) and fitted estimator
         """
 
         model = PLSRegression(n_components=min(2, X.shape[1])) if model is None else clone(model)
@@ -249,11 +252,11 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
             if do_cv:
                 cv_scores = np.mean(cross_val_score(model, X, y, cv=self.n_cv_folds, scoring='neg_mean_squared_error'))
             model.fit(X, y)
-            return cv_scores, model
+            return cv_scores, model, *args
         else:
             cv = GridSearchCV(model, self.model_hyperparams, cv=self.n_cv_folds, scoring='neg_mean_squared_error')
             cv.fit(X, y)
-            return cv.best_score_, cv.best_estimator_
+            return cv.best_score_, cv.best_estimator_, *args
 
     def fit(self, X, y, mask=None):
 

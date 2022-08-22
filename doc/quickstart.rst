@@ -27,3 +27,4 @@ An example is given below::
   vip.fit(x,y)
   vip.get_support_for_threshold(threshold=1)
   >>> array([True, False, False, False, False, True, False, False, False, False])
+

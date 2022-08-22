@@ -19,6 +19,17 @@ Interval Partial Least Squares (IPLS) is available in :class:`IPLS`.
 IPLS is a simple algorithm, selecting the best interval of a user definable width w.r.t. to
 a regression model.
 
+.. topic:: Examples
+
+    * :ref:`sphx_glr_auto_examples_plot_ipls_two_features.py`: A VIP example usage for a synthetic regression task
+
+.. topic:: References:
+
+    * L. Nogaard, A. Saudland, J. Wagner, J. P. Nielsen, L. Munck, S. B. Engelsen,
+      'Interval Partial Least-Squares Regression (iPLS):
+      A comparative chemometric study with an example from Near-Infrared Spectrocopy'
+      Applied Spectrosopy, Volume 54, Nr. 3, 413--419, 2000.
+
 .. _fipls:
 
 Forward Interval Partial Least Squares
@@ -28,6 +39,10 @@ Forward interval Partial Least Squares (FiPLS) is available in :class:`FiPLS`.
 FiPLS is a variant of IPLS that sequentially selects intervals based on the cross-validated RMSE of a fitted PLS model.
 The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` with :code:`direction='forward'` but
 this method selects continuous sequences of features instead of single features.
+
+.. topic:: Examples
+
+    * :ref:`sphx_glr_auto_examples_plot_fipls_two_features.py`: A VIP example usage for a synthetic regression task
 
 .. topic:: References:
 
@@ -44,6 +59,10 @@ Backward interval Partial Least Squares (FiPLS) is available in :class:`BiPLS`.
 BiPLS is a variant of IPLS that sequentially removes intervals based on the cross-validated RMSE of a fitted PLS model.
 The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` with :code:`direction='backward'`
 but this method selects continuous sequences of features instead of single features.
+
+.. topic:: Examples
+
+    * :ref:`sphx_glr_auto_examples_plot_bipls_two_features.py`: A VIP example usage for a synthetic regression task
 
 .. topic:: References:
 
@@ -67,6 +86,10 @@ The RF method keeps track of a counter for each interval and the counters for al
 After performing all iterations, the intervals with the highest selection frequencies are selected.
 
 iRF is available in :class:`IntervalRandomFrog`.
+
+.. topic:: Examples
+
+    * :ref:`sphx_glr_auto_examples_plot_irf_two_features.py`: A VIP example usage for a synthetic regression task
 
 .. topic:: References:
 
