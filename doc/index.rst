@@ -33,24 +33,21 @@ If you use AUSWAHL, please cite our work:
         year = 2022
     }
 
-User Guide
-----------
-
 .. toctree::
     :maxdepth: 3
+    :caption: User Guide
 
     installation
     quickstart
     user_guide
 
-API Documentation
------------------
-
 .. toctree::
     :maxdepth: 3
+    :caption: Documentation
 
     api
 
-Examples
---------
-`Gallery <auto_examples/index.html>`_
+.. toctree::
+    :caption: Examples
+
+    auto_examples/index
