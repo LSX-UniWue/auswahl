@@ -96,13 +96,16 @@ class _RandomFrog(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
                 selected_features = candidate_features
             self.frequencies_[selected_features] += 1
 
-        selected_idx = np.argsort(self.frequencies_)[-n_features_to_select:]
-        self.support_ = self._idx_to_mask(feature_idx=selected_idx)
+        self.support_ = self._generate_mask_from_frequencies(n_features_to_select)
 
         return self
 
     @abstractmethod
     def _idx_to_mask(self, feature_idx):
+        pass
+
+    @abstractmethod
+    def _generate_mask_from_frequencies(self, n_features_to_select):
         pass
 
     @abstractmethod
@@ -261,6 +264,12 @@ class RandomFrog(PointSelector, _RandomFrog):
         mask[feature_idx] = 1
         return mask
 
+    def _generate_mask_from_frequencies(self, n_features_to_select):
+        mask = np.zeros(len(self.frequencies_), dtype=bool)
+        selected_idx = np.argsort(self.frequencies_)[-n_features_to_select:]
+        mask[selected_idx] = 1
+        return mask
+
     def _get_feature_score_from_model(self, pls, feature_idx):
         return abs(pls.coef_.squeeze())
 
@@ -377,7 +386,7 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
         self.pls = pls
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
-        self.n_windows_ = X.shape[1] - interval_width
+        self.n_windows_ = X.shape[1] - interval_width + 1
         return super()._select(X, y,
                                n_features=self.n_windows_,
                                n_features_to_select=n_intervals_to_select,
@@ -392,13 +401,22 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
                                random_state=self.random_state)
 
     def _idx_to_mask(self, feature_idx):
-        mask = np.zeros(self.n_windows_ + self.interval_width, dtype=bool)
+        mask = np.zeros(self.n_windows_ + self.interval_width - 1, dtype=bool)
         for idx in feature_idx:
             mask[idx:idx + self.interval_width] = 1
         return mask
 
+    def _generate_mask_from_frequencies(self, n_features_to_select):
+        mask = np.zeros(len(self.frequencies_) + self.interval_width - 1, dtype=bool)
+        scores = self.frequencies_.copy()
+        for i in range(n_features_to_select):
+            best_idx = np.argmax(scores)
+            mask[best_idx:best_idx + self.interval_width] = True
+            scores[best_idx - self.interval_width + 1:best_idx + self.interval_width] = -1
+        return mask
+
     def _get_feature_score_from_model(self, pls, feature_idx):
-        scores = np.zeros(self.n_windows_ + self.interval_width)
+        scores = np.zeros(self.n_windows_ + self.interval_width - 1)
         scores[self._idx_to_mask(feature_idx)] = abs(pls.coef_.squeeze())
         scores = [sum(scores[idx:idx + self.interval_width]) for idx in feature_idx]
         return scores
