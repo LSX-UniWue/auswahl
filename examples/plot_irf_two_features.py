@@ -1,7 +1,7 @@
 """
-====================
+==================================
 IntervalRandomFrog - Basic example
-====================
+==================================
 
 An Interval Random Frog example showing the spectral intervals optimized by
 the IRF method.

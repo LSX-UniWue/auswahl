@@ -1,7 +1,7 @@
 """
-====================
+=====================
 BiPLS - Basic example
-====================
+=====================
 
 An Backward interval Partial Least Squares example showing the spectral intervals optimized by
 the FiPLS method.

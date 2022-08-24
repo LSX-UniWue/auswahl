@@ -1,7 +1,7 @@
 """
-====================
+=====================
 FiPLS - Basic example
-====================
+=====================
 
 An Forward interval Partial Least Squares example showing the spectral intervals optimized by
 the FiPLS method.
