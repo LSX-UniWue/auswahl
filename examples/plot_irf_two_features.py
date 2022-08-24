@@ -33,16 +33,25 @@ irf = IntervalRandomFrog(n_intervals_to_select=2,
                          random_state=42)
 irf.fit(X, y)
 
-plt.plot(irf.frequencies_ / n_iterations, marker='.')
-interval_starts = np.argwhere(np.diff(irf.get_support().astype(int)) > 0) + 1
-for start in interval_starts:
-    plt.fill_betweenx([0, 1], start, start + irf.interval_width - 1, zorder=0, color='C01', alpha=0.5)
+idx = np.arange(len(irf.frequencies_))
+plt.plot(idx, irf.frequencies_ / n_iterations, marker='.', zorder=3)
+plt.hlines(y=irf.frequencies_ / n_iterations,
+           xmin=idx,
+           xmax=idx + irf.interval_width - 1,
+           alpha=0.5,
+           zorder=1)
 
+interval_starts = np.argwhere(np.diff(irf.get_support().astype(int)) > 0) + 1
+plt.hlines(y=irf.frequencies_[interval_starts] / n_iterations,
+           xmin=interval_starts,
+           xmax=interval_starts + irf.interval_width - 1,
+           colors='C01',
+           zorder=2)
 
 plt.ylim([0, 1])
 plt.xticks(range(0, 55, 5))
 plt.xlabel('Feature')
 plt.ylabel('Relative Frequency')
-plt.legend(['Frequency', 'Selected Intervals'], loc='center left')
+plt.legend(['Frequency', 'Interval', 'Selected Intervals'])
 
 plt.show()
