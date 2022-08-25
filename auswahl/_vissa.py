@@ -209,6 +209,9 @@ class VISSA(PointSelector):
             if selected_variables.size == n_features_to_select:
                 break
 
+        self.weights_ = np.zeros(X.shape[1])
+        self.weights_[selected_variables] = selected_variables_weight
+
         self.support_ = np.zeros((X.shape[1],)).astype('bool')
         self.support_[selected_variables[np.argsort(-selected_variables_weight)][:n_features_to_select]] = True
 
