@@ -2,6 +2,9 @@
 
 .. _base.PointSelector:
 
+Wavelength Point Selection
+==========================
+
 All classes that extend the :class:`auswahl.PointSelector` can be used to perform wavelength point selection,
 i.e. the independent selection of informative wavelengths without taking spatial information into account.
 
@@ -12,7 +15,7 @@ Use the methods available in :mod:`sklearn.model_selection` to determine a suita
 .. _vip:
 
 Variable Importance in Projection
-=================================
+---------------------------------
 
 Calculating the Variable Importance in Projection (VIP) is possible by using the :class:`VIP` selection method.
 This method uses the coefficients of a fitted Partial Least Squares (PLS) model to calculate the importance of each
@@ -31,7 +34,7 @@ The VIPs are computed by:
 
 Note that the above equation uses a 1-dimensional target vector.
 
-.. topic:: Examples
+.. topic:: Examples:
 
     * :ref:`sphx_glr_auto_examples_plot_vip_two_features.py`: A VIP example usage for a synthetic regression task
     * :ref:`sphx_glr_auto_examples_plot_vip_threshold.py`: A VIP example that examines the calculated VIP scores to
@@ -46,7 +49,7 @@ Note that the above equation uses a 1-dimensional target vector.
 .. _mcuve:
 
 Monte-Carlo Uninformative Variable Elimination
-==============================================
+----------------------------------------------
 
 Monte-Carlo Uninformative Variable Elimination (MC-UVE) uses random sampling to determine the stability of features.
 Performing MC-UVE is possible by using the :class:`MCUVE` selection method.
@@ -59,6 +62,10 @@ the stability for the i-th feature is defined as:
 
 The features with the highest **absolute** stability values are selected.
 
+.. topic:: Examples:
+
+    * :ref:`sphx_glr_auto_examples_plot_mcuve_two_features.py`: An MC-UVE example usage for a synthetic regression task
+
 .. topic:: References:
 
     * Wensheng Cai, Yankun Li and Xueguang Shao,
@@ -69,7 +76,7 @@ The features with the highest **absolute** stability values are selected.
 .. _rf:
 
 Random Frog
-===========
+-----------
 
 Random Frog (RF) is an iterative selection method that starts with randomly selected features which are adapted during
 the iteration process.
@@ -81,6 +88,10 @@ After performing all iterations, the features with the highest selection frequen
 
 RF is available in :class:`RandomFrog`.
 
+.. topic:: Examples:
+
+    * :ref:`sphx_glr_auto_examples_plot_rf_two_features.py`: An RF example usage for a synthetic regression task
+
 .. topic:: References:
 
     * Hong-Dong Li and Qing-Song Xu and Yi-Zeng Liang,
@@ -91,7 +102,7 @@ RF is available in :class:`RandomFrog`.
 .. _cars:
 
 Competitive Adaptive Reweighted Sampling
-========================================
+----------------------------------------
 
 Competitive Adaptive Reweighted Sampling (CARS) is available in :class:`CARS`.
 CARS is an iterative algorithm, producing a candidate feature set with monotonly decreasing size in each iteration.
@@ -109,7 +120,7 @@ in a fitted Partial Least Squares (PLS) model. The importance is subsequently us
 sampling procedure, in which the set of features is generated through sampling with replacement. The number of samples
 drawn is determined by the EDF.
 
-.. topic:: Examples
+.. topic:: Examples:
 
     * :ref:`sphx_glr_auto_examples_plot_cars_two_features.py`: A CARS example usage for a synthetic regression task
 
@@ -122,7 +133,7 @@ drawn is determined by the EDF.
 .. _spa:
 
 Successive Projection Algorithm
-===============================
+-------------------------------
 
 Successive Projection Algorithm (SPA) is available in :class:`SPA`.
 The SPA algorithm addresses the frequent problem of high collinearity in spectroscopic data:
@@ -141,7 +152,7 @@ a maximum CV performance.
 Note also, that the features are selected solely with regard to their collinearity. The quality w.r.t.
 the target quantity regression is only considered during the CV optimization of the initial variable.
 
-.. topic:: Examples
+.. topic:: Examples:
 
     * :ref:`sphx_glr_auto_examples_plot_spa_features.py`: A SPA example usage for a synthetic regression task
 
@@ -152,8 +163,10 @@ the target quantity regression is only considered during the CV optimization of 
       'The successive projections algorithm for variable selection in spectroscopic multicomponent analysis',
       Chemometrics and Intelligent Laboratory Systems, 57, 65-73, 2001
 
+.. _vissa:
+
 Variable Iterative Subspace Shrinkage Approach
-==============================================
+----------------------------------------------
 
 The Variable Iterative Subspace Shrinkage Approach (VISSA) is an algorithm exploring the space of feature subsets
 via a Weighted Block Matrix Sampling strategy and is available in :class:`VISSA`
@@ -169,7 +182,7 @@ The algorithm terminates, if either the required number of variables have
 achieved a weight of circa 1, or the variable weights in an iteration produce a deteriorating average Cross Validation score
 of the top submodels compared to the previous iterations.
 
-.. topic:: Examples
+.. topic:: Examples:
 
     * :ref:`sphx_glr_auto_examples_plot_vissa_two_features.py`: A VISSA example usage for a synthetic regression task
 

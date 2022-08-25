@@ -15,6 +15,8 @@ class MCUVE(PointSelector):
 
     Note that the **absolute** stability values are used to determine the most important features.
 
+    Read more in the :ref:`User Guide <mcuve>`.
+
     Parameters
     ----------
     n_features_to_select : int or float, default=None

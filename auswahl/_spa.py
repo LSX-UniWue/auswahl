@@ -15,6 +15,8 @@ class SPA(PointSelector):
     
         The Successive Projections Algorithm conducts feature selection according to Araújo et al. [1]_.
         The algorithm aims to find a set of features exhibiting minimal collinearity.
+
+        Read more in the :ref:`User Guide <spa>`.
         
         Parameters
         ----------

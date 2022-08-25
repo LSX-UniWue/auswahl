@@ -2,6 +2,9 @@
 
 .. _base.IntervalSelector:
 
+Wavelength Interval Selection
+=============================
+
 All classes that extend the :class:`auswahl.IntervalSelector` can be used to perform wavelength interval selection,
 i.e. the selection of ranges of informative wavelengths.
 
@@ -13,15 +16,15 @@ Use the methods available in :mod:`sklearn.model_selection` to determine a suita
 .. _ipls:
 
 Interval Partial Least Squares
-==============================
+------------------------------
 
 Interval Partial Least Squares (IPLS) is available in :class:`IPLS`.
 IPLS is a simple algorithm, selecting the best interval of a user definable width w.r.t. to
 a regression model.
 
-.. topic:: Examples
+.. topic:: Examples:
 
-    * :ref:`sphx_glr_auto_examples_plot_ipls_two_features.py`: A VIP example usage for a synthetic regression task
+    * :ref:`sphx_glr_auto_examples_plot_ipls_two_features.py`: An IPLS example usage for a synthetic regression task
 
 .. topic:: References:
 
@@ -33,16 +36,16 @@ a regression model.
 .. _fipls:
 
 Forward Interval Partial Least Squares
-======================================
+--------------------------------------
 
 Forward interval Partial Least Squares (FiPLS) is available in :class:`FiPLS`.
 FiPLS is a variant of IPLS that sequentially selects intervals based on the cross-validated RMSE of a fitted PLS model.
 The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` with :code:`direction='forward'` but
 this method selects continuous sequences of features instead of single features.
 
-.. topic:: Examples
+.. topic:: Examples:
 
-    * :ref:`sphx_glr_auto_examples_plot_fipls_two_features.py`: A VIP example usage for a synthetic regression task
+    * :ref:`sphx_glr_auto_examples_plot_fipls_two_features.py`: An FiPLS example usage for a synthetic regression task
 
 .. topic:: References:
 
@@ -54,15 +57,16 @@ this method selects continuous sequences of features instead of single features.
 .. _bipls:
 
 Backward Interval Partial Least Squares
-=======================================
-Backward interval Partial Least Squares (FiPLS) is available in :class:`BiPLS`.
+---------------------------------------
+
+Backward interval Partial Least Squares (BiPLS) is available in :class:`BiPLS`.
 BiPLS is a variant of IPLS that sequentially removes intervals based on the cross-validated RMSE of a fitted PLS model.
 The idea is similar to :class:`sklearn.feature_selection.SequentialFeatureSelector` with :code:`direction='backward'`
 but this method selects continuous sequences of features instead of single features.
 
-.. topic:: Examples
+.. topic:: Examples:
 
-    * :ref:`sphx_glr_auto_examples_plot_bipls_two_features.py`: A VIP example usage for a synthetic regression task
+    * :ref:`sphx_glr_auto_examples_plot_bipls_two_features.py`: A BiPLS example usage for a synthetic regression task
 
 .. topic:: References:
 
@@ -74,22 +78,26 @@ but this method selects continuous sequences of features instead of single featu
 .. _irf:
 
 Interval Random Frog
-====================
+--------------------
 
 Interval Random Frog (iRF) is and adaption of the :ref:`rf` method that selects intervals instead of single features.
 It is an iterative selection method that starts with randomly selected intervals which are adapted during the iteration
 process.
 Each iteration, a random sub- or superset is created and compared against the previously selected intervals by
 cross-validation.
-The RF method keeps track of a counter for each interval and the counters for all intervals in the "winning" set
+The iRF method keeps track of a counter for each interval and the counters for all intervals in the "winning" set
 (i.e. higher cv score) are increased after each iteration.
-After performing all iterations, the intervals with the highest selection frequencies are selected.
+
+Using arbitrary interval positions might result in overlapping intervals (i.e. offset is smaller than the interval
+width) with similar or even equal selection probabilities. To prevent overlapping intervals for the final selection
+mask, the intervals are determined sequentially; i.e. an interval is selected if it has the highest selection
+probability AND does not overlap with the previously selected intervals.
 
 iRF is available in :class:`IntervalRandomFrog`.
 
-.. topic:: Examples
+.. topic:: Examples:
 
-    * :ref:`sphx_glr_auto_examples_plot_irf_two_features.py`: A VIP example usage for a synthetic regression task
+    * :ref:`sphx_glr_auto_examples_plot_irf_two_features.py`: An iRF example usage for a synthetic regression task
 
 .. topic:: References:
 

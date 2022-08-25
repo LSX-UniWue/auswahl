@@ -19,6 +19,8 @@ class CARS(PointSelector):
         The feature selection is conducted according to Li et al. [1]_.
         Since CARS is not designed to return a feature set of a specifc size, the implementation at hand
         is an adaption of the algorithm of Li et al. for this specific setting.
+
+        Read more in the :ref:`User Guide <cars>`.
     
         Parameters
         ----------

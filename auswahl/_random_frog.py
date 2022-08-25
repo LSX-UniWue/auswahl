@@ -152,6 +152,8 @@ class RandomFrog(PointSelector, _RandomFrog):
 
     The selection frequencies are computed according to Li et al. [1]_.
 
+    Read more in the :ref:`User Guide <rf>`.
+
     Parameters
     ----------
     n_features_to_select : int or float, default=None
@@ -282,6 +284,8 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
     r"""Feature selection with the Interval Random Frog (iRF) method.
 
     The selection frequencies are computed according to Yun et al. [1]_.
+
+    Read more in the :ref:`User Guide <irf>`.
 
     Parameters
     ----------

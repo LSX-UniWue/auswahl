@@ -35,10 +35,14 @@ If you use AUSWAHL, please cite our work:
 
 .. toctree::
     :maxdepth: 3
-    :caption: User Guide
 
     installation
     quickstart
+
+.. toctree::
+    :maxdepth: 3
+    :caption: User Guide
+
     user_guide
 
 .. toctree::

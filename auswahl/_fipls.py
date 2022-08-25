@@ -14,6 +14,8 @@ class FiPLS(IntervalSelector):
     The FiPLS method has been described in Xiaobo et al. [1]_.
     This implementation deviates from the original description as it allows to select intervals at arbitrary positions.
 
+    Read more in the :ref:`User Guide <fipls>`.
+
     Parameters
     ----------
     n_intervals_to_select : int, default=None

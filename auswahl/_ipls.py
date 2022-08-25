@@ -16,6 +16,8 @@ class IPLS(IntervalSelector):
 
         The optimal interval of a specified width is calculated according to Norgaard et al. [1]_.
 
+        Read more in the :ref:`User Guide <ipls>`.
+
         Parameters
         ----------
         interval_width : int, default=None

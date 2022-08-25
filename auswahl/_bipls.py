@@ -15,6 +15,8 @@ class BiPLS(IntervalSelector):
 
     The BiPLS method has been described in Xiaobo et al. [1]_.
 
+    Read more in the :ref:`User Guide <bipls>`.
+
     Parameters
     ----------
     n_intervals_to_select : int, default=None
