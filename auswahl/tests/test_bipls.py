@@ -22,6 +22,10 @@ def test_bipls(data):
     assert sum(bipls.support_) == n_intervals_to_select * interval_width
     assert sum(bipls.support_[np.r_[20:25, 45:50]]) == 10
 
+    assert bipls.rank_.max() == 1
+    assert bipls.rank_.min() == 0
+    assert (bipls.rank_ == 1).sum() <= (n_intervals_to_select * interval_width)
+
     X_t = bipls.transform(X)
     assert X_t.shape[1] == n_intervals_to_select * interval_width
 

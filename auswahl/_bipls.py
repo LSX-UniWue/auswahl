@@ -10,6 +10,7 @@ from ._base import IntervalSelector
 
 class BiPLS(IntervalSelector):
     """Feature Selection with Backward interval Partial Least Squares (BiPLS).
+
     The method separates the features space into intervals of equal width and sequentially removes the worst interval.
     The last interval is smaller if the total number of features is not a whole multiple of the interval width.
 
@@ -26,8 +27,8 @@ class BiPLS(IntervalSelector):
         Number of features that form an interval.
 
     pls : PLSRegression, default=None
-        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-        Use this to adjust the hyperparameters of the PLS method.
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
 
     n_cv_folds : int, default=10
         Number of cross validation folds used to evaluate intervals

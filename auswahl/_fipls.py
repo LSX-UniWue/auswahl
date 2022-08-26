@@ -25,8 +25,8 @@ class FiPLS(IntervalSelector):
         Number of features that form an interval
 
     pls : PLSRegression, default=None
-        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-        Use this to adjust the hyperparameters of the PLS method.
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
 
     n_cv_folds : int, default=10
         Number of cross validation folds used to evaluate intervals

@@ -193,8 +193,8 @@ class RandomFrog(PointSelector, _RandomFrog):
         Number of parallel processes used to fit the PLS models on the cross-validation splits
 
     pls : PLSRegression, default=None
-        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-        Use this to adjust the hyperparameters of the PLS method.
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
 
     random_state : int or numpy.random.RandomState, default=None
         Seed for the random subset sampling. Pass an int for reproducible output across function calls.
@@ -331,8 +331,8 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
         Number of parallel processes used to fit the PLS models on the cross-validation splits
 
     pls : PLSRegression, default=None
-        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-        Use this to adjust the hyperparameters of the PLS method.
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
 
     random_state : int or numpy.random.RandomState, default=None
         Seed for the random subset sampling. Pass an int for reproducible output across function calls.

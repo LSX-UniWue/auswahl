@@ -29,8 +29,8 @@ class MCUVE(PointSelector):
         Number of samples used for each random subset.
 
     pls : PLSRegression, default=None
-        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-        Use this to adjust the hyperparameters of the PLS method.
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
 
     random_state : int or numpy.random.RandomState, default=None
         Seed for the random subset sampling. Pass an int for reproducible output across function calls.
@@ -41,8 +41,8 @@ class MCUVE(PointSelector):
         Fitted regression coefficients of the <n_subsets> PLS models.
 
     stability_ : ndarray of shape (n_features,)
-        Computed stability value for each feature. While these attribute contains the signed stability values,
-        MC-UVE uses the absolute values to select the most important features.
+        Computed stability value for each feature. While these attribute contains the signed stability values, MC-UVE
+        uses the absolute values to select the most important features.
 
     support_ : ndarray of shape (n_features,)
         Mask of selected features.

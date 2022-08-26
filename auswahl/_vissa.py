@@ -11,59 +11,56 @@ from ._base import PointSelector
 
 
 class VISSA(PointSelector):
+    """Feature Selection with Variable Iterative Space Shrinkage Approach (VISSA).
 
+    The variable importance is calculated according to  Deng et al. [1]_.
+
+    Read more in the :ref:`User Guide <vip>`.
+
+    Parameters
+    ----------
+    n_features_to_select : int or float, default=None
+        Number of features to select.
+
+    n_jobs : int, default=1
+        Number of parallel threads to calculate VISSA
+
+    n_submodels : int, default=1000
+        Number of submodels fitted in each VISSA iteration
+
+    n_cv_folds : int, default=5
+        Number of cross validation folds used in the evaluation of feature sets.
+
+    pls : PLSRegression, default=None
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
+
+    Attributes
+    ----------
+    weights_ : ndarray of shape (n_features,)
+        VISSA importance scores for variables.
+
+    support_ : ndarray of shape (n_features,)
+        Mask of selected features. The highest weighted features are selected
+
+    References
+    ----------
+    .. [1] Bai-chuan Deng, Yong-huan Yun, Yi-zeng Liang, Lun-shao Yi,
+           'A novel variable selection approach that iteratively optimizes variable space using weighted binary
+            matrix sampling',
+           Analyst, 139, 4836–-4845, 2014.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from auswahl import VISSA
+    >>> X = np.random.randn(100, 10)
+    >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
+    >>> selector = VISSA(n_features_to_select=2, n_jobs=2, n_submodels=200)
+    >>> selector.fit(X, y)
+    >>> selector.get_support()
+    array([True, False, False, False, False, True, False, False, False, False])
     """
-            Feature Selection with Variable Iterative Space Shrinkage Approach (VISSA).
-
-            The variable importance is calculated according to  Deng et al. [1]_.
-
-            Read more in the :ref:`User Guide <vip>`.
-
-            Parameters
-            ----------
-            n_features_to_select : int or float, default=None
-                Number of features to select.
-
-            n_jobs : int, default=1
-                Number of parallel threads to calculate VISSA
-
-            n_submodels : int, default=1000
-                Number of submodels fitted in each VISSA iteration
-
-            n_cv_folds : int, default=5
-                Number of cross validation folds used in the evaluation of feature sets.
-
-            pls : PLSRegression, default=None
-                Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-                Use this to adjust the hyperparameters of the PLS method.
-
-
-            Attributes
-            ----------
-            weights_ : ndarray of shape (n_features,)
-                VISSA importance scores for variables.
-
-            support_ : ndarray of shape (n_features,)
-                Mask of selected features. The highest weighted features are selected
-
-            References
-            ----------
-            .. [1] Bai-chuan Deng, Yong-huan Yun, Yi-zeng Liang, Lun-shao Yi,
-                   'A novel variable selection approach that iteratively optimizes variable space using weighted binary
-                    matrix sampling',
-                   Analyst, 139, 4836–-4845, 2014.
-
-            Examples
-            --------
-            >>> import numpy as np
-            >>> from auswahl import VISSA
-            >>> X = np.random.randn(100, 10)
-            >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
-            >>> selector = VISSA(n_features_to_select=2, n_jobs=2, n_submodels=200)
-            >>> selector.fit(X, y)
-            >>> selector.get_support()
-            array([True, False, False, False, False, True, False, False, False, False])
-        """
 
     def __init__(self,
                  n_features_to_select: int = None,

@@ -9,59 +9,50 @@ from ._base import PointSelector
 
 
 class SPA(PointSelector):
-
     """Feature selection with the Successive Projection Algorithm (SPA).
-    
-    
-        The Successive Projections Algorithm conducts feature selection according to Araújo et al. [1]_.
-        The algorithm aims to find a set of features exhibiting minimal collinearity.
 
-        Read more in the :ref:`User Guide <spa>`.
-        
-        Parameters
-        ----------
-        
-        n_features_to_select : int, default=None
-            Upper bound of features to select.
-            
-        n_cv_folds : int, default=5
-            Number of cross validation folds used in the evaluation of feature sets.
+    The Successive Projections Algorithm conducts feature selection according to Araújo et al. [1]_.
+    The algorithm aims to find a set of features exhibiting minimal collinearity.
 
-        pls : PLSRegression, default=None
-            Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-            Use this to adjust the hyperparameters of the PLS method.
+    Read more in the :ref:`User Guide <spa>`.
 
-        n_jobs : int, default=1
-            Number of jobs used for parallel calculation of SPA
-    
-        
-        Attributes
-        ----------
-        
-        support_ : ndarray fo shape (n_features,)
-            Mask of selected features
-        
-    
-        References
-        ----------
-        
-        .. [1] Mário César Ugulino Araújo,Teresa Cristina Bezerra Saldanha, Roberto Kawakami Harrop Galvao, 
-               Takashi Yoneyama, Henrique Caldas Chame and Valeria Visani,
-               The successive projections algorithm for variable selection in spectroscopic multicomponent analysis,
-               Chemometrics and Intelligent Laboratory Systems, 57, 65-73, 2001
-        
-        
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from auswahl import SPA
-        >>> X = np.random.randn(100, 15)
-        >>> y = 5 * X[:, -2] - 2 * X[:, -1]  # y only depends on two features
-        >>> selector = SPA(n_features_to_select=2)
-        >>> selector.fit(X, y)
-        >>> selector.get_support()
-        array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
-    
+    Parameters
+    ----------
+    n_features_to_select : int, default=None
+        Upper bound of features to select.
+
+    n_cv_folds : int, default=5
+        Number of cross validation folds used in the evaluation of feature sets.
+
+    pls : PLSRegression, default=None
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
+
+    n_jobs : int, default=1
+        Number of jobs used for parallel calculation of SPA
+
+    Attributes
+    ----------
+    support_ : ndarray fo shape (n_features,)
+        Mask of selected features
+
+    References
+    ----------
+    .. [1] Mário César Ugulino Araújo,Teresa Cristina Bezerra Saldanha, Roberto Kawakami Harrop Galvao,
+           Takashi Yoneyama, Henrique Caldas Chame and Valeria Visani,
+           The successive projections algorithm for variable selection in spectroscopic multicomponent analysis,
+           Chemometrics and Intelligent Laboratory Systems, 57, 65-73, 2001
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from auswahl import SPA
+    >>> X = np.random.randn(100, 15)
+    >>> y = 5 * X[:, -2] - 2 * X[:, -1]  # y only depends on two features
+    >>> selector = SPA(n_features_to_select=2)
+    >>> selector.fit(X, y)
+    >>> selector.get_support()
+    array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
     """
     
     def __init__(self, 

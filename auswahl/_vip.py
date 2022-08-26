@@ -21,8 +21,8 @@ class VIP(PointSelector, Convertible):
         Number of features to select.
 
     pls : PLSRegression, default=None
-        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-        Use this to adjust the hyperparameters of the PLS method.
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
 
     Attributes
     ----------

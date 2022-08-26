@@ -11,51 +11,50 @@ from ._base import FeatureDescriptor
 
 
 class IPLS(IntervalSelector):
+    """Interval selection with Interval Partial Least Squares (iPLS).
 
-    """ Interval selection with Interval Partial Least Squares (iPLS).
+    The optimal interval of a specified width is calculated according to Norgaard et al. [1]_.
 
-        The optimal interval of a specified width is calculated according to Norgaard et al. [1]_.
+    Read more in the :ref:`User Guide <ipls>`.
 
-        Read more in the :ref:`User Guide <ipls>`.
+    Parameters
+    ----------
+    interval_width : int, default=None
+        Width of the interval to select.
 
-        Parameters
-        ----------
-        interval_width : int, default=None
-            Width of the interval to select.
+    n_cv_folds : int, default=10
+        Number of cross validation folds used to evaluate intervals
 
-        n_cv_folds : int, default=10
-            Number of cross validation folds used to evaluate intervals
+    pls : PLSRegression, default=None
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
+        to adjust the hyperparameters of the PLS method.
 
-        pls : PLSRegression, default=None
-            Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-            Use this to adjust the hyperparameters of the PLS method.
+    Attributes
+    ----------
+    support_ : ndarray of shape (n_features,)
+        Mask of the selected interval.
 
-        Attributes
-        ----------
-        support_ : ndarray of shape (n_features,)
-            Mask of the selected interval.
+    score_ : float
+        Cross validation score of the interval selected.
 
-        score_ : float
-            Cross validation score of the interval selected.
+    References
+    ----------
+    .. [1] L. Nogaard, A. Saudland, J. Wagner, J. P. Nielsen, L. Munck, S. B. Engelsen,
+           'Interval Partial Least-Squares Regression (iPLS):
+           A comparative chemometric study with an example from Near-Infrared Spectrocopy'
+           Applied Spectrosopy, Volume 54, Nr. 3, 413--419, 2000.
 
-        References
-        ----------
-        .. [1] L. Nogaard, A. Saudland, J. Wagner, J. P. Nielsen, L. Munck, S. B. Engelsen,
-               'Interval Partial Least-Squares Regression (iPLS):
-               A comparative chemometric study with an example from Near-Infrared Spectrocopy'
-               Applied Spectrosopy, Volume 54, Nr. 3, 413--419, 2000.
-
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from auswahl import IPLS
-        >>> X = np.random.randn(100, 10)
-        >>> y = 5 * X[:, 3] - 2 * X[:, 4]  # y only depends on two features
-        >>> selector = IPLS(interval_width=2)
-        >>> selector.fit(X, y)
-        >>> selector.get_support()
-        array([False, False, False, True, True, False, False, False, False, False])
-        """
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from auswahl import IPLS
+    >>> X = np.random.randn(100, 10)
+    >>> y = 5 * X[:, 3] - 2 * X[:, 4]  # y only depends on two features
+    >>> selector = IPLS(interval_width=2)
+    >>> selector.fit(X, y)
+    >>> selector.get_support()
+    array([False, False, False, True, True, False, False, False, False, False])
+    """
 
     def __init__(self,
                  n_intervals_to_select: int = 1,

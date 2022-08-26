@@ -14,21 +14,19 @@ from .util import optimize_intervals
 
 
 class PseudoIntervalSelector(IntervalSelector):
+    """ PseudoIntervalSelector transforms a PointSelector subclassing Convertible into an IntervalSelector, by
+    optimizing an interval selection into feature scores obtained by the PointSelector.
 
-    """
-        PseudoIntervalSelector transforms a PointSelector subclassing Convertible into an IntervalSelector,
-        by optimizing an interval selection into feature scores obtained by the PointSelector.
+    Parameters
+    ----------
+    selector: Convertible
+        Instance of a PointSelector subclassing Convertible
 
-        Parameters
-        ----------
-        selector: Convertible
-            Instance of a PointSelector subclassing Convertible
+    n_intervals_to_select : int, default=None
+        Number of intervals to select.
 
-        n_intervals_to_select : int, default=None
-            Number of intervals to select.
-
-        interval_width : int or float, default=None
-            Number of features that form an interval
+    interval_width : int or float, default=None
+        Number of features that form an interval
     """
 
     def __init__(self,

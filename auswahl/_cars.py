@@ -12,72 +12,62 @@ from ._base import PointSelector
 
 
 class CARS(PointSelector):
-
     """Feature selection with Competitive Adaptive Reweighted Sampling (CARS).
-    
-    
-        The feature selection is conducted according to Li et al. [1]_.
-        Since CARS is not designed to return a feature set of a specifc size, the implementation at hand
-        is an adaption of the algorithm of Li et al. for this specific setting.
 
-        Read more in the :ref:`User Guide <cars>`.
-    
-        Parameters
-        ----------
-        
-        n_features_to_select : int, default=None
-            Upper bound of features to select.
+    The feature selection is conducted according to Li et al. [1]_.
+    Since CARS is not designed to return a feature set of a specifc size, the implementation at hand is an adaption of
+    the algorithm of Li et al. for this specific setting.
 
-        n_cars_runs : int, default=20
-            Number of individual CARS rus to estimate the selection stability of wavelengths
+    Read more in the :ref:`User Guide <cars>`.
 
-        n_jobs : int, default=2
-            Number of parallel workers
-            
-        n_sample_runs : int, default=100
-            Number of sampling runs.
-            
-        fit_samples_ratio : float, default=0.9
-            Ratio of samples used to fit the regression model, used for scoring of features.
-            
-        n_cv_folds : int, default=5
-            Number of cross validation folds used in the evaluation of feature sets.
-              
-        
-        pls : PLSRegression, default=None
-            Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
-            Use this to adjust the hyperparameters of the PLS method.
-            
-        random_state : int or numpy.random.RandomState, default=None
-            Seed for the random subset sampling. Pass an int for reproducible output across function calls.  
-    
-        
-        Attributes
-        ----------
-        
-        support_ : ndarray of shape (n_features,)
-            Mask of selected features
+    Parameters
+    ----------
+    n_features_to_select : int, default=None
+        Upper bound of features to select.
 
-    
-        References
-        ----------
-        
-        .. [1] Hongdong Li,Yizeng Liang, Qingsong Xu and Dongsheng Cao,
-               Key wavelengths screening using competitive adaptive reweighted sampling method for multivariate calibration,
-               Analytica Chimica Acta, 648, 77-84, 2009
-        
-        
-        Examples
-        --------
-        >>> import numpy as np
-        >>> from auswahl import CARS
-        >>> X = np.random.randn(100, 15)
-        >>> y = 5 * X[:, -2] - 2 * X[:, -1]  # y only depends on two features
-        >>> selector = CARS(n_features_to_select=2,n_sample_runs = 100)
-        >>> selector.fit(X, y)
-        >>> selector.get_support()
-        array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
-    
+    n_cars_runs : int, default=20
+        Number of individual CARS rus to estimate the selection stability of wavelengths
+
+    n_jobs : int, default=2
+        Number of parallel workers
+
+    n_sample_runs : int, default=100
+        Number of sampling runs.
+
+    fit_samples_ratio : float, default=0.9
+        Ratio of samples used to fit the regression model, used for scoring of features.
+
+    n_cv_folds : int, default=5
+        Number of cross validation folds used in the evaluation of feature sets.
+
+    pls : PLSRegression, default=None
+        Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class.
+        Use this to adjust the hyperparameters of the PLS method.
+
+    random_state : int or numpy.random.RandomState, default=None
+        Seed for the random subset sampling. Pass an int for reproducible output across function calls.
+
+    Attributes
+    ----------
+    support_ : ndarray of shape (n_features,)
+        Mask of selected features
+
+    References
+    ----------
+    .. [1] Hongdong Li,Yizeng Liang, Qingsong Xu and Dongsheng Cao,
+           Key wavelengths screening using competitive adaptive reweighted sampling method for multivariate calibration,
+           Analytica Chimica Acta, 648, 77-84, 2009
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from auswahl import CARS
+    >>> X = np.random.randn(100, 15)
+    >>> y = 5 * X[:, -2] - 2 * X[:, -1]  # y only depends on two features
+    >>> selector = CARS(n_features_to_select=2,n_sample_runs = 100)
+    >>> selector.fit(X, y)
+    >>> selector.get_support()
+    array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
     """
 
     def __init__(self,
