@@ -40,6 +40,10 @@ class BiPLS(IntervalSelector):
     support_ : ndarray of shape (n_features,)
         Mask of selected features.
 
+    rank_ : ndarray of shape (n_features,)
+        Relative rank of selection. The interval with the lowest relative rank has been removed first. The finally
+        selected intervals have a relative rank of 1.
+
     References
     ----------
     .. [1] Zou Xiaobo, Zhao Jiewen, Li Yanxiao,
@@ -73,7 +77,10 @@ class BiPLS(IntervalSelector):
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):
         selection = np.ones(X.shape[1], dtype=bool)
+        rank = np.ones(X.shape[1])
         free_idx = [i for i in range(0, X.shape[1], interval_width)]
+        n_intervals_to_remove = len(free_idx) - n_intervals_to_select
+
         with Parallel(n_jobs=self.n_jobs) as parallel:
             for n in range(len(free_idx) - n_intervals_to_select):
                 x_free = X[:, selection]
@@ -88,8 +95,10 @@ class BiPLS(IntervalSelector):
                 selection[worst_interval:worst_interval + interval_width] = 0
                 self.best_model_ = models[best]
                 free_idx.remove(worst_interval)
+                rank[worst_interval:worst_interval + interval_width] = n / n_intervals_to_remove
 
         self.support_ = selection
+        self.rank_ = rank
         return self
 
     def _get_support_mask(self):
