@@ -14,8 +14,9 @@ from .util import optimize_intervals
 
 
 class PseudoIntervalSelector(IntervalSelector):
-    """ PseudoIntervalSelector transforms a PointSelector subclassing Convertible into an IntervalSelector, by
-    optimizing an interval selection into feature scores obtained by the PointSelector.
+    """ PseudoIntervalSelector transforms a PointSelector subclassing :class:`~auswahl.Convertible` into an IntervalSelector.
+    Given the feature scores calculated by the wrapped :class:`~auswahl.PointSelector`, an optimal (max total score) interval
+    placement is calculated using :func:`~auswahl.optimize_intervals`
 
     Parameters
     ----------

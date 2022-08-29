@@ -5,7 +5,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 def optimize_intervals(n_intervals: int, interval_width: int, feature_scores: np.array):
     """ The algorithm calculates the optimal non-overlapping placement of n_intervals of width interval_width into the
     range of features. The feature scores are specified in feature_scores (greater better). The algorithm can be used
-    for instance to turn every point selection algorithm yielding a score for each feature (such as VIP) into an
+    for instance to turn every point selection algorithm yielding a score for each feature (such as :class:`~auswahl.VIP`) into an
     interval selection algorithm
 
     Parameters

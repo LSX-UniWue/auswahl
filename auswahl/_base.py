@@ -8,6 +8,7 @@ from abc import ABCMeta, abstractmethod
 from typing import Union, Tuple, List
 from functools import cached_property
 
+import sklearn.base
 from sklearn import clone
 from sklearn.base import BaseEstimator
 from sklearn.cross_decomposition import PLSRegression
@@ -66,7 +67,7 @@ class FeatureDescriptor:
 
     @cached_property
     def string_rep(self):
-        """ Provides a printing representation for the FeatureDescriptor, printing interval configurations as number of
+        """ Provides a printing representation for the FeatureDescriptor printing interval configurations as number of
         intervals and interval width separated vy a forward slash.
 
         Returns
@@ -193,8 +194,7 @@ class FeatureDescriptor:
 class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     """ Top level base class for all Auswahl selectors.
 
-    Provides subclassing of all relevant sklearn classes and common cross validation and hyperparameter optimization
-    functionality.
+    Provides subclassing of all relevant sklearn classes, common cross validationa and hyperparameter optimization functionality.
 
     Parameters
     ----------
@@ -298,8 +298,12 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
 
         return self
 
-    def get_best_estimator(self):
+    def get_best_estimator(self) -> sklearn.base.BaseEstimator:
         """Retrieve the best estimator model fitted on the selected features
+
+           Returns
+           -------
+           best model fitted on selected features: sklearn.base.BaseEstimator
         """
         check_is_fitted(self)
         if not hasattr(self, 'best_model_'):
@@ -309,14 +313,14 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
         return self.best_model_
 
     def reseed(self, seed: Union[int, RandomState]):
-        """ Random state updating function. Selector methods with more complex internal structure (such that methods
-        wrapping other methods) are required to override this function accordingly.
+        """ Random state updating interface for benchmarking. Selector methods with more complex internal structure
+        (such as methods wrapping other methods) are required to override this function accordingly.
         """
         self.random_state = seed
 
     def rethread(self, n_jobs: int):
-        """ n_jobs updating function. Selector methods with more complex internal structure (such that methods wrapping
-        other methods) are required to override this function accordingly.
+        """ n_jobs updating interface for benchmarking. Selector methods with more complex internal structure
+        (such as methods wrapping other methods) are required to override this function accordingly.
         """
         self.n_jobs = n_jobs
 
@@ -464,14 +468,18 @@ class IntervalSelector(SpectralSelector, metaclass=ABCMeta):
 
 
 class Convertible(metaclass=ABCMeta):
-    """PointSelector approaches, which provide, apart from the feature selection, a global score for each feature can be
-    made eligible for a PointSelector to IntervalSelector conversion through the class PseudoIntervalSelector by
+    """Selectors subclassing :class:`~auswah.PointSelector`, which provide a global score for each feature, can be
+    made eligible for a :class:`~auswahl.PointSelector` to :class:`~auswahl.IntervalSelector` conversion facilitated by :class:`~auswahl.PseudoIntervalSelector` by
     inheriting from this class.
     """
 
     @abstractmethod
-    def get_feature_scores(self):
+    def get_feature_scores(self) -> np.ndarray:
         """Provide scores of all features
+
+           Returns
+           -------
+           feature scores: np.ndarray of shape [n_features,]
         """
         ...
 

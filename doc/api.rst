@@ -4,6 +4,19 @@
 API
 ===
 
+Baseclasses
+===========
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    FeatureDescriptor
+    SpectralSelector
+    PointSelector
+    IntervalSelector
+    Convertible
+
 Wavelength Point Selection
 ==========================
 
@@ -29,3 +42,25 @@ Wavelength Interval Selection
     FiPLS
     BiPLS
     IntervalRandomFrog
+    PseudoIntervalSelector
+
+Utilities
+=========
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    optimize_intervals
+
+Benchmarking
+============
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    benchmarking.benchmark
+    benchmarking.DataHandler
+
+

@@ -100,7 +100,7 @@ class MCUVE(PointSelector):
         selected_idx = np.argsort(abs(self.stability_))[-n_features_to_select:]
         self.support_ = np.zeros(X.shape[1], dtype=bool)
         self.support_[selected_idx] = 1
-        self.best_model_ = model
+        _, self.best_model_ = self._evaluate(X[:, self.support_], y, self.pls, do_cv=False)
 
         return self
 

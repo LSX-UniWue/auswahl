@@ -1,5 +1,5 @@
 
-from ._base import IntervalSelector, PointSelector, SpectralSelector, FeatureDescriptor
+from ._base import IntervalSelector, PointSelector, SpectralSelector, Convertible, FeatureDescriptor
 from .benchmarking._util import Selection
 from ._cars import CARS
 from ._ipls import IPLS
@@ -18,7 +18,7 @@ from .util import optimize_intervals
 
 __version__ = '0.0.1'
 
-__all__ = ['PointSelector', 'IntervalSelector',
+__all__ = ['PointSelector', 'IntervalSelector','SpectralSelector', 'Convertible', 'FeatureDescriptor',
            'CARS', 'MCUVE', 'RandomFrog', 'SPA', 'VIP', 'VIP_SPA', 'VISSA',
-           'IntervalRandomFrog', 'IPLS', 'FiPLS', 'BiPLS', 'iVISSA',
+           'IntervalRandomFrog', 'IPLS', 'FiPLS', 'BiPLS',
            '__version__', 'optimize_intervals']

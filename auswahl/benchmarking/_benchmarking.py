@@ -414,9 +414,9 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
 
         Returns
         -------
-        pod: DataHandler
-            BenchmarkPOD object containing the result data of the benchmark. The BenchmarkPOD object contains
-            data regarding regression, stability, selection and run time measurement.
+        benchmarking results: :class:`~auswahl.benchmarking.DataHandler`
+            :class:`~auswahl.benchmarking.DataHandler` object containing the results of the benchmarking.
+            Data regarding regression, stability, selection and run time measurement.
     """
 
     speaker = Speaker(verbose)
