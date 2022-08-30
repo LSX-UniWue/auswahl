@@ -7,15 +7,17 @@ from auswahl import RandomFrog, IntervalRandomFrog
 
 @pytest.fixture
 def data():
-    X = np.random.randn(100, 10)
+    rs = np.random.RandomState(1337)
+    X = rs.randn(100, 10)
     y = 5 * X[:, 0] - 2 * X[:, 5]
     return X, y
 
 
 @pytest.fixture
 def interval_data():
-    X = np.random.randn(100, 10)
-    y = 5 * X[:, 0] - 3 * X[:, 1] + 2 * X[:, 5] - 3 * X[:, 6]
+    np.random.seed(1337)
+    X = np.random.randn(100, 50)
+    y = 5 * X[:, 21] - 2 * X[:, 24] + 3 * X[:, 46] + X[:, 47]
     return X, y
 
 
@@ -23,7 +25,7 @@ def test_random_frog(data):
     X, y = data
     n_iterations = 1000
 
-    rf = RandomFrog(n_features_to_select=2, n_iterations=n_iterations)
+    rf = RandomFrog(n_features_to_select=2, n_iterations=n_iterations, random_state=7331)
 
     rf.fit(X, y)
     assert len(rf.support_) == X.shape[1]
@@ -62,19 +64,23 @@ def test_reproducible_run(data):
 
 def test_interval_random_frog(interval_data):
     X, y = interval_data
-    n_iterations = 1000
 
-    rf = IntervalRandomFrog(n_intervals_to_select=2, interval_width=2, n_iterations=n_iterations)
+    n_intervals_to_select = 2
+    interval_width = 5
+    n_iterations = 1000
+    rf = IntervalRandomFrog(n_intervals_to_select=n_intervals_to_select,
+                            interval_width=interval_width,
+                            n_iterations=n_iterations,
+                            random_state=42)
 
     rf.fit(X, y)
     assert len(rf.support_) == X.shape[1]
-    assert sum(rf.support_) == 4
+    assert sum(rf.support_) == 10
     assert all(rf.frequencies_ <= n_iterations)
-    assert_array_equal(rf.support_, [1, 1, 0, 0, 0, 1, 1, 0, 0, 0])
+    assert all(rf.support_[[21, 24, 46, 47]])
 
     X_t = rf.transform(X)
-    assert X_t.shape[1] == 4
-    assert_array_almost_equal(X[:, [0, 1, 5, 6]], X_t)
+    assert X_t.shape[1] == n_intervals_to_select * interval_width
 
 
 def test_reproducible_run_interval_random_frog(interval_data):

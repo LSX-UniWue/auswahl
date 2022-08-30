@@ -10,6 +10,7 @@ from sklearn.feature_selection import SelectorMixin
 from sklearn.model_selection import cross_val_score, KFold
 from sklearn.utils.validation import check_is_fitted, check_random_state, check_scalar
 
+from util.pls_utils import get_coef_from_pls
 from ._base import PointSelector, IntervalSelector
 
 
@@ -273,7 +274,7 @@ class RandomFrog(PointSelector, _RandomFrog):
         return mask
 
     def _get_feature_score_from_model(self, pls, feature_idx):
-        return abs(pls.coef_.squeeze())
+        return abs(get_coef_from_pls(pls).squeeze())
 
     def _get_support_mask(self):
         check_is_fitted(self)
@@ -421,7 +422,7 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
 
     def _get_feature_score_from_model(self, pls, feature_idx):
         scores = np.zeros(self.n_windows_ + self.interval_width - 1)
-        scores[self._idx_to_mask(feature_idx)] = abs(pls.coef_.squeeze())
+        scores[self._idx_to_mask(feature_idx)] = abs(get_coef_from_pls(pls).squeeze())
         scores = [sum(scores[idx:idx + self.interval_width]) for idx in feature_idx]
         return scores
 

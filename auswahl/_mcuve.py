@@ -5,6 +5,7 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_is_fitted, check_scalar
 
+from util.pls_utils import get_coef_from_pls
 from ._base import PointSelector
 
 
@@ -92,7 +93,7 @@ class MCUVE(PointSelector):
             X_i, y_i = X[idx], y[idx]
 
             model.fit(X_i, y_i)
-            coefs.append(model.coef_.squeeze())
+            coefs.append(get_coef_from_pls(model).squeeze())
 
         self.coefs_ = np.array(coefs)
         self.stability_ = self.coefs_.mean(axis=0) / self.coefs_.std(axis=0)

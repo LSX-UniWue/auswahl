@@ -8,6 +8,7 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_is_fitted
 
+from util.pls_utils import get_coef_from_pls
 from ._base import PointSelector
 
 
@@ -106,7 +107,7 @@ class CARS(PointSelector):
         y_pls_fit = y[fitting_samples]
 
         _, model = self._evaluate(x_pls_fit, y_pls_fit, pls, do_cv=False)
-        weights = np.abs(model.coef_).flatten()
+        weights = np.abs(get_coef_from_pls(model)).flatten()
         wavelength_weights = np.zeros(X.shape[1])
         wavelength_weights[wavelengths] = weights
 
