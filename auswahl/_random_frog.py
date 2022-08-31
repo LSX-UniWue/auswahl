@@ -10,7 +10,7 @@ from sklearn.feature_selection import SelectorMixin
 from sklearn.model_selection import cross_val_score, KFold
 from sklearn.utils.validation import check_is_fitted, check_random_state, check_scalar
 
-from util.pls_utils import get_coef_from_pls
+from .util import get_coef_from_pls
 from ._base import PointSelector, IntervalSelector
 
 

@@ -3,7 +3,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal
 from sklearn.cross_decomposition import PLSRegression
 
-from util.pls_utils import get_coef_from_pls
+from util._pls_utils import get_coef_from_pls
 
 
 @pytest.fixture

@@ -8,7 +8,7 @@ from sklearn.cross_decomposition import PLSRegression
 from sklearn.utils import check_random_state
 from sklearn.utils.validation import check_is_fitted
 
-from util.pls_utils import get_coef_from_pls
+from .util import get_coef_from_pls
 from ._base import PointSelector
 
 
