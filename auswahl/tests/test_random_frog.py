@@ -71,7 +71,7 @@ def test_interval_random_frog(interval_data):
     rf = IntervalRandomFrog(n_intervals_to_select=n_intervals_to_select,
                             interval_width=interval_width,
                             n_iterations=n_iterations,
-                            random_state=42)
+                            random_state=7331)
 
     rf.fit(X, y)
     assert len(rf.support_) == X.shape[1]
