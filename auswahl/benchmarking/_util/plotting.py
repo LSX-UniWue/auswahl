@@ -522,7 +522,7 @@ def _plot_selection_bar(pod: DataHandler,
                  f'for {FeatureDescriptor(n_features, pod.resolve_tuples)} features.')
 
     selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features).to_numpy().tolist()
-    selections = pd.DataFrame([sum([s.selected_features for s in sel], []) for sel in selections])
+    selections = pd.DataFrame([sum([s.features for s in sel], []) for sel in selections])
 
     n_wavelengths = pod.get_meta(dataset)[2][1]  # TODO: improve this interface
 

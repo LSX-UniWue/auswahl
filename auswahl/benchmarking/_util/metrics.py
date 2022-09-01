@@ -11,7 +11,7 @@ def _pairwise_scoring(pod: DataHandler, pairwise_sim_function, metric_name: str)
             for dataset in pod.datasets:
                 # retrieve the samples of selected features (list of objects of type Selection)
                 supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy().tolist()
-                supports = np.array([selection.selected_features for selection in supports])
+                supports = np.array([selection.features for selection in supports])
 
                 pairwise_sim = []
                 dim0, dim1 = np.triu_indices(r)
