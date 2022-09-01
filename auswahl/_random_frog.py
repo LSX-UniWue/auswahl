@@ -228,8 +228,10 @@ class RandomFrog(PointSelector, _RandomFrog):
                  pls: PLSRegression = None,
                  n_cv_folds: int = 5,
                  n_jobs: int = 1,
+                 model_hyperparams: Union[Dict, List[Dict]] = None,
                  random_state: Union[int, np.random.RandomState] = None):
-        super().__init__(n_features_to_select, random_state=random_state, n_jobs=n_jobs)
+        super().__init__(n_features_to_select, model_hyperparams=model_hyperparams,
+                         random_state=random_state, n_jobs=n_jobs)
         self.n_iterations = n_iterations
         self.n_initial_features = n_initial_features
         self.variance_factor = variance_factor
