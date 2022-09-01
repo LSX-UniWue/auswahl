@@ -4,8 +4,8 @@ from sklearn.cross_decomposition import PLSRegression
 
 
 def get_coef_from_pls(pls):
-    """Retrieves the coef_ attribute from the PLS model in the shape (n_targets, n_features) without triggering a
-    FutureWarning. The coef_ values are already in the planned shape for future releases.
+    """Retrieves the coef attribute from the PLS model in the shape (n_targets, n_features) without triggering a
+    FutureWarning. The coef values are already in the planned shape for future releases.
 
     Parameters
     ----------
@@ -14,7 +14,7 @@ def get_coef_from_pls(pls):
 
     Returns
     -------
-    coef_: ndarray of shape (n_targets, n_features)
+    coef: ndarray of shape (n_targets, n_features)
         Linear coefficients of the pls model
     """
     warnings.simplefilter('ignore', category=FutureWarning)

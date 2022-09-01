@@ -52,6 +52,7 @@ Utilities
     :template: function.rst
 
     optimize_intervals
+    util.get_coef_from_pls
 
 Benchmarking
 ============
