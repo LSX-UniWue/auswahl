@@ -249,7 +249,8 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
             cross validation score if requested (otherwise None) and fitted estimator
         """
 
-        model = PLSRegression(n_components=min(2, X.shape[1])) if model is None else clone(model)
+        model = PLSRegression() if model is None else clone(model)
+        model.n_components = min(model.n_components, X.shape[1])
         if self.model_hyperparams is None:  # no hyperparameter optimization; conduct a simple CV
             cv_scores = None
             if do_cv:
