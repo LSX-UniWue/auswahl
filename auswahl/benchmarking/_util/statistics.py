@@ -6,31 +6,32 @@ from .data_handling import DataHandler
 
 
 def mw_ranking(pod: DataHandler, regression_metric: str, greater_better: bool = False, significance: float = 0.05):
-    """
-        Calculates a partial order of methods across all datasets and number of features to be selected for the given
-        regression metric. The Mann-Whitney U-test is used to assess statistical significance of differences in regression
-        performance.
+    """Calculates a partial order of methods across all datasets and number of features to be selected for the given
+    regression metric. The Mann-Whitney U-test is used to assess statistical significance of differences in regression
+    performance.
 
-        Parameters
-        ----------
-        pod: DataHandler
-            BenchmarkPOD object returned by the benchmarking function
-        regression_metric: str
-            name of the regression metric w.r.t which the partial order of methods will be calculated
-        greater_better: bool, default=False
-            flag, indicating the polarization of the regression metric. Default is the assumption that a smaller value
-            in the metric is better
-        significance: float, default=0.05
-            significance threshold. A difference in regression performance is considered statistically significant, if
-            its p-value is below this threshold
+    Parameters
+    ----------
+    pod: DataHandler
+        BenchmarkPOD object returned by the benchmarking function
 
-        Returns
-        -------
-        tuple: (strata, pair_scores)
-            strata: partial ordering
-            pair_scores: pandas.DataFrame indicating how often a method has been statistically significantly better
-                        than other methods, across datasets and number of features to be selected
+    regression_metric: str
+        Name of the regression metric w.r.t which the partial order of methods will be calculated
 
+    greater_better: bool, default=False
+        Flag, indicating the polarization of the regression metric. Default is the assumption that a smaller value
+        in the metric is better
+
+    significance: float, default=0.05
+        Significance threshold. A difference in regression performance is considered statistically significant, if
+        its p-value is below this threshold
+
+    Returns
+    -------
+    tuple: (strata, pair_scores)
+        strata: partial ordering
+        pair_scores: pandas.DataFrame indicating how often a method has been statistically significantly better
+                    than other methods, across datasets and number of features to be selected
     """
 
     data = pod.get_regression_data(reg_metric=regression_metric, item='samples').to_numpy()

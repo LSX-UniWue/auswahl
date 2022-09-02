@@ -1,12 +1,9 @@
-
 import warnings
-import pandas as pd
+from typing import List, Union, Literal, Tuple
 
 import matplotlib.patches as mpatches
 import numpy as np
-
-from typing import List, Union, Literal, Tuple
-
+import pandas as pd
 from matplotlib import pyplot as plt
 
 from .data_handling import DataHandler
@@ -25,13 +22,13 @@ def _check_specified_or_singleton(pool, argument, identifier):
         elif len(pool) == 0:
             raise ValueError(f'No {identifier} specified during configuration of the benchmarking.')
         return pool[0]
-    return argument #argument if isinstance(argument, str) else argument.__name__
+    return argument  # argument if isinstance(argument, str) else argument.__name__
 
 
 # go
 def _arrange_boxes(pod, n_features, methods):
     x_coords = []
-    ticks = np.arange(len(n_features) if n_features is not None else len(pod.feature_descriptors)) + 1  #start with 1
+    ticks = np.arange(len(n_features) if n_features is not None else len(pod.feature_descriptors)) + 1  # start with 1
     n_methods = len(methods if methods is not None else pod.methods)
     if len(methods) > 1:
         for i in range(n_methods):
@@ -51,7 +48,6 @@ def _box_plot(title: str,
               tick_labels: List[List[Union[float, int]]] = None,
               ticks: List[Union[int, float]] = None,
               save_path: str = None):
-
     colors = plt.cm.get_cmap('Accent', len(y_data) + 1)
     entities = ['boxprops', 'flierprops', 'capprops', 'whiskerprops']
 
@@ -78,7 +74,7 @@ def _box_plot(title: str,
                 plotting_kwargs[entity] = dict(color=colors(i))
 
         box_subplots.append(ax.boxplot(data, positions=x_data[i], whis=(0, 100), widths=box_width,
-                                manage_ticks=False, patch_artist=True, **plotting_kwargs))
+                                       manage_ticks=False, patch_artist=True, **plotting_kwargs))
 
         if legend is not None:
             legend_handles.append(mpatches.Patch(color=colors(i), label=legend[i]))
@@ -121,14 +117,13 @@ def _errorbar_plot(title: str,
                    legend: List[str],
                    plot_lines: bool = True,
                    save_path: str = None):
-
     colors = plt.cm.get_cmap('Accent', y_data.shape[0] + 1)
     markers = [c for c in ".ov^<>12348sp*hH+xDd|"]
 
     fig, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
     legend_handles = []
 
-    #calculate errors:
+    # calculate errors:
     y_max = (y_max - y_data).tolist()
     y_min = (y_data - y_min).tolist()
     y_data = y_data.tolist()
@@ -157,6 +152,7 @@ def _errorbar_plot(title: str,
     else:
         plt.show()
 
+
 def _line_plot(title: str,
                x_label: str,
                y_label: str,
@@ -164,7 +160,6 @@ def _line_plot(title: str,
                x_data: List[Union[int, Tuple[int, int]]],
                legend: List[str],
                save_path: str = None):
-
     colors = plt.cm.get_cmap('Accent', len(y_data) + 1)
     markers = [c for c in ".ov^<>12348sp*hH+xDd|"]
 
@@ -203,42 +198,40 @@ def plot_score_vs_stability(pod: DataHandler,
                             regression_metric: str = None,
                             methods: Union[str, List[str]] = None,
                             save_path: str = None):
+    """Plotting a boxplot for the benchmarked methods displaying
+    * the mean regression score on the y-axis
+        * mean regression value
+        * (25,75) IQR as box
+        * (0, 100) range as whiskers
+    * the stability score on the x-axis
+
+    Parameters
+    ----------
+    pod : DataHandler
+        Data container produced by benchmarking.
+
+    dataset: str
+        Dataset for which the data is to be plotted.
+
+    n_features: int or tuple of int
+        Number of features, which were to be selected by the algorithms.
+
+    stability_metric : str
+        Identifier of the stability metric to be plotted in the pod.
+
+    regression_metric : str
+        Identifier of the regression metric to be plotted in the pod..
+
+    methods : str or list of str, default=None
+        Identifiers of methods for which the data is to be plotted. If None, all available methods are plotted.
+
+    save_path: str, default=None
+        Path at which the plot is stored. If None, the plot is just displayed.
     """
-        Plotting a boxplot for the benchmarked methods displaying
-            * the mean regression score on the y-axis
-                * mean regression value
-                * (25,75) IQR as box
-                * (0, 100) range as whiskers
-            * the stability score on the x-axis
-
-        Parameters
-        ----------
-
-        pod : DataHandler
-            data container produced by benchmarking
-
-        dataset: str
-            dataset for which the data is to be plotted
-
-        n_features: int or tuple of int
-            number of features, which were to be selected by the algorithms
-
-        stability_metric : str
-            identifier of the stability metric to be plotted in the pod
-
-        regression_metric : str
-            identifier of the regression metric to be plotted in the pod
-
-        methods : str or list of str, default=None
-            identifers of methods for which the data is to be plotted. If None, all available methods are plotted
-
-        save_path: str, default=None
-            path at which the plot is stored. If None, the plot is just displayed
-    """
-
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
     n_features = _check_specified_or_singleton(pod.feature_descriptors, n_features, identifier='n_features')
-    regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric, identifier='regression metric')
+    regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric,
+                                                      identifier='regression metric')
     stability_metric = _check_specified_or_singleton(pod.stab_metrics, stability_metric, identifier='stability metric')
 
     reg_data = pod.get_regression_data(dataset=dataset,
@@ -267,29 +260,30 @@ def plot_exec_time(pod: DataHandler,
                    n_features: List[Union[int, Tuple[int]]] = None,
                    item: Literal['mean', 'median'] = 'mean',
                    save_path: str = None):
-
-    """
-        Plots execution times of selectors across different number of features to be selected
+    """Plots execution times of selectors across different number of features to be selected.
 
     Parameters
     ----------
     pod: DataHandler
-        BenchmarkPOD object containing the benchmarking data
+        BenchmarkPOD object containing the benchmarking data.
+
     dataset: str, default=None
-        identifier of the dataset of which to plot the execution time. If there is data for only one dataset
-        in the BenchmarkPOD object, the argument does not have to be specified
+        Identifier of the dataset of which to plot the execution time. If there is data for only one dataset
+        in the BenchmarkPOD object, the argument does not have to be specified.
+
     methods: str or list of str, default=None
-        identifiers of methods for which to plot the execution time. If None, all available methods are used.
+        Identifiers of methods for which to plot the execution time. If None, all available methods are used.
+
     n_features: list of integers or of tuples of integers, default=None
-        identifiers of the number of features or the configuration of intervals for which the execution time is to be plotted.
-        If None, all available feature descriptors are used.
+        Identifiers of the number of features or the configuration of intervals for which the execution time is to be
+        plotted. If None, all available feature descriptors are used.
+
     item: Literal['mean', 'median'], default='mean'
-        specifies whether the mean or median is displayed in the plot
+        Specifies whether the mean or median is displayed in the plot.
+
     save_path: str
-        path at which the plot has to be saved
-
+        Path at which the plot has to be saved.
     """
-
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
 
     if n_features is not None and not isinstance(n_features, list):
@@ -337,7 +331,6 @@ def _plot_score_box(pod: DataHandler,
                     methods: Union[str, List[str]],
                     n_features: List[Union[int, Tuple[int, int]]],
                     save_path: str = None):
-
     regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric,
                                                       identifier='regression metric')
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
@@ -378,7 +371,6 @@ def _plot_score_bar(pod: DataHandler,
                     n_features: List[Union[int, Tuple[int, int]]] = None,
                     item: Literal['mean', 'median'] = 'mean',
                     save_path: str = None):
-
     regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric,
                                                       identifier='regression metric')
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
@@ -431,29 +423,32 @@ def plot_score(pod: DataHandler,
                item: Literal['mean', 'median'] = 'mean',
                plot_type: Literal['box', 'bar'] = 'box',
                save_path: str = None):
-
-    """
-        Plot regression scores of selectors across different number of features to be selected as box or bar plot
+    """Plot regression scores of selectors across different number of features to be selected as box or bar plot.
 
     Parameters
     ----------
     pod: DataHandler
-        BenchmarkPOD object containing the benchmarking data
-    dataset: str, default=None
-        identifier of the dataset of which to plot the execution time. If there is data for only one dataset
-        in the BenchmarkPOD object, the argument does not have to be specified
-    methods: str or list of str, default=None
-        identifiers of methods for which to plot the execution time. If None, all available methods are used.
-    n_features: list of integers or of tuples of integers, default=None
-        identifiers of the number of features or the configuration of intervals for which the execution time is to be plotted.
-        If None, all available feature descriptors are used.
-    item: Literal['mean', 'median'], default='mean'
-        specifies whether the mean or median is displayed in the plot
-    plot_type: Literal['box', 'bar'], default='box'
-        specifies the requested plot type
-    save_path: str, default=None
-        path at which the plot has to be saved. If None, the plot is only displayed, not saved.
+        BenchmarkPOD object containing the benchmarking data.
 
+    dataset: str, default=None
+        Identifier of the dataset of which to plot the execution time. If there is data for only one dataset
+        in the BenchmarkPOD object, the argument does not have to be specified.
+
+    methods: str or list of str, default=None
+        Identifiers of methods for which to plot the execution time. If None, all available methods are used.
+
+    n_features: list of integers or of tuples of integers, default=None
+        Identifiers of the number of features or the configuration of intervals for which the execution time is to be
+        plotted. If None, all available feature descriptors are used.
+
+    item: Literal['mean', 'median'], default='mean'
+        Specifies whether the mean or median is displayed in the plot.
+
+    plot_type: Literal['box', 'bar'], default='box'
+        Specifies the requested plot type.
+
+    save_path: str, default=None
+        Path at which the plot has to be saved. If None, the plot is only displayed, not saved.
     """
     if plot_type == 'box':
         _plot_score_box(pod, dataset, regression_metric, methods, n_features, save_path)
@@ -469,24 +464,25 @@ def plot_stability(pod: DataHandler,
                    stability_metric: str = None,
                    methods: Union[str, List[str]] = None,
                    save_path: str = None):
+    """Plots the stability score of methods for a given metric across the number of features to be selected.
 
-    """
-        Plots the stability score of methods for a given metric across the number of features to be selected
+    Parameters
+    ----------
+    pod: DataHandler
+        BenchmarkPOD object containing the benchmarking data.
 
-        Parameters
-        ----------
-        pod: DataHandler
-            BenchmarkPOD object containing the benchmarking data
-        dataset: str
-            dataset identifier
-        stability_metric: str
-            stability metric used for plotting
-        methods: Union[str, List[str]], default=None
-            method identifier or list of method identifiers for methods to be plotted. If None, all available methods
-            are plotted
-        save_path: str, default=None
-            path on which to store the plot. If None, the plot is simply displayed
+    dataset: str
+        Dataset identifier.
 
+    stability_metric: str
+        Stability metric used for plotting.
+
+    methods: Union[str, List[str]], default=None
+        Method identifier or list of method identifiers for methods to be plotted. If None, all available methods
+        are plotted.
+
+    save_path: str, default=None
+        Path on which to store the plot. If None, the plot is simply displayed.
     """
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
     stability_metric = _check_specified_or_singleton(pod.stab_metrics, stability_metric, identifier='stability metric')
@@ -509,7 +505,6 @@ def _plot_selection_bar(pod: DataHandler,
                         n_features: Union[int, Tuple[int]],
                         methods: Union[str, List[str]] = None,
                         save_path: str = None):
-
     if methods is None:
         methods = pod.methods
 
@@ -545,9 +540,9 @@ def _plot_selection_bar(pod: DataHandler,
         axs[i].set_ylabel("P")
 
         # plot vertical lines
-        #axs[i].hlines(y=[0.25, 0.5, 0.75], xmin=axs[i].get_xlim()[0], xmax=axs[i].get_xlim()[1],
-                      #linewidth=0.5, color='k', alpha=.5)
-        #axs[i].grid(axis='y')
+        # axs[i].hlines(y=[0.25, 0.5, 0.75], xmin=axs[i].get_xlim()[0], xmax=axs[i].get_xlim()[1],
+        # linewidth=0.5, color='k', alpha=.5)
+        # axs[i].grid(axis='y')
         axs[i].set_yticks([0.25, 0.5, 0.75])
         axs[i].yaxis.grid(True)
 
@@ -569,9 +564,9 @@ def _plot_selection_heatmap(pod: DataHandler,
                             dataset: str = None,
                             methods: Union[str, List[str]] = None,
                             save_path: str = None):
-
     fig, ax = plt.subplots()
-    ax.set_title(f'Displaying selection probability heatmap on dataset {dataset} for {n_features} features to be selected')
+    ax.set_title(
+        f'Displaying selection probability heatmap on dataset {dataset} for {n_features} features to be selected')
 
     selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features)
     n_wavelengths = pod.get_meta(dataset)[2][1]
@@ -581,11 +576,11 @@ def _plot_selection_heatmap(pod: DataHandler,
         unique_counts = selections.iloc[i].value_counts()
         selection_prob[i, unique_counts.index.to_numpy().astype('int')] = unique_counts.to_numpy() / pod.n_runs
 
-    #build heatmap
+    # build heatmap
     print(selection_prob)
     ax.imshow(selection_prob, cmap='viridis')
 
-    #add annotations
+    # add annotations
     ax.set_xlabel('wavelength')
     ax.set_ylabel('method')
     ax.set_yticks(np.arange(len(methods)), labels=methods)
@@ -604,27 +599,28 @@ def plot_selection(pod: DataHandler,
                    methods: Union[str, List[str]] = None,
                    plot_type: Literal['heatmap', 'bar'] = 'bar',
                    save_path: str = None):
+    """Plots the selection probability for features of different selectors.
 
-    """
-
-        Plots the selection probabililty for features of different selectors
-
-     Parameters
-     ----------
+    Parameters
+    ----------
     pod: BenchmarkPOD
-        BenchmarkPOD object containing the benchmarking data
-    dataset: str
-        dataset identifier
-    stability_metric: str
-        stability metric used for plotting
-    methods: Union[str, List[str]], default=None
-        method identifier or list of method identifiers for methods to be plotted. If None, all available methods
-        are plotted
-    plot_type: Literal['heatmap', 'bar'], default='bar'
-        plot type displayed
-    save_path: str, default=None
-        path on which to store the plot. If None, the plot is simply displayed
+        BenchmarkPOD object containing the benchmarking data.
 
+    dataset: str
+        Dataset identifier.
+
+    stability_metric: str
+        Stability metric used for plotting.
+
+    methods: Union[str, List[str]], default=None
+        Method identifier or list of method identifiers for methods to be plotted. If None, all available methods
+        are plotted.
+
+    plot_type: Literal['heatmap', 'bar'], default='bar'
+        Plot type displayed.
+
+    save_path: str, default=None
+        Path on which to store the plot. If None, the plot is simply displayed.
     """
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
 
