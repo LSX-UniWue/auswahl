@@ -2,7 +2,7 @@ from ._benchmarking import benchmark
 from ._util.metrics import zucknick_score, deng_score
 from ._util.plotting import plot_score_vs_stability, plot_score, plot_exec_time, plot_stability, plot_selection
 from ._util.statistics import mw_ranking
-from ._util.helpers import load_pod
+from ._util.helpers import load_data_handler
 from ._util.data_handling import DataHandler
 
 __all__ = [
@@ -15,6 +15,6 @@ __all__ = [
     'mw_ranking',
     'plot_stability',
     'plot_selection',
-    'load_pod',
+    'load_data_handler',
     'DataHandler'
 ]

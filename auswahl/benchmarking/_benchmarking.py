@@ -401,7 +401,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
             List of stability metrics to be evaluated and made available after the benchmarking
         methods: List of SpectralSelector or tuples (SpectralSelector, str)
             List of instances of classes subtyping SpectralSelector. If the class names of the instance's classes
-            are not unique a tuple can be passed specifying the name (instance, name)
+            are not unique a tuple has to be passed specifying the name (instance, name)
         random_state: int or numpy.random.RandomState, default=None
             RandomState for reproducibility of the benchmarking results
         n_jobs: int, default=1

@@ -62,6 +62,13 @@ Benchmarking
     :template: function.rst
 
     benchmarking.benchmark
+    benchmarking.load_data_handler
+
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    auswahl.Selection
     benchmarking.DataHandler
 
 
