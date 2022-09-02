@@ -1,26 +1,23 @@
-
 import copy
 import json
 import time
 import traceback
-import numpy as np
 import warnings
-
 from typing import Union, List, Tuple, Callable
+
+import numpy as np
 from joblib import Parallel, delayed
 from numpy.random import RandomState
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
-from sklearn.metrics import mean_squared_error
 
 from ._util.data_handling import DataHandler
 from .._base import PointSelector, IntervalSelector, SpectralSelector, FeatureDescriptor
 
 
 class Speaker:
-
-    """
-        Pretty printing facility
+    """Pretty printing facility.
     """
 
     def __init__(self, verbose: bool):
@@ -55,7 +52,8 @@ class ErrorLogger:
                                                   'during': during,
                                                   'type': type(exception).__name__,
                                                   'message': str(exception),
-                                                  'trace': "".join(traceback.TracebackException.from_exception(exception).format())}
+                                                  'trace': "".join(
+                                                      traceback.TracebackException.from_exception(exception).format())}
 
     def write_log(self):
         with open(self.log_file, 'w') as file:
@@ -64,7 +62,6 @@ class ErrorLogger:
 
 # go
 def _check_feature_consistency(methods, features):
-
     # make a list
     if not isinstance(features, list):
         features = [features]
@@ -97,16 +94,15 @@ def _parameterize(methods: List[SpectralSelector], n: FeatureDescriptor):
 
 # go
 def _check_name_uniqueness(name_list: List[str], identifier):
+    """Check the uniqueness of names
 
-    """
-        Check the uniqueness of names
+    Parameters
+    ----------
+    name_list: List[str]
+        list of names, whose uniqueness is to be checked
 
-        Parameters
-        ----------
-        name_list: List[str]
-            list of names, whose uniqueness is to be checked
-        identifier: str
-            name of the list for reference in a possible exception to be raised
+    identifier: str
+        name of the list for reference in a possible exception to be raised
     """
     if len(name_list) != np.unique(name_list).size:
         raise ValueError(f'The names in {identifier} need to be unique')
@@ -114,10 +110,8 @@ def _check_name_uniqueness(name_list: List[str], identifier):
 
 # go
 def _unpack_methods(methods):
-    """
-
-        Decomposes the method argument passed to function benchmark into a list of selector methods and identifiers.
-        Checks types underway.
+    """ Decomposes the method argument passed to function benchmark into a list of selector methods and identifiers.
+    Checks types underway.
 
     Parameters
     ----------
@@ -127,7 +121,6 @@ def _unpack_methods(methods):
     Returns
     -------
     tuple: Tuple[List[Union[PointSelector, IntervalSelector]], List[str]]
-
     """
     selectors = []
     names = []
@@ -139,7 +132,8 @@ def _unpack_methods(methods):
             if isinstance(method[0], (PointSelector, IntervalSelector)):
                 selectors.append(method[0])
             else:
-                raise ValueError(f'Expected first element in {method} to be of type Union[IntervalSelector, PointSelector]')
+                raise ValueError(
+                    f'Expected first element in {method} to be of type Union[IntervalSelector, PointSelector]')
             if type(method[1]) == str:
                 names.append(method[1])
             else:
@@ -157,21 +151,18 @@ def _unpack_methods(methods):
 
 # go
 def _unpack_metrics(metrics, compulsory=False):
+    """ Decomposes the metrics arguments passed to function benchmark into a list of functions and names.
+    Checks types underway.
+
+    Parameters
+    ----------
+    metrics: List[Callable[[np.ndarray, np.ndarray], float]]
+        list of metrics
+
+    Returns
+    -------
+    tuple: Tuple[List[Callable], List[str]]
     """
-
-            Decomposes the metrics arguments passed to function benchmark into a list of functions and names.
-            Checks types underway.
-
-        Parameters
-        ----------
-        metrics: List[Callable[[np.ndarray, np.ndarray], float]]
-            list of metrics
-
-        Returns
-        -------
-        tuple: Tuple[List[Callable], List[str]]
-
-        """
     if metrics is None:
         if compulsory:
             raise ValueError('At least one regression metric has to be specified.')
@@ -197,10 +188,8 @@ def _unpack_metrics(metrics, compulsory=False):
 
 # go
 def _check_datasets(data):
-    """
-
-         Retrieve names of datasets in data.
-         Checks types underway.
+    """Retrieve names of datasets in data.
+    Checks types underway.
 
     Parameters
     ----------
@@ -211,7 +200,6 @@ def _check_datasets(data):
     -------
         tuple: data if data is a list, else [data]
                dataset names: List[str]
-
     """
     if not isinstance(data, list):
         data = [data]
@@ -222,7 +210,8 @@ def _check_datasets(data):
         if len(dataset) != 4:
             raise ValueError(f'The dataset specification requires three fields: (x, y, name, train_size)')
         if not (isinstance(dataset[0], np.ndarray) and isinstance(dataset[1], np.ndarray)):
-            raise ValueError(f'The first two elements in the dataset specification (x, y, name, train_size) need to be of type np.array ')
+            raise ValueError(f'The first two elements in the dataset specification (x, y, name, train_size) '
+                             f'need to be of type np.array')
         if not isinstance(dataset[2], str):
             raise ValueError(f'The name of a dataset is required to be of type str. Got {type(dataset[2])}')
         if not isinstance(dataset[3], float):
@@ -233,19 +222,17 @@ def _check_datasets(data):
 
 # go
 def _check_train_size(train_sizes, data, dataset_names):
+    """ Sanitize training sizes passed to function benchmarking. Check the proper range and scales w.r.t. the dataset
+    sizes.
 
+    Parameters
+    ----------
+    train_sizes: List[float]
+        train_size passed to function benchmark
+
+    data: List[np.array]
+        datasets passed to function benchmark
     """
-        Sanitize training sizes passed to function benchmarking. Check the proper range and scales
-        w.r.t. the dataset sizes.
-
-        Parameters
-        ----------
-        train_sizes: List[float]
-            train_size passed to function benchmark
-        data: List[np.array]
-            datasets passed to function benchmark
-    """
-
     # Check proper range of the sizes
     for size in train_sizes:
         if size <= 0 or size >= 1:
@@ -255,13 +242,13 @@ def _check_train_size(train_sizes, data, dataset_names):
     for i in range(len(train_sizes)):
         x = data[i]
         if int(x.shape[0] * (1 - train_sizes[i])) == 0:
-            raise ValueError(f'Given the size of the dataset {dataset_names[i]}, the specified train_size {train_sizes[i]} leaves '
-                             f'an empty test set.')
+            raise ValueError(
+                f'Given the size of the dataset {dataset_names[i]}, the specified train_size {train_sizes[i]} leaves '
+                f'an empty test set.')
 
 
 # go
 def _check_n_runs(n_runs):
-
     if not isinstance(n_runs, int):
         raise ValueError(f'n_runs is required to be an integer')
     if n_runs <= 0:
@@ -282,22 +269,24 @@ def _copy_methods(methods, joblib_mem_segregation=True):
 
 # go
 def _drain_threads(methods):
-
-    """
-        Configure the methods to be single-thread operating
+    """Configure the methods to be single-thread operating
 
     Parameters
     ----------
     methods: List[SpectralSelector]
-
     """
     for method in methods:
-       method.rethread(n_jobs=1)
+        method.rethread(n_jobs=1)
 
 
-def _benchmark_parallel(x: np.array, y: np.array, train_size: float,
-                        methods, method_names, reg_metrics, seed: int, run_index: int):
-
+def _benchmark_parallel(x: np.array,
+                        y: np.array,
+                        train_size: float,
+                        methods,
+                        method_names,
+                        reg_metrics,
+                        seed: int,
+                        run_index: int):
     methods = _copy_methods(methods)
     train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=train_size, random_state=seed)
 
@@ -338,7 +327,7 @@ def _benchmark_parallel(x: np.array, y: np.array, train_size: float,
                 metric_errors.append((e, run_index, seed, f'Evaluation of: {metric.__name__}'))
 
         results[method_name]['metrics'] = metrics
-        results[method_name]['exec'] = end-start
+        results[method_name]['exec'] = end - start
         results[method_name]['selection'] = support
         results[method_name]['run_index'] = run_index  # retain association of threads to runs
 
@@ -379,46 +368,52 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
               n_jobs: int = 1,
               error_log_file: str = "./error_log.txt",
               verbose: bool = True):
+    """Function performing benchmarking of Interval- and PointSelector feature selectors across different datasets and
+    different parameterizations of the selectors.
 
+    Parameters
+    ----------
+    data: List of tuples (np.array, np.array, str, float)
+        list of tuples describing datasets (x, y, dataset_name, train_size)
+
+    features: List of integers or tuple of integers (int, int)
+        Descriptor of the number of features to be selected. If an integer, the integer describes the number of
+        features to be selected. If a tuple, the tuple is interpreted as (#intervals to select, interval width).
+        If an IntervalSelector is included in the benchmarking, the features have to be described as tuples.
+
+    n_runs: int, default=10
+        Number of runs per method, dataset and number of features to be selected. Used to elucidate
+        method performance and selection stability.
+
+    reg_metrics: List of Callable[[np.ndarray, np.ndarray], float], default=sklearn.metrics.mean_square_error
+        List of regression metrics to be evaluated and made available after the benchmarking
+
+    stab_metrics: List of Callable[[BenchmarkPOD], float], default=None
+        List of stability metrics to be evaluated and made available after the benchmarking
+
+    methods: List of SpectralSelector or tuples (SpectralSelector, str)
+        List of instances of classes subtyping SpectralSelector. If the class names of the instance's classes
+        are not unique a tuple has to be passed specifying the name (instance, name)
+
+    random_state: int or numpy.random.RandomState, default=None
+        RandomState for reproducibility of the benchmarking results
+
+    n_jobs: int, default=1
+        Number of jobs to be used during benchmarking. It is recommended to provide jobs to the benchmarking
+        instead of individual selectors
+
+    error_log_file: str, default="./error_log.txt"
+        location and name of the file, in which errors are to be logged
+
+    verbose: bool, default=True
+        If True, basic information of the state of benchmarking are plotted
+
+    Returns
+    -------
+    benchmarking results: :class:`~auswahl.benchmarking.DataHandler`
+        :class:`~auswahl.benchmarking.DataHandler` object containing the results of the benchmarking.
+        Data regarding regression, stability, selection and run time measurement.
     """
-        Function performing benchmarking of Interval- and PointSelector feature selectors across
-        different datasets and different parameterizations of the selectors.
-
-        Parameters
-        ----------
-        data: List of tuples (np.array, np.array, str, float)
-            list of tuples describing datasets (x, y, dataset_name, train_size)
-        features: List of integers or tuple of integers (int, int)
-            Descriptor of the number of features to be selected. If an integer, the integer describes the number of
-            feautres to be selected. If a tuple, the tuple is interpreted as (#intervals to select, interval width).
-            If an IntervalSelector is included in the benchmarking, the feautres have to be described as tuples.
-        n_runs: int, default=10
-            Number of runs per method, dataset and number of features to be selected. Used to elucidate
-            method performance and selection stability.
-        reg_metrics: List of Callable[[np.ndarray, np.ndarray], float], default=sklearn.metrics.mean_square_error
-            List of regression metrics to be evaluated and made available after the benchmarking
-        stab_metrics: List of Callable[[BenchmarkPOD], float], default=None
-            List of stability metrics to be evaluated and made available after the benchmarking
-        methods: List of SpectralSelector or tuples (SpectralSelector, str)
-            List of instances of classes subtyping SpectralSelector. If the class names of the instance's classes
-            are not unique a tuple has to be passed specifying the name (instance, name)
-        random_state: int or numpy.random.RandomState, default=None
-            RandomState for reproducibility of the benchmarking results
-        n_jobs: int, default=1
-            Number of jobs to be used during benchmarking. It is recommended to provide jobs to the benchmarking
-            instead of individual selectors
-        error_log_file: str, default="./error_log.txt"
-            location and name of the file, in which errors are to be logged
-        verbose: bool, default=True
-            If True, basic information of the state of benchmarking are plotted
-
-        Returns
-        -------
-        benchmarking results: :class:`~auswahl.benchmarking.DataHandler`
-            :class:`~auswahl.benchmarking.DataHandler` object containing the results of the benchmarking.
-            Data regarding regression, stability, selection and run time measurement.
-    """
-
     speaker = Speaker(verbose)
     logger = ErrorLogger(log_file=error_log_file)
 
@@ -430,7 +425,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
     methods, method_names = _unpack_methods(methods)
 
     _check_name_uniqueness(dataset_names, "datasets")
-    _check_name_uniqueness(method_names,  "methods")
+    _check_name_uniqueness(method_names, "methods")
     _check_name_uniqueness(reg_metric_names, "reg_metrics")
     _check_name_uniqueness(stab_metric_names, "stab_metrics")
 
