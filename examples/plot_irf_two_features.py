@@ -30,7 +30,7 @@ irf = IntervalRandomFrog(n_intervals_to_select=2,
                          interval_width=5,
                          n_iterations=n_iterations,
                          n_jobs=5,
-                         random_state=42)
+                         random_state=7331)
 irf.fit(X, y)
 
 idx = np.arange(len(irf.frequencies_))
@@ -48,7 +48,8 @@ plt.hlines(y=irf.frequencies_[interval_starts] / n_iterations,
            colors='C01',
            zorder=2)
 
-plt.ylim([0, 1])
+plt.ylim([0, 1.01])
+plt.grid(axis='y')
 plt.xticks(range(0, 55, 5))
 plt.xlabel('Feature')
 plt.ylabel('Relative Frequency')
