@@ -62,13 +62,30 @@ Benchmarking
     :template: function.rst
 
     benchmarking.benchmark
-    benchmarking.load_data_handler
 
+Data Handling
+-------------
 .. autosummary::
     :toctree: generated/
+    :template: function.rst
+
+    benchmarking.load_data_handler
+
     :template: class.rst
 
-    auswahl.Selection
     benchmarking.DataHandler
+
+Plotting
+--------
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    benchmarking.plot_score
+    benchmarking.plot_stability
+    benchmarking.plot_score_vs_stability
+    benchmarking.plot_selection
+    benchmarking.plot_exec_time
+
 
 

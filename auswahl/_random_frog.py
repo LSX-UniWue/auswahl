@@ -179,10 +179,10 @@ class RandomFrog(PointSelector, _RandomFrog):
         This variable is called η in the original publication.
 
     n_cv_folds : int, default=5
-        Number of cross validation folds used to evaluate the features
+        Number of cross validation folds used to evaluate the features.
 
     n_jobs : int, default=1
-        Number of parallel processes used to fit the PLS models on the cross-validation splits
+        Number of parallel processes used to fit the PLS models on the cross-validation splits.
 
     pls : PLSRegression, default=None
         Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
@@ -194,7 +194,7 @@ class RandomFrog(PointSelector, _RandomFrog):
     Attributes
     ----------
     frequencies_ : ndarray of shape (n_features,)
-        Number of times each feature has been selected after all iterations
+        Number of times each feature has been selected after all iterations.
 
     support_ : ndarray of shape (n_features,)
         Mask of selected features.
@@ -317,10 +317,10 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
         This variable is called η in the original publication.
 
     n_cv_folds : int, default=5
-        Number of cross validation folds used to evaluate the features
+        Number of cross validation folds used to evaluate the features.
 
     n_jobs : int, default=1
-        Number of parallel processes used to fit the PLS models on the cross-validation splits
+        Number of parallel processes used to fit the PLS models on the cross-validation splits.
 
     pls : PLSRegression, default=None
         Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this

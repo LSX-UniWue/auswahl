@@ -1,40 +1,35 @@
-
-import warnings
-from typing import Union, Dict, List
+from typing import Union
 
 import numpy as np
-from joblib import Parallel, delayed
-from sklearn.cross_decomposition import PLSRegression
-from sklearn.utils.validation import check_is_fitted
 from numpy.random import RandomState
+from sklearn.utils.validation import check_is_fitted
 
-from ._base import IntervalSelector, Convertible, SpectralSelector
 from ._base import FeatureDescriptor
+from ._base import IntervalSelector, Convertible, SpectralSelector
 from .util import optimize_intervals
 
 
 class PseudoIntervalSelector(IntervalSelector):
-    """ PseudoIntervalSelector transforms a PointSelector subclassing :class:`~auswahl.Convertible` into an IntervalSelector.
-    Given the feature scores calculated by the wrapped :class:`~auswahl.PointSelector`, an optimal (max total score) interval
-    placement is calculated using :func:`~auswahl.optimize_intervals`
+    """PseudoIntervalSelector transforms a PointSelector subclassing :class:`~auswahl.Convertible` into an
+    IntervalSelector. Given the feature scores calculated by the wrapped :class:`~auswahl.PointSelector`, an optimal
+    (max total score) interval placement is calculated using :func:`~auswahl.optimize_intervals`.
 
     Parameters
     ----------
     selector: Convertible
-        Instance of a PointSelector subclassing Convertible
+        Instance of a PointSelector subclassing Convertible.
 
     n_intervals_to_select : int, default=None
         Number of intervals to select.
 
     interval_width : int or float, default=None
-        Number of features that form an interval
+        Number of features that form an interval.
     """
 
     def __init__(self,
                  selector: Convertible,
                  n_intervals_to_select: int = None,
                  interval_width: Union[int, float] = None):
-
         super().__init__(n_intervals_to_select=n_intervals_to_select, interval_width=interval_width)
 
         if not isinstance(selector, Convertible):

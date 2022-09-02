@@ -109,12 +109,12 @@ class DataHandler:
 
     # TODO: improve that
     def get_meta(self, dataset):
-        """Provides meta information for each dataset
+        """Provides meta information for each dataset.
 
         Parameters
         ----------
         dataset: str
-            name of the dataset, whose meta information is requested.
+            Name of the dataset, whose meta information is requested.
 
         Returns
         -------
@@ -197,10 +197,10 @@ class DataHandler:
         Parameters
         ----------
         dataset: str or list of str, default=None
-            dataset identifier or list of dataset identifiers.
+            Dataset identifier or list of dataset identifiers.
 
         method : str or list of str, default=None
-            method(s) to be retrieved. If None, all methods are retrieved.
+            Method(s) to be retrieved. If None, all methods are retrieved.
 
         n_features : int, tuple of int, list of int or list of tuple of int, default=None
              Feature configuration for which to retrieve results. A configuration for a single number of
@@ -208,19 +208,19 @@ class DataHandler:
              can be passed. If None, the runs for all numbers of selected features are retrieved.
 
         reg_metric : str or list of str, default=None
-            regression metric(s) to be retrieved. If None, all available metrics are retrieved.
+            Regression metric(s) to be retrieved. If None, all available metrics are retrieved.
 
         item : Literal of ['mean', 'std', 'median', 'max', 'min', 'samples'], default=None
-            specify, which indicator(s) for the selected regression metrics is to be retrieved.
-            If None, all indicators are retrieved.
+            Specify, which indicator(s) for the selected regression metrics is to be retrieved. If None, all indicators
+            are retrieved.
 
         Returns
         -------
         pandas multiIndex DataFrame.
             The frame holds the selection methods in its index and a multiindex with levels
             {'dataset', 'n_features', 'reg_metric', 'sample'} as columns, where 'sample' refers to the individual
-            runs for the statistical evaluation.
-            The keys for level 'n_features' are of type :class:`~auswahl.FeatureDescriptor`.
+            runs for the statistical evaluation. The keys for level 'n_features' are of type
+            :class:`~auswahl.FeatureDescriptor`.
         """
         method_key, key = self._make_key(dataset, method, n_features, reg_metric=reg_metric, sample=sample)
         return self.reg_data.loc[(method_key, key)], key, self.reg_data.columns
@@ -236,24 +236,24 @@ class DataHandler:
         Parameters
         ----------
         method : str or list of str, default=None
-            method(s) to be retrieved. If None, all methods are retrieved.
+            Method(s) to be retrieved. If None, all methods are retrieved.
 
         n_features : int, tuple of int, list of int or list of tuple of int, default=None
-             Feature configuration for which to retrieve results. A configuration for a single number of
-             features, a single interval defined as tuple (#intervals, interval_width) or lists of such configurations
-             can be passed.If None, the runs for all numbers of selected features are retrieved.
+             Feature configuration for which to retrieve results. A configuration for a single number of features, a
+             single interval defined as tuple (#intervals, interval_width) or lists of such configurations can be
+             passed. If None, the runs for all numbers of selected features are retrieved.
 
         sample_run : int or list of int, default=None
-            the run(s) for which the selected features are to be retrieved. If None, the selected features
-            of all runs are retrieved.
+            The run(s) for which the selected features are to be retrieved. If None, the selected features of all runs
+            are retrieved.
 
         Returns
         -------
         pandas.MultiIndex DataFrame.
-            The frame holds the methods in its index and a multiindex with levels {'dataset', 'n_features', 'sample'}
-            as columns, where 'sample' refers to the individual runs for the statistical evaluation.
-            The keys for level 'n_features' are of type :class:`~auswahl.FeatureDescriptor`.
-            The type of the data in the frame is :class:`~auswahl.Selection`.
+            The frame holds the methods in its index and a multiindex with levels {'dataset', 'n_features', 'sample'} as
+            columns, where 'sample' refers to the individual runs for the statistical evaluation. The keys for level
+            'n_features' are of type :class:`~auswahl.FeatureDescriptor`. The type of the data in the frame is
+            :class:`~auswahl.Selection`.
         """
         method_key, key = self._make_key(dataset, method, n_features, sample=sample)
         return self.selection_data.loc[(method_key, key)], key, self.selection_data.columns
@@ -269,22 +269,22 @@ class DataHandler:
         Parameters
         ----------
         method : str or list of str, default=None
-            method(s) to be retrieved. If None, all methods are retrieved.
+            Method(s) to be retrieved. If None, all methods are retrieved.
 
         n_features : int, tuple of int, list of int or list of tuple of int, default=None
-             Feature configuration for which to retrieve results. A configuration for a single number of
-             features, a single interval defined as tuple (#intervals, interval_width) or lists of such configurations
-             can be passed. If None, the runs for all numbers of selected features are retrieved.
+             Feature configuration for which to retrieve results. A configuration for a single number of features, a
+             single interval defined as tuple (#intervals, interval_width) or lists of such configurations can be
+             passed. If None, the runs for all numbers of selected features are retrieved.
 
         stab_metric : str or list of str, default=None
-            stability metric(s) to be retrieved. If None, all available metrics are retrieved.
+            Stability metric(s) to be retrieved. If None, all available metrics are retrieved.
 
         Returns
         -------
         pandas multiIndex DataFrame.
             The frame holds the selection methods in its index and a multiindex with levels
-            {'dataset', 'n_features', 'stab_metric'} as columns.
-            The keys for level 'n_features' are of type :class:`~auswahl.FeatureDescriptor`
+            {'dataset', 'n_features', 'stab_metric'} as columns. The keys for level 'n_features' are of type
+            :class:`~auswahl.FeatureDescriptor`.
         """
         method_key, key = self._make_key(dataset, method, n_features, stab_metric=stab_metric)
         return self.stab_data.loc[(method_key, key)], key, self.stab_data.columns
@@ -300,24 +300,23 @@ class DataHandler:
         Parameters
         ----------
         method : str or list of str, default=None
-            method(s) to be retrieved. If None, all methods are retrieved.
+            Method(s) to be retrieved. If None, all methods are retrieved.
 
         n_features : int, tuple of int, list of int or list of tuple of int, default=None
-             Feature configuration for which to retrieve results. A configuration for a single number of
-             features, a single interval defined as tuple (#intervals, interval_width) or lists of such configurations
-             can be passed.If None, the runs for all numbers of selected features are retrieved.
+             Feature configuration for which to retrieve results. A configuration for a single number of features, a
+             single interval defined as tuple (#intervals, interval_width) or lists of such configurations can be
+             passed. If None, the runs for all numbers of selected features are retrieved.
 
         sample_run : int or list of int, default=None
-            the run(s) for which the selected features are to be retrieved. If None, the selected features
-            of all runs are retrieved.
+            The run(s) for which the selected features are to be retrieved. If None, the selected features of all runs
+            are retrieved.
 
         Returns
         -------
         pandas multiIndex DataFrame.
-            The frame holds the methods in its index and a multiindex with levels
-            {'dataset', 'n_features', 'sample'} as columns, where 'sample' refers to the individual
-            runs for the statistical evaluation.
-            The keys for level 'n_features' are of type :class:`~auswahl.FeatureDescriptor`.
+            The frame holds the methods in its index and a multiindex with levels {'dataset', 'n_features', 'sample'} as
+            columns, where 'sample' refers to the individual runs for the statistical evaluation. The keys for level
+            'n_features' are of type :class:`~auswahl.FeatureDescriptor`.
         """
 
         method_key, key = self._make_key(dataset, method, n_features, sample=sample)
@@ -329,10 +328,10 @@ class DataHandler:
         Parameters
         ----------
         file_path: str
-            path to the file.
+            Path to the file.
 
         file_name: str
-            name of the file without extension.
+            Name of the file without extension.
         """
         if '.' in file_name:
             file_name = file_name.split('.')[0]

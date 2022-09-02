@@ -199,10 +199,13 @@ def plot_score_vs_stability(pod: DataHandler,
                             methods: Union[str, List[str]] = None,
                             save_path: str = None):
     """Plotting a boxplot for the benchmarked methods displaying
+
     * the mean regression score on the y-axis
+
         * mean regression value
         * (25,75) IQR as box
         * (0, 100) range as whiskers
+
     * the stability score on the x-axis
 
     Parameters
@@ -220,7 +223,7 @@ def plot_score_vs_stability(pod: DataHandler,
         Identifier of the stability metric to be plotted in the pod.
 
     regression_metric : str
-        Identifier of the regression metric to be plotted in the pod..
+        Identifier of the regression metric to be plotted in the pod.
 
     methods : str or list of str, default=None
         Identifiers of methods for which the data is to be plotted. If None, all available methods are plotted.

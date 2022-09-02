@@ -6,15 +6,15 @@ from typing import List
 class Selection:
     """Helper class allowing the handling of lists of different lengths in a single pandas DataFrame.
 
-       Parameters
-       ----------
-       selected_features: List[int], default=None
-            List of feature indices wrapped by this instance.
+   Parameters
+   ----------
+   selected_features: List[int], default=None
+        List of feature indices wrapped by this instance.
 
-       Attributes
-       ----------
-       features: List[int]
-            List of feature indices contained in the instance.
+   Attributes
+   ----------
+   features: List[int]
+        List of feature indices contained in the instance.
     """
 
     def __init__(self, selected_features: List[int] = None):

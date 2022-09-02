@@ -15,7 +15,7 @@ def get_coef_from_pls(pls):
     Returns
     -------
     coef: ndarray of shape (n_targets, n_features)
-        Linear coefficients of the pls model
+        Linear coefficients of the pls model.
     """
     warnings.simplefilter('ignore', category=FutureWarning)
     coef = pls.coef_

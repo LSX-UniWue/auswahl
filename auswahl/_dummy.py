@@ -4,7 +4,7 @@ from ._base import PointSelector, IntervalSelector
 
 
 class DummyPointSelector(PointSelector):
-    """Dummy selector realizing abstract base classes to test their functionality  overarchingly.
+    """Dummy selector realizing abstract base classes to test their functionality overarchingly.
     """
 
     def __init__(self, n_features_to_select: int = None):
@@ -18,7 +18,7 @@ class DummyPointSelector(PointSelector):
 
 
 class DummyIntervalSelector(IntervalSelector):
-    """Dummy selector realizing abstract base classes to test their functionality  overarchingly.
+    """Dummy selector realizing abstract base classes to test their functionality overarchingly.
     """
 
     def __init__(self,
