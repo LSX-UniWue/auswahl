@@ -19,6 +19,8 @@ from sklearn.utils import check_scalar
 from sklearn.utils.validation import check_is_fitted
 from numpy.random import RandomState
 
+from functools import wraps
+
 
 class FeatureDescriptor:
     """ The class FeatureDescriptor abstracts the configuration of features the selection methods are to retrieve from
@@ -125,7 +127,16 @@ class FeatureDescriptor:
     # Comparator implementations
     #
 
-    def __le__(self, x: FeatureDescriptor):
+    def _feature_cast(f):
+        @wraps(f)
+        def wrapper(s, x):
+            if not isinstance(x, FeatureDescriptor):
+                x = FeatureDescriptor(x, resolve_intervals=s.resolve_tuples)
+            return f(s, x)
+        return wrapper
+
+    @_feature_cast
+    def __le__(self, x: Union[FeatureDescriptor, int, Tuple[int, int]]):
         """A FeatureDescriptor is less or equal to another FeatureDescriptor, if it selects more features (intervals
         resolved to the number of constituent features) or, in case of equality, if the number of intervals is smaller.
         """
@@ -136,6 +147,7 @@ class FeatureDescriptor:
                 return False
         return True
 
+    @_feature_cast
     def __ge__(self, x: FeatureDescriptor):
         """A FeatureDescriptor is greater or equal to another FeatureDescriptor, if it selects more features (intervals
         resolved to the number of constituent features) or, in case of equality, if the number of intervals is larger.
@@ -249,8 +261,7 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
             cross validation score if requested (otherwise None) and fitted estimator
         """
 
-        model = PLSRegression() if model is None else clone(model)
-        model.n_components = min(model.n_components, X.shape[1])
+        model = PLSRegression(n_components=min(2, X.shape[1])) if model is None else clone(model)
         if self.model_hyperparams is None:  # no hyperparameter optimization; conduct a simple CV
             cv_scores = None
             if do_cv:
@@ -483,4 +494,3 @@ class Convertible(metaclass=ABCMeta):
            feature scores: np.ndarray of shape [n_features,]
         """
         ...
-
