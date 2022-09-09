@@ -12,7 +12,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
 
-from ._util.data_handling import DataHandler
+from .util.data_handling import DataHandler
 from .._base import PointSelector, IntervalSelector, SpectralSelector, FeatureDescriptor
 
 
@@ -388,11 +388,11 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
     reg_metrics: List of Callable[[np.ndarray, np.ndarray], float], default=sklearn.metrics.mean_square_error
         List of regression metrics to be evaluated and made available after the benchmarking
 
-    stab_metrics: List of Callable[[BenchmarkPOD], float], default=None
+    stab_metrics: List of Callable[[DataHandler], float], default=None
         List of stability metrics to be evaluated and made available after the benchmarking
 
     methods: List of SpectralSelector or tuples (SpectralSelector, str)
-        List of instances of classes subtyping SpectralSelector. If the class names of the instance's classes
+        List of instances of classes subtyping :class:`~auswahl.SpectralSelector`. If the class names of the instances' classes
         are not unique a tuple has to be passed specifying the name (instance, name)
 
     random_state: int or numpy.random.RandomState, default=None

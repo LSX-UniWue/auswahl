@@ -86,7 +86,7 @@ class BiPLS(IntervalSelector):
             for n in range(len(free_idx) - n_intervals_to_select):
                 x_free = X[:, selection]
                 n_features = x_free.shape[1]
-                evaluations = parallel(delayed(self._evaluate)
+                evaluations = parallel(delayed(self.evaluate)
                                        (np.delete(x_free, np.r_[i:min(n_features, i + interval_width)], axis=1), y,
                                         self.pls)
                                        for i in range(0, n_features, interval_width))

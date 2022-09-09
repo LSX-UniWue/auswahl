@@ -78,7 +78,7 @@ class FiPLS(IntervalSelector):
                 x_selected = X[:, selection]
                 x_free = X[:, ~selection]
                 free_idx = np.arange(X.shape[1])[~selection]
-                evaluations = parallel(delayed(self._evaluate)
+                evaluations = parallel(delayed(self.evaluate)
                                   (np.concatenate([x_selected, x_free[:, i:i + interval_width]], axis=1), y, self.pls)
                                   for i in range(len(free_idx) - interval_width + 1))
                 scores, models = list(zip(*evaluations))

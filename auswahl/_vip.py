@@ -62,13 +62,13 @@ class VIP(PointSelector, Convertible):
         self.pls = pls
 
     def _fit(self, X, y, n_features_to_select):
-        _, model = self._evaluate(X, y, self.pls, do_cv=False)
+        _, model = self.evaluate(X, y, self.pls, do_cv=False)
         self.vips_ = self._calculate_vip_scores(X, model)
 
         selected_idx = np.argsort(self.vips_)[-n_features_to_select:]
         self.support_ = np.zeros(X.shape[1], dtype=bool)
         self.support_[selected_idx] = 1
-        _, self.best_model_ = self._evaluate(X[:, self.support_], y, self.pls, do_cv=False)
+        _, self.best_model_ = self.evaluate(X[:, self.support_], y, self.pls, do_cv=False)
 
         return self
 

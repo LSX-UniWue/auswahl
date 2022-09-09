@@ -54,6 +54,10 @@ Utilities
     optimize_intervals
     util.get_coef_from_pls
 
+================
+Benchmarking API
+================
+
 Benchmarking
 ============
 
@@ -64,7 +68,8 @@ Benchmarking
     benchmarking.benchmark
 
 Data Handling
--------------
+=============
+
 .. autosummary::
     :toctree: generated/
     :template: function.rst
@@ -74,9 +79,11 @@ Data Handling
     :template: class.rst
 
     benchmarking.DataHandler
+    benchmarking.util.helpers.Selection
 
 Plotting
---------
+========
+
 .. autosummary::
     :toctree: generated/
     :template: function.rst
@@ -86,6 +93,18 @@ Plotting
     benchmarking.plot_score_vs_stability
     benchmarking.plot_selection
     benchmarking.plot_exec_time
+
+Stability Metrics
+=================
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    benchmarking.util.metrics.deng_score
+    benchmarking.util.metrics.zucknick_score
+    benchmarking.util.metrics.pairwise_scoring
+
 
 
 

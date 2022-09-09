@@ -31,7 +31,7 @@ class FeatureDescriptor:
     ----------
     key: int, Tuple[int, int], FeatureDescriptor
         Feature configuration to be abstracted by the object. A single integer is interpreted as a number of arbitrarily
-        selectable features. A tuple is (#intervals, width of intervals) configuration of features to be selected. If a
+        selectable features. A tuple is a (#intervals, width of intervals) configuration of features to be selected. If a
         FeatureDescriptor is passed, it is copied. All passed integers are required to be non-negative.
 
     resolve_intervals: bool, default=False
@@ -70,7 +70,7 @@ class FeatureDescriptor:
     @cached_property
     def string_rep(self):
         """ Provides a printing representation for the FeatureDescriptor printing interval configurations as number of
-        intervals and interval width separated vy a forward slash.
+        intervals and interval width separated via a forward slash.
 
         Returns
         -------
@@ -185,7 +185,7 @@ class FeatureDescriptor:
        return self.string_rep
 
     def get_configuration_for(self, selector: SpectralSelector):
-        """ Translate and return the feature configuration for a given SpectralSelector.
+        """ Translate and return the feature configuration for a given :class:`~auswahl.SpectralSelector`.
 
         Parameters
         ----------
@@ -211,7 +211,8 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
     Parameters
     ----------
     model_hyperparams: dict
-        Dictionary of estimator hyperparameters following the sklearn convention
+        Dictionary of hyperparameters following the sklearn convention for
+        the estimator underlying the selection algorithm.
 
     n_cv_folds: int
         Number of cross validation runs during model fitting
@@ -227,15 +228,17 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
                  random_state: Union[int, RandomState] = None, n_jobs: int = 1):
         if model_hyperparams is not None and not isinstance(model_hyperparams, (list, dict)):
             raise ValueError("Keyword argument 'model_hyperparams' is expected to be of type dict or list of dicts")
-        self.model_hyperparams = model_hyperparams
+
         if not isinstance(n_cv_folds, int) or n_cv_folds <= 0:
             raise ValueError(f'Keyword argument "n_cv_folds" is expected to be a positive integer. Got {n_cv_folds}')
+
+        self.model_hyperparams = model_hyperparams
         self.n_cv_folds = n_cv_folds
         self.random_state = random_state
         self.n_jobs = n_jobs
 
-    def _evaluate(self, X, y, model, do_cv=True, *args):
-        """Conduct a cross validating and hyperparameter optimizing estimator fitting
+    def evaluate(self, X, y, model, do_cv=True, *args):
+        """Conduct a cross validationand hyperparameter optimization of the underlying estimator model.
 
         Parameters
         ----------

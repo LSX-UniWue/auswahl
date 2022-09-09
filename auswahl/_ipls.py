@@ -78,9 +78,9 @@ class IPLS(IntervalSelector):
         self.random_state = random_state
 
     def _fit_ipls(self, X, y, interval_width, pls, start):
-        score, model = self._evaluate(X[:, np.arange(start, start + interval_width, dtype='int')],
-                                      y,
-                                      pls)
+        score, model = self.evaluate(X[:, np.arange(start, start + interval_width, dtype='int')],
+                                     y,
+                                     pls)
         return score, model, start
 
     def _fit(self, X, y, n_intervals_to_select, interval_width):

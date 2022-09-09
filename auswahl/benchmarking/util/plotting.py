@@ -211,19 +211,23 @@ def plot_score_vs_stability(pod: DataHandler,
     Parameters
     ----------
     pod : DataHandler
-        Data container produced by benchmarking.
+        :class:`~auswahl.benchmarking.DataHandler` object containing the benchmarking data.
 
     dataset: str
-        Dataset for which the data is to be plotted.
+        Dataset for which the data is to be plotted. If there is data for only one dataset
+        in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
     n_features: int or tuple of int
-        Number of features, which were to be selected by the algorithms.
+        Number of features, which were to be selected by the algorithms. If there is data for only one feature configuration
+        in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
     stability_metric : str
-        Identifier of the stability metric to be plotted in the pod.
+        Identifier of the stability metric to be plotted in the pod. If there is data for only one stability metric
+        in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
     regression_metric : str
-        Identifier of the regression metric to be plotted in the pod.
+        Identifier of the regression metric to be plotted in the pod. If there is data for only one regression metric
+        in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
     methods : str or list of str, default=None
         Identifiers of methods for which the data is to be plotted. If None, all available methods are plotted.
@@ -268,7 +272,7 @@ def plot_exec_time(pod: DataHandler,
     Parameters
     ----------
     pod: DataHandler
-        BenchmarkPOD object containing the benchmarking data.
+        :class:`~auswahl.benchmarking.DataHandler` object containing the benchmarking data.
 
     dataset: str, default=None
         Identifier of the dataset of which to plot the execution time. If there is data for only one dataset
@@ -426,16 +430,16 @@ def plot_score(pod: DataHandler,
                item: Literal['mean', 'median'] = 'mean',
                plot_type: Literal['box', 'bar'] = 'box',
                save_path: str = None):
-    """Plot regression scores of selectors across different number of features to be selected as box or bar plot.
+    """Plot regression scores of selectors across different number of selected features  as box or bar plot.
 
     Parameters
     ----------
     pod: DataHandler
-        BenchmarkPOD object containing the benchmarking data.
+        :class:`~auswahl.benchmarking.DataHandler` object containing the benchmarking data.
 
     dataset: str, default=None
         Identifier of the dataset of which to plot the execution time. If there is data for only one dataset
-        in the BenchmarkPOD object, the argument does not have to be specified.
+        in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
     methods: str or list of str, default=None
         Identifiers of methods for which to plot the execution time. If None, all available methods are used.
@@ -467,18 +471,21 @@ def plot_stability(pod: DataHandler,
                    stability_metric: str = None,
                    methods: Union[str, List[str]] = None,
                    save_path: str = None):
-    """Plots the stability score of methods for a given metric across the number of features to be selected.
+
+    """Plots the stability score of methods for a given metric.
 
     Parameters
     ----------
     pod: DataHandler
-        BenchmarkPOD object containing the benchmarking data.
+        :class:`~auswahl.benchmarking.DataHandler` object containing the benchmarking data.
 
-    dataset: str
-        Dataset identifier.
+    dataset: str, default=None
+        Identifier of the dataset of which to plot the execution time. If there is data for only one dataset
+        in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
-    stability_metric: str
-        Stability metric used for plotting.
+    stability_metric: str, default=None
+        Stability metric used for plotting. If there is data for only one stability_metric
+        in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
     methods: Union[str, List[str]], default=None
         Method identifier or list of method identifiers for methods to be plotted. If None, all available methods
@@ -561,40 +568,6 @@ def _plot_selection_bar(pod: DataHandler,
         plt.show()
 
 
-# TODO: probably to be discarded
-def _plot_selection_heatmap(pod: DataHandler,
-                            n_features: int,
-                            dataset: str = None,
-                            methods: Union[str, List[str]] = None,
-                            save_path: str = None):
-    fig, ax = plt.subplots()
-    ax.set_title(
-        f'Displaying selection probability heatmap on dataset {dataset} for {n_features} features to be selected')
-
-    selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features)
-    n_wavelengths = pod.get_meta(dataset)[2][1]
-
-    selection_prob = np.zeros((len(methods), n_wavelengths))
-    for i in range(len(methods)):
-        unique_counts = selections.iloc[i].value_counts()
-        selection_prob[i, unique_counts.index.to_numpy().astype('int')] = unique_counts.to_numpy() / pod.n_runs
-
-    # build heatmap
-    print(selection_prob)
-    ax.imshow(selection_prob, cmap='viridis')
-
-    # add annotations
-    ax.set_xlabel('wavelength')
-    ax.set_ylabel('method')
-    ax.set_yticks(np.arange(len(methods)), labels=methods)
-    ax.set_xlabel(np.arange(n_wavelengths))
-
-    if save_path is not None:
-        plt.savefig(save_path)
-    else:
-        plt.show()
-
-
 # go -> confirmed
 def plot_selection(pod: DataHandler,
                    n_features: Union[int, Tuple[int, int]],
@@ -602,25 +575,24 @@ def plot_selection(pod: DataHandler,
                    methods: Union[str, List[str]] = None,
                    plot_type: Literal['heatmap', 'bar'] = 'bar',
                    save_path: str = None):
+
     """Plots the selection probability for features of different selectors.
 
     Parameters
     ----------
-    pod: BenchmarkPOD
-        BenchmarkPOD object containing the benchmarking data.
+    pod: DataHandler
+       :class:`~auswahl.benchmarking.DataHandler` object containing the benchmarking data.
 
-    dataset: str
-        Dataset identifier.
-
-    stability_metric: str
-        Stability metric used for plotting.
+   dataset: str, default=None
+        Identifier of the dataset of which to plot the execution time. If there is data for only one dataset
+        in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
     methods: Union[str, List[str]], default=None
         Method identifier or list of method identifiers for methods to be plotted. If None, all available methods
         are plotted.
 
     plot_type: Literal['heatmap', 'bar'], default='bar'
-        Plot type displayed.
+        Plot type displayed. Option 'heatmap' is currently unavailable.
 
     save_path: str, default=None
         Path on which to store the plot. If None, the plot is simply displayed.
@@ -633,7 +605,9 @@ def plot_selection(pod: DataHandler,
     if plot_type == 'bar':
         _plot_selection_bar(pod, dataset, n_features, methods, save_path)
     elif plot_type == 'heatmap':
-        _plot_selection_heatmap(pod, dataset, n_features, methods, save_path)
+        #_plot_selection_heatmap(pod, dataset, n_features, methods, save_path)
+        raise ValueError("The plotting option 'heatmap' is currently not available. Use the option"
+                         "'bar' instead.")
     else:
         raise ValueError(f'Unknown plot_type passed to function plot_selection: {plot_type}.'
                          'Use one of {heatmap, bar}')

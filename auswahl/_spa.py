@@ -87,7 +87,7 @@ class SPA(PointSelector):
             wavelengths.append(wavelength_map[next_index])
             wavelength_map = np.delete(wavelength_map, next_index)
 
-        score, model = self._evaluate(X[:, wavelengths], y, self.pls)
+        score, model = self.evaluate(X[:, wavelengths], y, self.pls)
         return score, model, wavelengths
 
     def _fit(self, X, y, n_features_to_select):

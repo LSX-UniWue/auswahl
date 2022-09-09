@@ -68,17 +68,17 @@ class _RandomFrog(SpectralSelector, BaseEstimator, metaclass=ABCMeta):
                 continue
 
             # Determine the candidate feature selection
-            _, pls = self._evaluate(X[:, self._idx_to_mask(features_to_explore)], y, pls)
+            _, pls = self.evaluate(X[:, self._idx_to_mask(features_to_explore)], y, pls)
             absolute_coefficients = self._get_feature_score_from_model(pls, features_to_explore)
             selection_idx = np.argsort(absolute_coefficients)[-n_candidate_features:]
             candidate_features = features_to_explore[selection_idx]
 
             # Score the current feature selection and the candidate feature selection
             pls.n_components = min(pls.n_components, len(selected_features))
-            selected_features_score, _ = self._evaluate(X=X[:, self._idx_to_mask(selected_features)], y=y, model=pls)
+            selected_features_score, _ = self.evaluate(X=X[:, self._idx_to_mask(selected_features)], y=y, model=pls)
 
             pls.n_components = min(pls.n_components, len(candidate_features))
-            candidate_features_score, _ = self._evaluate(X=X[:, self._idx_to_mask(candidate_features)], y=y, model=pls)
+            candidate_features_score, _ = self.evaluate(X=X[:, self._idx_to_mask(candidate_features)], y=y, model=pls)
 
             # Update the feature selection
             if candidate_features_score >= selected_features_score:

@@ -27,7 +27,7 @@ class CARS(PointSelector):
         Upper bound of features to select.
 
     n_cars_runs : int, default=20
-        Number of individual CARS rus to estimate the selection stability of wavelengths
+        Number of individual CARS runs to estimate the selection stability of wavelengths
 
     n_jobs : int, default=2
         Number of parallel workers
@@ -106,7 +106,7 @@ class CARS(PointSelector):
         x_pls_fit = X[fitting_samples, :][:, wavelengths]
         y_pls_fit = y[fitting_samples]
 
-        _, model = self._evaluate(x_pls_fit, y_pls_fit, pls, do_cv=False)
+        _, model = self.evaluate(x_pls_fit, y_pls_fit, pls, do_cv=False)
         weights = np.abs(get_coef_from_pls(model)).flatten()
         wavelength_weights = np.zeros(X.shape[1])
         wavelength_weights[wavelengths] = weights
@@ -147,7 +147,7 @@ class CARS(PointSelector):
             if wavelengths.shape[0] == n_features_to_select:
                 break
 
-        score, model = self._evaluate(X[:, wavelengths], y, pls)
+        score, model = self.evaluate(X[:, wavelengths], y, pls)
         return score, wavelengths, model
 
     def _calculate_feature_importance(self, n_features, selection_candidates):

@@ -81,7 +81,7 @@ class MCUVE(PointSelector):
         self.pls = pls
 
     def _fit(self, X, y, n_features_to_select):
-        _, model = self._evaluate(X, y, self.pls, do_cv=False)
+        _, model = self.evaluate(X, y, self.pls, do_cv=False)
         random_state = check_random_state(self.random_state)
         self._check_n_subsets()
         n_samples_per_subset = self._check_n_samples_per_subset(X)
@@ -101,7 +101,7 @@ class MCUVE(PointSelector):
         selected_idx = np.argsort(abs(self.stability_))[-n_features_to_select:]
         self.support_ = np.zeros(X.shape[1], dtype=bool)
         self.support_[selected_idx] = 1
-        _, self.best_model_ = self._evaluate(X[:, self.support_], y, self.pls, do_cv=False)
+        _, self.best_model_ = self.evaluate(X[:, self.support_], y, self.pls, do_cv=False)
 
         return self
 

@@ -78,11 +78,11 @@ class VISSA(PointSelector):
         self.n_submodels = n_submodels
 
     def _evaluate_submodels(self, X, y, bsm):
-        submodels = Parallel(n_jobs=self.n_jobs)(delayed(self._evaluate)(X[:, bsm[:, i]],
-                                                                         y,
-                                                                         self.pls,
-                                                                         True,
-                                                                         i) for i in range(self.n_submodels))
+        submodels = Parallel(n_jobs=self.n_jobs)(delayed(self.evaluate)(X[:, bsm[:, i]],
+                                                                        y,
+                                                                        self.pls,
+                                                                        True,
+                                                                        i) for i in range(self.n_submodels))
         return submodels
 
     def _produce_submodels_adapted(self, var_weights: np.array, n_features_to_select, n_submodels, random_state):

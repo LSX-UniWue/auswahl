@@ -48,10 +48,10 @@ class DataHandler:
 
     def __init__(self,
                  datasets: List[str],
-                 methods: List,
+                 methods: List[str],
                  features: List[FeatureDescriptor],
-                 reg_metrics: List,
-                 stab_metrics: List,
+                 reg_metrics: List[str],
+                 stab_metrics: List[str],
                  n_runs: int):
 
         self.datasets = sorted(datasets)
@@ -253,7 +253,7 @@ class DataHandler:
             The frame holds the methods in its index and a multiindex with levels {'dataset', 'n_features', 'sample'} as
             columns, where 'sample' refers to the individual runs for the statistical evaluation. The keys for level
             'n_features' are of type :class:`~auswahl.FeatureDescriptor`. The type of the data in the frame is
-            :class:`~auswahl.Selection`.
+            :class:`~auswahl.benchmarking.util.helpers.Selection`.
         """
         method_key, key = self._make_key(dataset, method, n_features, sample=sample)
         return self.selection_data.loc[(method_key, key)], key, self.selection_data.columns
