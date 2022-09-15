@@ -125,7 +125,7 @@ def zucknick_score(pod: DataHandler):
 
     Returns
     -------
-        Extends the passed BenchmarkPOD with the stability scores calculated according to Zucknick et al. [1]_.
+        Extends the passed DataHandler with the stability scores calculated according to Zucknick et al. [1]_.
 
     References
     ----------
@@ -134,3 +134,9 @@ def zucknick_score(pod: DataHandler):
          Stat. Appl. Genet. Molecular Biol. 7(1), 7 (2008)
     """
     pairwise_scoring(pod, _zucknick_stability_score, 'zucknick_score')
+
+
+#def zucknick_score(delta):
+ #   def parameterized_zucknick(pod: DataHandler):
+  #      pairwise_scoring(pod, _zucknick_stability_score(delta), 'zucknick_score')
+   # return parameterized_zucknick

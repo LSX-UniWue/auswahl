@@ -291,12 +291,15 @@ def _benchmark_parallel(x: np.array,
                         reg_metrics,
                         seed: int,
                         run_index: int):
+    # prepare model and conduct data splitting
     methods = _copy_methods(methods)
     train_x, test_x, train_y, test_y = train_test_split(x, y, train_size=train_size, random_state=seed)
 
     results = dict()
     for method_name, method in zip(method_names, methods):
+        # prepare the container holding the results of the evaluation of the current method
         results[method_name] = dict()
+        # update the selector method to use the random state of the current evaluation run
         method.reseed(seed)
         # fit feature selector
         try:
@@ -327,9 +330,10 @@ def _benchmark_parallel(x: np.array,
                 metrics.append(metric(test_y, prediction))
             except Exception as e:
                 metrics.append(np.nan)
-                metric_errors = results[method_name].setdefault('metric_exception', [])
+                metric_errors = results[method_name].setdefault('metric_exception', list())
                 metric_errors.append((e, run_index, seed, f'Evaluation of: {metric.__name__}'))
 
+        # Aggregate the results of the evaluation run
         results[method_name]['metrics'] = metrics
         results[method_name]['exec'] = end - start
         results[method_name]['selection'] = support
@@ -342,6 +346,7 @@ def _pot(pod, dataset_name, feature, methods_names, reg_metrics_names, results, 
     for result in results:
         for method in methods_names:
             if 'exception' not in result[method].keys():
+                # store the evaluation results in the DataHandler object
                 run_index = result[method]['run_index']
                 pod._register_measurement(result[method]['exec'], dataset_name, method,
                                           feature, run_index)
@@ -351,6 +356,7 @@ def _pot(pod, dataset_name, feature, methods_names, reg_metrics_names, results, 
                     pod._register_regression(result[method]['metrics'][j], dataset_name, method,
                                              feature, metric, run_index)
             else:
+                # log the fatal evaluation error during benchmarking
                 exception, run_index, seed, during = result[method]['exception']
                 logger.log_error(severity='fatal', run_index=run_index, seed=seed,
                                  method_name=method, during=during, exception=exception)
@@ -466,7 +472,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
                                                                 run_seeds[r], r)
                                    for r in range(n_runs))
 
-                # insert the results of the processes into the BenchmarkPOD object or the error log
+                # insert the results of the processes into the DataHandler object or the error log
                 _pot(pod, dataset_names[d], features[i], method_names, reg_metric_names, results, logger)
 
     # dump error log
