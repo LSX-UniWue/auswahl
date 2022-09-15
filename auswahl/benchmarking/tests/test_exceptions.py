@@ -42,9 +42,8 @@ def test_n_features_exceptions(data):
 
     params = [
         {'features': [], 'methods': [vip]},  # nothing given for PointSelector
-        {'features': [], 'methods': [ipls]},  # nothing given for PointSelector
+        {'features': [], 'methods': [ipls]},  # nothing given for IntervalSelector
 
-        {'features': [(1, 1)], 'methods': [vip]},  # tuple given for PointSelector
         {'features': [1], 'methods': [ipls]},  # Point given for IntervalSelector
 
         {'features': [(1,)], 'methods': [vip]},  # wrong tuple given for PointSelector

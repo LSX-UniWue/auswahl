@@ -66,6 +66,10 @@ def _check_feature_consistency(methods, features):
     if not isinstance(features, list):
         features = [features]
 
+    if len(features) < 1:
+        raise ValueError('At least one feature indicator (integer or tuple of integers) has to be given to the'
+                         'benchmarking function.')
+
     if not isinstance(methods, list):
         methods = [methods]
 
