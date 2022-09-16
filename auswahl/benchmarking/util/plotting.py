@@ -529,7 +529,7 @@ def _plot_selection_bar(pod: DataHandler,
     selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features).to_numpy().tolist()
     selections = pd.DataFrame([sum([s.features for s in sel], []) for sel in selections])
 
-    n_wavelengths = pod.get_meta(dataset)[2][1]  # TODO: improve this interface
+    n_wavelengths = pod.get_meta(dataset)['n_features']
 
     if len(methods) == 1:
         axs = [axs]

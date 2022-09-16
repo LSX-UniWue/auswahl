@@ -325,6 +325,38 @@ Yields for our test data set::
 Plotting Facilities
 ===================
 
+Auswahl offers a range of functions for benchmarking visualization. The visualization functions operate directly on the instance of :class:`~auswahl.benchmarking.DataHandler` returned by the
+function :func:`auswahl.benchmarking.benchmark` and offer a variety of options for slicing the benchmarking results for a selective representations of the evaluation. The example below
+showcases the deployment of some of the functions::
+
+    result = benchmark([(x, y, 'test_set', 0.8)],
+                   features=[5, 7, 10, 15],
+                   methods=[CARS(), VIP(), MCUVE()],
+                   n_runs=10,
+                   random_state=42,
+                   reg_metrics=[mean_squared_error, mean_absolute_error],
+                   stab_metrics=[DengScore(), ZucknickScore()],
+                   n_jobs=2,
+                   verbose=True)
+
+    # plot the regression score for the mean_squared_error for all selectors and feature configurations
+    plot_score(result, regression_metric='mean_squared_error', save_path="doc/images/score.png")
+
+    # contrast regression score and selector stability for feature configuration of 10 features to be selected
+    plot_score_vs_stability(result, n_features=10, regression_metric="mean_squared_error", stability_metric='zucknick_score', save_path="doc/images/reg_stab.png")
+
+    # plot the selection probability of each feature for every selector
+    plot_selection(result, n_features=10, save_path="doc/images/selection.png")
+
+The following gallery illustrates the resulting plots
+
+.. image:: ./images/score.png
+
+.. image:: ./images/reg_stab.png
+
+.. image:: ./images/selection.png
+
+
 Error logging
 =============
 
