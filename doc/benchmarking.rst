@@ -374,12 +374,26 @@ Reproducibility
 ---------------
 
 The benchmarking has been implemented to be completely reproducible. Invoking the function with the same random seed,
-yields the equal results to preceding runs.
+yields the equal results as preceding runs.
 
 Parallelization
 ---------------
 
+The benchmarking can be sped up by parallezation. Auswahl uses to that end the process-level parallelism of `joblib`_.
+The function :func:`~auswahl.benchmarking.benchmark` provides the argument ``n_jobs`` for the configuration of the number
+of parallel processes. Note, that :func:`~auswahl.benchmarking.benchmark` overrides possible ``n_jobs`` configurations in
+its provided selector algorithms:
+The selector algorithms are all executed in a non-parallel fashion, as the benchmarking parallelizes the execution of the
+different sample runs of the selector algorithms. Make therefore sure to provide :func:`~auswahl.benchmarking.benchmark` with the correct configuration of available hardware parallelity.
 
+.. _joblib: https://joblib.readthedocs.io/en/latest/
+
+Loading and Storing
+-------------------
+
+The benchmarking results of type :class:`~auswahl.benchmarking.DataHandler` can be pickled using
+the method :meth:`~auswahl.benchmarking.DataHandler.store`. The :class:`~auswahl.benchmarking.DataHandler` instance
+can later be reloaded using the function :func:`~auswahl.benchmarking.util.helpers.load_data_handler`
 
 
 

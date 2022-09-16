@@ -106,6 +106,15 @@ Stability Metrics
     benchmarking.util.metrics.DengScore
     benchmarking.util.metrics.ZucknickScore
 
+Misc
+====
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    benchmarking.util.helpers.load_data_handler
+
 
 
 
