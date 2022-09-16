@@ -20,7 +20,7 @@ The data set configurations provided to the benchmarking function each consist o
     *  The spectral data as :class:`~numpy.ndarray`
     * The target quantities as :class:`~numpy.ndarray`
     * The unique name of the data set
-    * a float in ]0,1[ indicating the share of the data to be used for training
+    * a float in ]0,1[ indicating the share of the data to be used for fitting
 
 An example invocation of :func:`benchmarking.benchmark` with several data sets is given below::
 
@@ -70,7 +70,7 @@ Metrics
 =======
 
 The benchmarking system distinguishes between two different kinds of metrics, namely *regression metrics* and *stability metrics*.
-While the former is a compulsory component of the benchmarking (and set to :func:`sklearn.metrics.mean_squares_error` per default),
+While the former is a compulsory component of the benchmarking (and set to :func:`sklearn.metrics.mean_squared_error` per default),
 the *stability metric* is optinally calculated by the benchmarking system. The system can handle several metrics of each kind simultaneously.
 
 Regression Metrics
@@ -168,9 +168,9 @@ The metric is available for benchmarking with class :class:`~benchmarking.util.m
 Adding Stability Metrics
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to add custom stability metrics to the benchmarking system, the inheritance from :class:`~~benchmarking.util.metrics.StabilityScore`
+In order to add custom stability metrics to the benchmarking system, the inheritance from :class:`~benchmarking.util.metrics.StabilityScore`
 is mandatory. For stability metrics defined symmetrically on pairs of sets of selected features
-consider extending the class :class:`~~benchmarking.util.metrics.PairwiseStabilityScore`::
+consider extending the class :class:`~benchmarking.util.metrics.PairwiseStabilityScore`::
 
     class MyScore(PairwiseStabilityScore):
 
@@ -202,13 +202,131 @@ An example invocation can be seen here::
                        methods=[CARS(), VIP()],
                        n_runs=10)
 
-.. _eval:
+
 Benchmarking Results
 ====================
 
+The function :func:`~auswahl.benchmarking.benchmark` returns the results of the evaluation as an instance of class :class:`~auswahl.benchmarking.util.DataHandler`, which
+aggregates the evaluation results curated into four categories:
+
+**Regression**
+
+
+Regression results for all selection algorithms, all benchmarked datasets, all regression metrics, all feature selection configuration and all sample runs of the algorithms. The data is aggregated as a
+:class:`pandas.DataFrame` with the selection algorithms (by their names) in the index and a :class:`pandas.MultiIndex` in its colums containing the levels
+	``dataset``
+		All available datasets. Key of type ``str``
+	``n_features``
+		All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
+	``regression_metric``
+		All available regression metrics. Key of type ``str``
+	``run``
+		All individual sample runs for the particular configurations. Key of type ``int``
+
+The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_regression_data` of class :class:`~auswahl.benchmarking.DataHandler`.
+The method can also be used to slice the frame to a single or selection of items of the various levels.
+
+
+**Stability**
+
+Stability results for all selection algorithms, all benchmarked datasets, all stability metrics and all feature selection configuration. The data is aggregated as a
+:class:`pandas.DataFrame` with the selection algorithms (by their names) in the index and a :class:`pandas.MultiIndex` in its colums containing the levels
+	``dataset``
+		All available datasets. Key of type ``str``
+	``n_features``
+		All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
+	``stability_metric``
+		All available regression metrics. Key of type ``str``
+
+The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_stability_data` of class :class:`~auswahl.benchmarking.DataHandler`.
+The method can also be used to slice the frame to a single or selection of items of the various levels.
+
+**Execution time**
+
+Execution time measurements for all selection algorithms, all benchmarked datasets, all feature selection configuration and all sample runs of the algorithms. The data is aggregated as a
+:class:`pandas.DataFrame` with the selection algorithms (by their names) in the index and a :class:`pandas.MultiIndex` in its colums containing the levels
+	``dataset``
+		All available datasets. Key of type ``str``
+	``n_features``
+		All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
+	``run``
+        All individual sample runs for the particular configurations. Key of type ``int``
+
+The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_measurement_data` of class :class:`~auswahl.benchmarking.DataHandler`.
+The method can also be used to slice the frame to a single or selection of items of the various levels.
+
+**Selection**
+
+The indices of selected features  for all selection algorithms, all benchmarked datasets, all feature selection configuration and all sample runs of the algorithms. The data is aggregated as a
+:class:`pandas.DataFrame` with the selection algorithms (by their names) in the index and a :class:`pandas.MultiIndex` in its columns containing the levels
+	``dataset``
+		All available datasets. Key of type ``str``
+	``n_features``
+		All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
+	``run``
+        All individual sample runs for the particular configurations. Key of type ``int``
+
+The dataframe contains the sets of selected features as instances of class :class:`~auswahl.benchmarking.util.helpers.Selection`. |br|
+The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_selection_data` of class :class:`~auswahl.benchmarking.DataHandler`.
+The method can also be used to slice the frame to a single or selection of items of the various levels. |br|
+
+The retrieved frames can be used for further analysis and inspection using the variety of operations ``pandas`` provides for DataFrames equipped with
+the :class:`pandas.MultiIndex`. An example is given below::
+
+    x = np.load("./data/spectra.npy")
+    y = np.load("./data/targets.npy")
+
+    result = benchmark([(x, y, 'test_set', 0.8)],
+                        features=[5, 10, 15],
+                        methods=[CARS(), VIP()],
+                        n_runs=10,
+                        random_state=42,
+                        reg_metrics=[mean_squared_error, mean_absolute_error],
+                        stab_metrics=[DengScore()],
+                        n_jobs=2,
+                        verbose=True)
+    # retrieve the mean_squared_error data
+    mse_data = result.get_regression_data(reg_metric='mean_squared_error')
+
+    # group the data per feature configuration and calculate the regression mean across all samples runs
+    means = mse_data.groupby(axis=1, level=['n_features']).mean()
+    print(means)
+
+Yields for our test data::
+
+    n_features         5        10        15
+    CARS        0.027381  0.027366  0.028535
+    VIP         0.035211  0.033051  0.032912
+
+Another example considering the selected features of the selection algorithms is given as well::
+
+    result = benchmark([(x, y, 'test_set', 0.8)],
+                   features=[5, 7, 15],
+                   methods=[CARS(), VIP()],
+                   n_runs=10,
+                   random_state=42,
+                   reg_metrics=[mean_squared_error, mean_absolute_error],
+                   stab_metrics=[DengScore()],
+                   n_jobs=2,
+                   verbose=True)
+
+    # retrieve the selected features of the first sample run for feature configurations 5 and 15
+    selection = result.get_selection_data(sample=0, n_features=[5, 7])
+    print(selection)
+
+Yields for our test data set::
+
+    dataset                      test_set
+    n_features                          5                                 7
+    run                                 0                                 0
+    CARS        [166, 178, 530, 551, 559]  [6, 23, 167, 542, 552, 554, 566]
+    VIP                   [0, 1, 2, 3, 4]             [0, 1, 2, 3, 4, 5, 6]
 
 Plotting Facilities
 ===================
+
+Error logging
+=============
 
 
 

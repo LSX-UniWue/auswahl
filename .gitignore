@@ -27,3 +27,7 @@ doc/auto_examples/
 
 # PyCharm
 .idea/
+
+# local testing
+test.py
+data/
