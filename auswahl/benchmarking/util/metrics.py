@@ -25,10 +25,15 @@ class StabilityScore(metaclass=ABCMeta):
 
     @abstractmethod
     def __call__(self, pod: DataHandler):
-        """
-            Conducts the evaluation of the stability metric across all datasets and methods in the
-            :class:`~auswahl.benchmarking.DataHandler` object, which is extended with the results of the
-            stability evaluation.
+        """Conducts the evaluation of the stability metric across all datasets and methods in the
+        :class:`~auswahl.benchmarking.DataHandler` object, which is extended with the results of the
+        stability evaluation.
+
+        Parameters
+        ----------
+        pod: DataHandler
+            instance of :class:`~auswahl.benchmarking.DataHandler` containing the results of the benchmarking
+            procedure
         """
         ...
 
@@ -118,21 +123,18 @@ class DengScore(PairwiseStabilityScore):
 
     """Wraps the calculation of the selection stability score for randomized selection methods, according to Deng et al. [1]_.
 
-        Parameters
-        ----------
-        Parameters
-        ----------
-        metric_name: str, default="deng_score"
-            Unique Name of the metric. If no name is provided, the name of the class inheriting from this function
-            is used
+    Parameters
+    ----------
+    metric_name: str, default="deng_score"
+            Unique Name of the metric
 
-        References
-        ----------
-        .. [1] Bai-Chuan Deng, Yong-Huan Yun, Pan Ma, Chen-Chen Li, Da-Bing Ren and Yi-Zeng Liang,
-               'A new method for wavelength interval selection that intelligently optimizes the locations, widths
-               and combination of intervals',
-               Analyst, 6, 1876-1885, 2015.
-        """
+    References
+    ----------
+    .. [1] Bai-Chuan Deng, Yong-Huan Yun, Pan Ma, Chen-Chen Li, Da-Bing Ren and Yi-Zeng Liang,
+           'A new method for wavelength interval selection that intelligently optimizes the locations, widths
+           and combination of intervals',
+           Analyst, 6, 1876-1885, 2015.
+    """
 
     def __init__(self, metric_name: str = "deng_score"):
         super().__init__(metric_name)
@@ -151,8 +153,10 @@ class ZucknickScore(PairwiseStabilityScore):
 
     Parameters
     ----------
-    pod: DataHandler
-        :class:`~auswahl.benchmarking.DataHandler` object containing the benchmarking data.
+    correlation_threshold: float, default=0.8
+        parameter of the calculation of stability according to Zucknick et al. [1]_ . The parameter determines
+        the minimum required correlation between two features to be considered similar.
+    metric_name: str, default="zucknick_score"
 
     References
     ----------
