@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils import check_random_state
 
 from .util.data_handling import DataHandler
+from .util.metrics import StabilityScore
 from .._base import PointSelector, IntervalSelector, SpectralSelector, FeatureDescriptor
 
 
@@ -154,7 +155,7 @@ def _unpack_methods(methods):
 
 
 # go
-def _unpack_metrics(metrics, compulsory=False):
+def _unpack_metrics(metrics, typing=Callable, compulsory=False):
     """ Decomposes the metrics arguments passed to function benchmark into a list of functions and names.
     Checks types underway.
 
@@ -181,9 +182,12 @@ def _unpack_metrics(metrics, compulsory=False):
     metric_functions = []
     names = []
     for metric in metrics:
-        if isinstance(metric, Callable):
+        if isinstance(metric, typing):
             metric_functions.append(metric)
-            names.append(metric.__name__)
+            if typing == StabilityScore:
+                names.append(metric.metric_name)
+            else:
+                names.append(metric.__name__)
         else:
             raise ValueError(f'Expected the metric {metric} to be callable')
 
@@ -374,7 +378,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
               n_runs: int = 10,
               reg_metrics: List[Callable[[np.ndarray, np.ndarray], float]] = mean_squared_error,
               random_state: Union[int, RandomState] = None,
-              stab_metrics: List[Callable[[DataHandler], float]] = None,
+              stab_metrics: List[StabilityScore] = None,
               n_jobs: int = 1,
               error_log_file: str = "./error_log.txt",
               verbose: bool = True):
@@ -431,7 +435,7 @@ def benchmark(data: List[Tuple[np.array, np.array, str, float]],
 
     xs, ys, dataset_names, train_sizes = _check_datasets(data)
     reg_metrics, reg_metric_names = _unpack_metrics(reg_metrics, compulsory=True)
-    stab_metrics, stab_metric_names = _unpack_metrics(stab_metrics)
+    stab_metrics, stab_metric_names = _unpack_metrics(stab_metrics, typing=StabilityScore)
     methods, method_names = _unpack_methods(methods)
 
     _check_name_uniqueness(dataset_names, "datasets")

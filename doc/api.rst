@@ -99,11 +99,12 @@ Stability Metrics
 
 .. autosummary::
     :toctree: generated/
-    :template: function.rst
+    :template: class.rst
 
-    benchmarking.util.metrics.deng_score
-    benchmarking.util.metrics.zucknick_score
-    benchmarking.util.metrics.pairwise_scoring
+    benchmarking.util.metrics.StabilityScore
+    benchmarking.util.metrics.PairwiseStabilityScore
+    benchmarking.util.metrics.DengScore
+    benchmarking.util.metrics.ZucknickScore
 
 
 

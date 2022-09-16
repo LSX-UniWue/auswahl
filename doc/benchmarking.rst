@@ -112,7 +112,7 @@ For sets of selections :math:`\{S_i\}_{i=1}^k`, the score is averaged across all
 .. math:: \mathcal{S}_{deng}(\{S_i\}_{i=1}^k) = \frac{2}{k^2 - k}\displaystyle\sum_{i < j}\mathcal{S}(S_i, S_j)
 
 
-The metric is available for benchmarking with function :func:`benchmarking.util.metrics.deng_score`
+The metric is available for benchmarking with function :class:`benchmarking.util.metrics.DengScore`
 
 .. topic:: References:
 
@@ -158,11 +158,17 @@ two features to consider them similar.
       gene expression profiles derived by univariate and multivariate classification methods.
       Stat. Appl. Genet. Molecular Biol. 7(1), 7 (2008)
 
+
 Adding Stability Metrics
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to add custom stability metrics to the benchmarking system, consider the documentation for the
-helper function :func:`benchmarking.util.metrics.pairwise_scoring`.
+helper function :class:`benchmarking.util.metrics.PairwiseStabilityScore`.
+
+
+Benchmarking Results
+====================
+
 
 Plotting Facilities
 ===================
