@@ -100,14 +100,12 @@ class DataHandler:
         self.resolve_tuples = features[0].resolve_tuples
         self.meta = dict()
 
-    # TODO: improve that
     def register_meta(self, dataset_meta: List[Tuple[np.array, np.array, str, float]]):
         if not isinstance(dataset_meta, list):
             dataset_meta = [dataset_meta]
         for x, y, name, _ in dataset_meta:
-            self.meta[name] = (x, y, x.shape)
+            self.meta[name] = {'x': x, 'y': y, 'n_samples': x.shape[0], 'n_features': x.shape[1]}
 
-    # TODO: improve that
     def get_meta(self, dataset):
         """Provides meta information for each dataset.
 
@@ -118,8 +116,15 @@ class DataHandler:
 
         Returns
         -------
-        tuple
-            (spectra, targets, (n_samples, n_wavelengths)).
+        dict containing information about the dataset
+            ``x``
+                The spectral data of the dataset: np.ndarray of shape (n_samples, n_wavelengths)
+            ``y``
+                The target quantity of the dataset: np.ndarray of shape (n_samples, )
+            ``n_samples``
+                Direct access to the number of samples in the dataset
+            ``n_features``
+                Direct access to the number of wavelengths, that is features, in the dataset
         """
         return self.meta[dataset]
 

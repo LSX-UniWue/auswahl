@@ -13,12 +13,12 @@ Benchmarking
 Data sets
 =========
 
-The benchmarking system can evaluate the performance of :class:`SpectralSelector` methods across several data sets simultaneously in order to provide a
+The benchmarking system can evaluate the performance of :class:`~SpectralSelector` methods across several data sets simultaneously in order to provide a
 unified comparison of selection algorithms across a number of studied scenarios.
 The data set configurations provided to the benchmarking function each consist of a tuple specifiying four items. Namely
 
-    *  The spectral data as :class:`numpy.ndarray`
-    * The target quantities as :class:`numpy.ndarray`
+    *  The spectral data as :class:`~numpy.ndarray`
+    * The target quantities as :class:`~numpy.ndarray`
     * The unique name of the data set
     * a float in ]0,1[ indicating the share of the data to be used for training
 
@@ -34,8 +34,8 @@ An example invocation of :func:`benchmarking.benchmark` with several data sets i
 Selectors
 =========
 
-The benchmarking system can handle all selectors extending the class :class:`SpectralSelector`. Especially, the system can benchmark algorithms of
-:class:`PointSelector` and :class:`IntervalSelector` simultaneously. In the data handling of the benchmarking system
+The benchmarking system can handle all selectors extending the class :class:`~SpectralSelector`. Especially, the system can benchmark algorithms of
+:class:`~PointSelector` and :class:`~IntervalSelector` simultaneously. In the data handling of the benchmarking system
 and all derived functionalities, such as the plotting, the selectors are addressed by their class name. If these are not unique
 (for instance during benchmarking of differently configured instances of the same selector algorithm),
 or custom names are desired for other reasons, the names have to be specified for the selectors as exemplified below::
@@ -51,11 +51,11 @@ Features to select
 ==================
 
 The benchmarking system allows the comparison of feature selection algorithms across several feature configurations.
-For the :class:`PointSelector` the configurations of features to be selected are simply specified by a single integer. For selectors extending :class:`IntervalSelector`
+For the :class:`~PointSelector` the configurations of features to be selected are simply specified by a single integer. For selectors extending :class:`~IntervalSelector`
 a feature selection configuration requires the description of both the width of an interval (that is a consecutive block of wavelengths) and a number of
 of such intervals to be extracted by the algorithm. Such a configuration is specified with a tuple (number of intervals, interval width). If the methods to be benchmarked
-comprise at least one selector extending :class:`IntervalSelector`, all feature configurations need to be specified in the above defined interval fashion. For
-:class:`PointSelector` the interval configurations will be resolved to a number of interval width times number of intervals individual features to be selected.
+comprise at least one selector extending :class:`~IntervalSelector`, all feature configurations need to be specified in the above defined interval fashion. For
+:class:`~PointSelector` the interval configurations will be resolved to a number of interval width times number of intervals individual features to be selected.
 An example for is given below::
 
     result = benchmark([(X, y, 'data_example', 0.25)],
@@ -112,7 +112,7 @@ For sets of selections :math:`\{S_i\}_{i=1}^k`, the score is averaged across all
 .. math:: \mathcal{S}_{deng}(\{S_i\}_{i=1}^k) = \frac{2}{k^2 - k}\displaystyle\sum_{i < j}\mathcal{S}(S_i, S_j)
 
 
-The metric is available for benchmarking with function :class:`benchmarking.util.metrics.DengScore`
+The metric is available for benchmarking with class :class:`~benchmarking.util.metrics.DengScore`
 
 .. topic:: References:
 
@@ -124,7 +124,7 @@ The metric is available for benchmarking with function :class:`benchmarking.util
 Zucknick Score
 ^^^^^^^^^^^^^^
 
-The Zucknick score aims to account for the high collinearity in spectral data, by incorporating a corrletion adjustment mechanism into the stability evaluation.
+The Zucknick score aims to account for the high collinearity in spectral data, by incorporating a correlation adjustment mechanism into the stability evaluation.
 To that end the Zucknick-Score consideres the Intersection-over-Union adjusted with a correlation contribution :math:`C`. The metric considers two sets of selections of features :math:`S_1` and :math:`S_2` of size :math:`n`:
 
 .. math:: \mathcal{S(\delta)}_{zucknick} = \frac{S_1 \cap S_2 + C(S_1, S_2, \delta)}{S_1 \cup S_2}
@@ -152,20 +152,57 @@ and :math:`t(X, d)` a thresholding function operating on matrix :math:`X` using 
 The parameter :math:`\delta` can be selected by the users as a threshold for the minimum required correlation between
 two features to consider them similar.
 
+For sets of selections :math:`\{S_i\}_{i=1}^k`, the score is averaged across all pairs
+
+.. math:: \mathcal{S}_{zucknick}(\{S_i\}_{i=1}^k) = \frac{2}{k^2 - k}\displaystyle\sum_{i < j}\mathcal{S}(S_i, S_j)
+
+
+The metric is available for benchmarking with class :class:`~benchmarking.util.metrics.ZucknickScore`
+
 .. topic:: References:
 
     * Zucknick, M., Richardson, S., Stronach, E.A.: Comparing the characteristics of
       gene expression profiles derived by univariate and multivariate classification methods.
-      Stat. Appl. Genet. Molecular Biol. 7(1), 7 (2008)
-
+      Stat. Appl. Genet. Molecular Biol. 7(1), 7 (2008
 
 Adding Stability Metrics
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In order to add custom stability metrics to the benchmarking system, consider the documentation for the
-helper function :class:`benchmarking.util.metrics.PairwiseStabilityScore`.
+In order to add custom stability metrics to the benchmarking system, the inheritance from :class:`~~benchmarking.util.metrics.StabilityScore`
+is mandatory. For stability metrics defined symmetrically on pairs of sets of selected features
+consider extending the class :class:`~~benchmarking.util.metrics.PairwiseStabilityScore`::
 
+    class MyScore(PairwiseStabilityScore):
 
+        def __init__(self, metric_name, *my_args, **my_kwargs):
+            super().__init__(metric_name)
+
+        def pairwise_sim_func(self, meta_data: dict, set_1: np.ndarray, set_2: np.ndarray) -> float:
+            #
+            # Calculate the stability between the pair of feature sets set_1 and set_2
+            #
+
+            # access meta information of the data set
+            total_number_of_features = meta_data['n_features']
+            return 0
+
+Using Metrics
+^^^^^^^^^^^^^
+
+The evaluatin metrics can be passed as lists if the evaluation of several metrics is desired.
+When accessing the results of the evaluation, the regression metrics are referred to by their function name. The stability
+scores can be arbitrarily named, but are per default named with their camelcase class name separated by an underscore (like ``zucknick_score``).
+An example invocation can be seen here::
+
+    result = benchmark([(X, y, 'data_example', 0.25)],
+                       features=[10, 15, 20],
+                       reg_metrics=[mean_squared_error, mean_absolute_error],
+                       stab_metrics=[DengScore(), ZucknickScore(metric_name='custom_name',
+                                                                correlation_threshold=0.9)]
+                       methods=[CARS(), VIP()],
+                       n_runs=10)
+
+.. _eval:
 Benchmarking Results
 ====================
 

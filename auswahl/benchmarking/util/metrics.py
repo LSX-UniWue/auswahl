@@ -74,10 +74,9 @@ class PairwiseStabilityScore(StabilityScore, metaclass=ABCMeta):
                     dim0, dim1 = np.triu_indices(r)
                     for i in range(dim0.size):
                         if dim0[i] != dim1[i]:  # only consider similarity between different pairs of feature sets
-                            pairwise_sim.append(self.pairwise_sim_func(pod,
+                            pairwise_sim.append(self.pairwise_sim_func(pod.get_meta(dataset),
                                                                        set_1=supports[dim0[i]],
-                                                                       set_2=supports[dim1[i]],
-                                                                       dataset=dataset))
+                                                                       set_2=supports[dim1[i]]))
                     score = np.mean(np.array(pairwise_sim))
 
                     pod._register_stability(method=method,
@@ -92,24 +91,22 @@ class PairwiseStabilityScore(StabilityScore, metaclass=ABCMeta):
 
     # go
     @abstractmethod
-    def pairwise_sim_func(self, data: DataHandler, set_1: np.ndarray, set_2: np.ndarray, dataset: str) -> float:
+    def pairwise_sim_func(self, meta_data: dict, set_1: np.ndarray, set_2: np.ndarray) -> float:
         """Function calculating the stability score for a single pair of selections of features. The function has to
         return a float score and receive as arguments an instance of :class:`~auswahl.benchmarking.DataHandler`,
-        the two selections as np.ndarrays containing the integer indices of the selected features and a string identifier
+        the two selections as numpy.ndarrays containing the integer indices of the selected features and a string identifier
         of the dataset, which can be used in conjunction with the :class:`~auswahl.benchmarking.DataHandler` object            to retrieve possibly required meta information like properties of the data, such as the total number of features
         available.
 
         Parameters
         ----------
-        data: DataHandler
-            benchmarking results. Can be used in conjunction with argument data_name to retrieve possibly necessary
-            meta information, such as properties of the data relevant for the considered stability.
+        meta_data: dict
+            Dict containing meta information about the dataset for which the stability metric is evaluated.
+            See the documentation of :meth:`~auswahl.benchmarking.DataHandler.get_meta` for the available data.
         set_1: np.nadarray
             array of integer indices of selected features of shape (n_features_to_select,)
         set_2: np.nadarray
             array of integer indices of selected features of shape (n_features_to_select,)
-        data_name: str
-            name of the dataset for which the stability metric is evaluated
 
         Returns
         -------
@@ -139,8 +136,8 @@ class DengScore(PairwiseStabilityScore):
     def __init__(self, metric_name: str = "deng_score"):
         super().__init__(metric_name)
 
-    def pairwise_sim_func(self, data: DataHandler, set_1: np.ndarray, set_2: np.ndarray, dataset) -> float:
-        n_wavelengths = data.get_meta(dataset)[2][1]
+    def pairwise_sim_func(self, meta_data: dict, set_1: np.ndarray, set_2: np.ndarray) -> float:
+        n_wavelengths = meta_data['n_features']
         n = set_1.size
         e = n ** 2 / n_wavelengths
         return (np.intersect1d(set_1, set_2).size - e) / (n - e)
@@ -183,12 +180,11 @@ class ZucknickScore(PairwiseStabilityScore):
         correlation = correlation * (correlation >= self.correlation_threshold)
         return (1 / support_2.size) * np.sum(correlation[:support_1.size, support_1.size:])
 
-    def pairwise_sim_func(self, data: DataHandler, set_1: np.ndarray, set_2: np.ndarray, dataset: str) -> float:
+    def pairwise_sim_func(self, meta_data: dict, set_1: np.ndarray, set_2: np.ndarray) -> float:
         n = set_1.size
-        spectra = data.get_meta(dataset)[0]
+        spectra = meta_data['x']
         intersection_size = np.intersect1d(set_1, set_2).size
         union_size = 2 * n - intersection_size
         c_12 = self._thresholded_correlation(spectra, set_1, set_2)
         c_21 = self._thresholded_correlation(spectra, set_2, set_1)
         return (intersection_size + c_12 + c_21) / union_size
-
