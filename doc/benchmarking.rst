@@ -194,6 +194,9 @@ consider extending the class :class:`~benchmarking.util.metrics.PairwiseStabilit
             total_number_of_features = meta_data['n_features']
             return 0
 
+Note, that the validity of selections needs to be verified expressly.
+See more information regarding the validation :ref:`here <selection>`
+
 Using Metrics
 ^^^^^^^^^^^^^
 
@@ -279,6 +282,8 @@ Execution time measurements for all selection algorithms, all benchmarked datase
 The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_measurement_data` of class :class:`~auswahl.benchmarking.DataHandler`.
 The method can also be used to slice the frame to a single or selection of items of the various levels.
 
+.. _selection:
+
 **Selection**
 
 The indices of selected features  for all selection algorithms, all benchmarked datasets, all feature selection configuration and all sample runs of the algorithms. The data is aggregated as a
@@ -293,7 +298,11 @@ The indices of selected features  for all selection algorithms, all benchmarked 
     * ``run``:
         All individual sample runs for the particular configurations. Key of type ``int``
 
-The dataframe contains the sets of selected features as instances of class :class:`~auswahl.benchmarking.util.helpers.Selection`. |br|
+The dataframe contains the sets of selected features as instances of class :class:`~auswahl.benchmarking.util.helpers.Selection`.
+
+Note, that the DataFrame contains a :class:`~auswahl.benchmarking.util.helpers.Selection` object also for invalid, that is error raising executions
+of the selector algorithms. Make therefore sure to check the validity of the :class:`~auswahl.benchmarking.util.helpers.Selection` object at hand using
+its member function :meth:`~auswahl.benchmarking.util.helpers.Selection.is_valid` . |br|
 The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_selection_data` of class :class:`~auswahl.benchmarking.DataHandler`.
 The method can also be used to slice the frame to a single or selection of items of the various levels. |br|
 
@@ -301,7 +310,10 @@ Utilization
 -----------
 
 The retrieved frames can be used for further analysis and inspection using the plentitude of operations ``pandas`` provides for DataFrames equipped with
-the :class:`pandas.MultiIndex`. An example is given below::
+the :class:`pandas.MultiIndex`.
+Note, that the data of error raising executions of the selector algorithms is set to :class:`numpy.NaN`. The consideration of the results can therefore be
+conveniently restricted to the valid executions, by using the nan-ignoring functions of ``pandas``.
+An example is given below::
 
     x = np.load("./data/spectra.npy")
     y = np.load("./data/targets.npy")
@@ -319,7 +331,7 @@ the :class:`pandas.MultiIndex`. An example is given below::
     mse_data = result.get_regression_data(reg_metric='mean_squared_error')
 
     # group the data per feature configuration and calculate the regression mean across all samples runs
-    means = mse_data.groupby(axis=1, level=['n_features']).mean()
+    means = mse_data.groupby(axis=1, level=['n_features']).nanmean()
     print(means)
 
 Yields for our test data::
@@ -390,6 +402,28 @@ The following gallery illustrates the resulting plots
 Error logging
 =============
 
+The benchmarking system catches possible errors during the evaluation of the different selectors and provides an overview of the raised
+errors in an error logging file. Apart from the exception message and stacktrace, an indication is provided at which point during the
+benchmarking process the error was raised and reproduction information is disclosed comprising the dataset, the feature configuration, the specific selector, and the seed used
+for the data splitting and for the configuration of the selector.
+The information about the error is provided in the json-format.
+The file path for the error log can be provided to :func:`~auswahl.benchmarking.benchmark`.
+The format of the error_log is given below::
+
+    {
+    "error 1": {
+        "dataset": "test_set",
+        "severity": "fatal",
+        "features": "5",
+        "run": 0,
+        "seed": "121958",
+        "method": "ExceptionalSelector",
+        "during": "Fitting of Selector",
+        "type": "NotImplementedError",
+        "message": "This function is not meaningfully implemented",
+        "trace": "NotImplementedError: This function is not meaningfully implemented\n"
+        }
+    }
 
 Miscellaneous
 =============
