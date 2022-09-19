@@ -186,6 +186,7 @@ consider extending the class :class:`~benchmarking.util.metrics.PairwiseStabilit
             super().__init__(metric_name)
 
         def pairwise_sim_func(self, meta_data: dict, set_1: np.ndarray, set_2: np.ndarray) -> float:
+
             #
             # Calculate the stability between the pair of feature sets set_1 and set_2
             #
@@ -194,8 +195,17 @@ consider extending the class :class:`~benchmarking.util.metrics.PairwiseStabilit
             total_number_of_features = meta_data['n_features']
             return 0
 
-Note, that the validity of selections needs to be verified expressly.
-See more information regarding the validation :ref:`here <selection>`
+The user is only required to overwrite the method :meth:`~benchmarking.util.metrics.PairwiseStabilityScore.pairwise_sim_func`, to calculate and return
+the stability between a pair of sets of selected features. If the stability calculation requires information about the dataset (such as correlation information), the
+data can be accessed via the provided ``meta_data``. See :class:`~benchmarking.DataHandler.get_meta` for an overview over the returned data.
+
+Note, that the validity of selections needs to be verified expressly by the user, if there is no recourse
+to the superclass :class:`~benchmarking.util.metrics.PairwiseStabilityScore`.
+See more information regarding the validation :ref:`here <selection>`.
+
+Completely custom metrics also require to handle the storing of the stability in the :class:`~benchmarking.DataHandler`
+passed to :meth:`~benchmarking.util.metrics.StabilityScore.__call__` of :class:`~benchmarking.util.metrics.StabilityScore`.
+To that end refer to the documentation of :meth:`~benchmarking.DataHandler.register_stability`.
 
 Using Metrics
 ^^^^^^^^^^^^^

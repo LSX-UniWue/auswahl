@@ -83,11 +83,11 @@ class PairwiseStabilityScore(StabilityScore, metaclass=ABCMeta):
                     if len(pairwise_sim) > 0:
                         score = np.mean(np.array(pairwise_sim))
 
-                        pod._register_stability(method=method,
-                                                n_features=n,
-                                                dataset=dataset,
-                                                metric_name=self.metric_name,
-                                                value=score)
+                        pod.register_stability(method=method,
+                                               n_features=n,
+                                               dataset=dataset,
+                                               metric_name=self.metric_name,
+                                               value=score)
 
     # go
     def __call__(self, pod: DataHandler):
