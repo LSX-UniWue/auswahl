@@ -17,14 +17,28 @@ class Selection:
         List of feature indices contained in the instance.
     """
 
-    def __init__(self, selected_features: List[int] = None):
+    def __init__(self, selected_features: List[int] = []):
         self.features = selected_features
+
+    def __len__(self):
+        return len(self.features)
 
     def __repr__(self):
         return str(self.features)
 
     def __str__(self):
         return self.__repr__()
+
+    def is_valid(self):
+        """
+            Indicates, whether the selection has been produced by a selector execution raising an error during benchmarking
+            or is valid.
+
+            Returns
+            -------
+            validity flag: bool
+        """
+        return len(self) != 0
 
 
 def load_data_handler(file_path: str):

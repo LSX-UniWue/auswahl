@@ -1,7 +1,9 @@
 import numpy as np
 
 from .data_handling import DataHandler
+from .helpers import  Selection
 from abc import ABCMeta, abstractmethod
+from typing import Union, List
 
 
 class StabilityScore(metaclass=ABCMeta):
@@ -68,22 +70,24 @@ class PairwiseStabilityScore(StabilityScore, metaclass=ABCMeta):
                 for dataset in pod.datasets:
                     # retrieve the samples of selected features (list of objects of type Selection)
                     supports = pod.get_selection_data(method=method, n_features=n, dataset=dataset).to_numpy().tolist()
-                    supports = np.array([selection.features for selection in supports])
+                    supports = np.array([selection.features for selection in supports if selection.is_valid()])
                     # evaluate all different pairs (symmetry assumed)
                     pairwise_sim = []
-                    dim0, dim1 = np.triu_indices(r)
+                    dim0, dim1 = np.triu_indices(supports.shape[0])
                     for i in range(dim0.size):
                         if dim0[i] != dim1[i]:  # only consider similarity between different pairs of feature sets
                             pairwise_sim.append(self.pairwise_sim_func(pod.get_meta(dataset),
                                                                        set_1=supports[dim0[i]],
                                                                        set_2=supports[dim1[i]]))
-                    score = np.mean(np.array(pairwise_sim))
 
-                    pod._register_stability(method=method,
-                                            n_features=n,
-                                            dataset=dataset,
-                                            metric_name=self.metric_name,
-                                            value=score)
+                    if len(pairwise_sim) > 0:
+                        score = np.mean(np.array(pairwise_sim))
+
+                        pod._register_stability(method=method,
+                                                n_features=n,
+                                                dataset=dataset,
+                                                metric_name=self.metric_name,
+                                                value=score)
 
     # go
     def __call__(self, pod: DataHandler):
@@ -119,6 +123,7 @@ class PairwiseStabilityScore(StabilityScore, metaclass=ABCMeta):
 class DengScore(PairwiseStabilityScore):
 
     """Wraps the calculation of the selection stability score for randomized selection methods, according to Deng et al. [1]_.
+    A detailed overview is provided in the user guide.
 
     Parameters
     ----------
@@ -147,11 +152,12 @@ class ZucknickScore(PairwiseStabilityScore):
     """Wraps the calculation of the stability score according to Zucknick et al. [1]_. The stability score features a
     correlation-adjusting mechanism assessing stability not only with respect to
     set theoretical stabilities, but also according to the correlation between the features selected in different runs.
+    A detailed overview is provided in the userguide.
 
     Parameters
     ----------
     correlation_threshold: float, default=0.8
-        parameter of the calculation of stability according to Zucknick et al. [1]_ . The parameter determines
+        Parameter of the calculation of stability according to Zucknick et al. [1]_ . The parameter determines
         the minimum required correlation between two features to be considered similar.
     metric_name: str, default="zucknick_score"
 

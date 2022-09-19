@@ -309,9 +309,9 @@ def plot_exec_time(pod: DataHandler,
     exec_max = grouped.max().to_numpy()
 
     if item == 'mean':
-        exec_times = grouped.mean().to_numpy()
+        exec_times = grouped.nanmean().to_numpy()
     elif item == 'median':
-        exec_times = grouped.median().to_numpy()
+        exec_times = grouped.nanmedian().to_numpy()
     else:
         raise ValueError("f'Unknown item {item}. Use median or mean'")
 
@@ -527,7 +527,7 @@ def _plot_selection_bar(pod: DataHandler,
                  f'for {FeatureDescriptor(n_features, pod.resolve_tuples)} features.')
 
     selections = pod.get_selection_data(dataset=dataset, method=methods, n_features=n_features).to_numpy().tolist()
-    selections = pd.DataFrame([sum([s.features for s in sel], []) for sel in selections])
+    selections = pd.DataFrame([sum([s.features for s in sel if s.is_valid()], []) for sel in selections])
 
     n_wavelengths = pod.get_meta(dataset)['n_features']
 

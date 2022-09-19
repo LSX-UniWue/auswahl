@@ -210,7 +210,7 @@ class DataHandler:
         n_features : int, tuple of int, list of int or list of tuple of int, default=None
              Feature configuration for which to retrieve results. A configuration for a single number of
              features, a single interval defined as tuple (#intervals, interval_width) or lists of such configurations
-             can be passed. If None, the runs for all numbers of selected features are retrieved.
+             can be passed. If None, the runs for all feature configurations are retrieved.
 
         reg_metric : str or list of str, default=None
             Regression metric(s) to be retrieved. If None, all available metrics are retrieved.

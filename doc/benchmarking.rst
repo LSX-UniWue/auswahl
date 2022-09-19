@@ -19,12 +19,12 @@ to get a quick overview of the documented interface of :func:`~auswahl.benchmark
 Data sets
 =========
 
-The benchmarking system can evaluate the performance of :class:`~SpectralSelector` methods across several data sets simultaneously in order to provide a
+The benchmarking system can evaluate the performance of :class:`~SpectralSelector` methods across several data sets simultaneously, in order to provide a
 unified comparison of selection algorithms across a number of studied scenarios.
 The data set configurations provided to the benchmarking function each consist of a tuple specifying four items. Namely
 
-    *  The spectral data as :class:`~numpy.ndarray`
-    * The target quantities as :class:`~numpy.ndarray`
+    * The spectral data as :class:`~numpy.ndarray` of shape (n_samples, n_features)
+    * The target quantities as :class:`~numpy.ndarray` of shape (n_samples)
     * The unique name of the data set
     * a float in :math:`]0,1[` indicating the share of the data to be used for fitting of the selection algorithms
 
@@ -41,10 +41,10 @@ Selectors
 =========
 
 The benchmarking system can handle all selectors extending the class :class:`~SpectralSelector`. Especially, the system can benchmark algorithms of
-:class:`~PointSelector` and :class:`~IntervalSelector` simultaneously. In the data handling of the benchmarking system
+the subclasses :class:`~PointSelector` and :class:`~IntervalSelector` simultaneously. In the data handling of the benchmarking system
 and all derived functionalities, such as the plotting, the selectors are addressed by their class name. If these are not unique
 (for instance during benchmarking of differently configured instances of the same selector algorithm),
-or custom names are desired for other reasons, the names have to be specified for the selectors as exemplified below::
+or custom names are desired for other reasons, the names can be specified for the selectors as exemplified below::
 
     result = benchmark([(X, y, 'data_example', 0.25)],
                        features=[10, 15, 20],
@@ -61,8 +61,8 @@ For the :class:`~PointSelector` the configurations of features to be selected ar
 a feature selection configuration requires the description of both the width of an interval (that is a consecutive block of wavelengths) and a number of
 such intervals to be extracted by the algorithm. Such a configuration is specified with a tuple (number of intervals, interval width). If the methods to be benchmarked
 comprise at least one selector extending :class:`~IntervalSelector`, all feature configurations need to be specified in the above defined interval fashion. For
-:class:`~PointSelector` the interval configurations will be resolved to a number of interval width times number of intervals individual features to be selected.
-An example for is given below::
+:class:`~PointSelector` the interval configurations will be resolved by selecting :math:`intervals \times width` many features.
+An example for such a scenario is given below::
 
     result = benchmark([(X, y, 'data_example', 0.25)],
                         #The IntervalSelector FiPLS is benchmarked. Specify the feature configurations for which the algorithms
@@ -77,7 +77,7 @@ Metrics
 
 The benchmarking system distinguishes between two different kinds of metrics, namely *regression metrics* and *stability metrics*.
 While the former is a compulsory component of the benchmarking (and set to :func:`sklearn.metrics.mean_squared_error` per default),
-the *stability metric* is optinally calculated by the benchmarking system. The system can handle several metrics of each kind simultaneously.
+the *stability metric* is optionally calculated by the benchmarking system. The system can handle several metrics of each kind simultaneously.
 
 Regression Metrics
 ------------------
@@ -103,6 +103,7 @@ complemented with metrics introducing correlation-adjustment mechanisms into the
 evaluation. |br|
 For the benchmarking functionality provided in *Auswahl*, two stability assessment metrics are provided directly.
 
+
 Deng Score
 ^^^^^^^^^^
 
@@ -126,6 +127,7 @@ The metric is available for benchmarking with class :class:`~benchmarking.util.m
       'A new method for wavelength interval selection that intelligently optimizes the locations, widths
       and combination of intervals',
       Analyst, 6, 1876-1885, 2015.
+
 
 Zucknick Score
 ^^^^^^^^^^^^^^
@@ -195,7 +197,7 @@ consider extending the class :class:`~benchmarking.util.metrics.PairwiseStabilit
 Using Metrics
 ^^^^^^^^^^^^^
 
-The evaluatin metrics can be passed as lists if the evaluation of several metrics is desired.
+The evaluation metrics can be passed as lists if the evaluation of several metrics is desired.
 When accessing the results of the evaluation, the regression metrics are referred to by their function name. The stability
 metrics can be arbitrarily named, but are per default named with their camelcase class name separated by an underscore (like ``zucknick_score``).
 An example invocation can be seen here::
@@ -212,22 +214,32 @@ An example invocation can be seen here::
 Benchmarking Results
 ====================
 
-The function :func:`~auswahl.benchmarking.benchmark` returns the results of the evaluation as an instance of class :class:`~auswahl.benchmarking.util.DataHandler`, which
+This section elaborates on the structure and further handling of the data returned by the benchmarking.
+
+Output structure and retrieval
+------------------------------
+
+The function :func:`~auswahl.benchmarking.benchmark` returns the results of the evaluation as an instance of class :class:`~auswahl.benchmarking.DataHandler`, which
 aggregates the evaluation results curated into four categories:
 
 **Regression**
 
 
-Regression results for all selection algorithms, all benchmarked datasets, all regression metrics, all feature selection configuration and all sample runs of the algorithms. The data is aggregated as a
-:class:`pandas.DataFrame` with the selection algorithms (by their names) in the index and a :class:`pandas.MultiIndex` in its colums containing the levels
-	``dataset``
-		All available datasets. Key of type ``str``
-	``n_features``
-		All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
-	``regression_metric``
-		All available regression metrics. Key of type ``str``
-	``run``
-		All individual sample runs for the particular configurations. Key of type ``int``
+Regression results for all selection algorithms, all benchmarked datasets, all regression metrics, all feature selection configurations
+and all sample runs of the algorithms. The data is aggregated as a :class:`pandas.DataFrame` with the selection algorithms (by their names)
+in the index and a :class:`pandas.MultiIndex` in its colums containing the levels
+
+    * ``dataset``:
+        All available datasets. Key of type ``str``.
+
+    * ``n_features``:
+        All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
+
+    * ``regression_metric``:
+        All available regression metrics. Key of type ``str``
+
+    * ``run``:
+        All individual sample runs for the particular configurations. Key of type ``int``
 
 The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_regression_data` of class :class:`~auswahl.benchmarking.DataHandler`.
 The method can also be used to slice the frame to a single or selection of items of the various levels.
@@ -237,11 +249,14 @@ The method can also be used to slice the frame to a single or selection of items
 
 Stability results for all selection algorithms, all benchmarked datasets, all stability metrics and all feature selection configuration. The data is aggregated as a
 :class:`pandas.DataFrame` with the selection algorithms (by their names) in the index and a :class:`pandas.MultiIndex` in its colums containing the levels
-	``dataset``
-		All available datasets. Key of type ``str``
-	``n_features``
-		All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
-	``stability_metric``
+
+    * ``dataset``:
+        All available datasets. Key of type ``str``.
+
+    * ``n_features``:
+        All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
+
+    * ``stability_metric``:
 		All available regression metrics. Key of type ``str``
 
 The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_stability_data` of class :class:`~auswahl.benchmarking.DataHandler`.
@@ -251,11 +266,14 @@ The method can also be used to slice the frame to a single or selection of items
 
 Execution time measurements for all selection algorithms, all benchmarked datasets, all feature selection configuration and all sample runs of the algorithms. The data is aggregated as a
 :class:`pandas.DataFrame` with the selection algorithms (by their names) in the index and a :class:`pandas.MultiIndex` in its colums containing the levels
-	``dataset``
+
+    * ``dataset``:
 		All available datasets. Key of type ``str``
-	``n_features``
+
+    * ``n_features``:
 		All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
-	``run``
+
+    * ``run``:
         All individual sample runs for the particular configurations. Key of type ``int``
 
 The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_measurement_data` of class :class:`~auswahl.benchmarking.DataHandler`.
@@ -265,16 +283,22 @@ The method can also be used to slice the frame to a single or selection of items
 
 The indices of selected features  for all selection algorithms, all benchmarked datasets, all feature selection configuration and all sample runs of the algorithms. The data is aggregated as a
 :class:`pandas.DataFrame` with the selection algorithms (by their names) in the index and a :class:`pandas.MultiIndex` in its columns containing the levels
-	``dataset``
+
+    * ``dataset``:
 		All available datasets. Key of type ``str``
-	``n_features``
+
+    * ``n_features``:
 		All available feature configurations. Key of type ``int``, ``Tuple[int, int]`` or :class:`~auswahl.FeatureDescriptor`
-	``run``
+
+    * ``run``:
         All individual sample runs for the particular configurations. Key of type ``int``
 
 The dataframe contains the sets of selected features as instances of class :class:`~auswahl.benchmarking.util.helpers.Selection`. |br|
 The data can be accessed using method :meth:`~auswahl.benchmarking.DataHandler.get_selection_data` of class :class:`~auswahl.benchmarking.DataHandler`.
 The method can also be used to slice the frame to a single or selection of items of the various levels. |br|
+
+Utilization
+-----------
 
 The retrieved frames can be used for further analysis and inspection using the plentitude of operations ``pandas`` provides for DataFrames equipped with
 the :class:`pandas.MultiIndex`. An example is given below::
@@ -392,7 +416,7 @@ Loading and Storing
 -------------------
 
 The benchmarking results of type :class:`~auswahl.benchmarking.DataHandler` can be pickled using
-the method :meth:`~auswahl.benchmarking.DataHandler.store`. The :class:`~auswahl.benchmarking.DataHandler` instance
+its member function :meth:`~auswahl.benchmarking.DataHandler.store`. The :class:`~auswahl.benchmarking.DataHandler` instance
 can later be reloaded using the function :func:`~auswahl.benchmarking.util.helpers.load_data_handler`
 
 
