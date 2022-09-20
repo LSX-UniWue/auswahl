@@ -25,8 +25,11 @@ class StabilityScore(metaclass=ABCMeta):
         else:
             self.metric_name = type(self).__name__
 
-    @abstractmethod
     def __call__(self, pod: DataHandler):
+        self.evaluate_stability(pod)
+
+    @abstractmethod
+    def evaluate_stability(self, pod: DataHandler):
         """Conducts the evaluation of the stability metric across all datasets and methods in the
         :class:`~auswahl.benchmarking.DataHandler` object, which is extended with the results of the
         stability evaluation.
@@ -34,8 +37,8 @@ class StabilityScore(metaclass=ABCMeta):
         Parameters
         ----------
         pod: DataHandler
-            instance of :class:`~auswahl.benchmarking.DataHandler` containing the results of the benchmarking
-            procedure
+             instance of :class:`~auswahl.benchmarking.DataHandler` containing the results of the benchmarking
+             procedure
         """
         ...
 
@@ -90,7 +93,7 @@ class PairwiseStabilityScore(StabilityScore, metaclass=ABCMeta):
                                                value=score)
 
     # go
-    def __call__(self, pod: DataHandler):
+    def evaluate_stability(self, pod: DataHandler):
         return self._pairwise_scoring(pod)
 
     # go

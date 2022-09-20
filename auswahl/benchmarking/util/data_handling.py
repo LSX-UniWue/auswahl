@@ -1,6 +1,7 @@
 import os
 import pickle
 from functools import wraps
+from functools import partial as prtl
 from typing import List, Union, Tuple
 
 import numpy as np
@@ -77,6 +78,14 @@ class DataHandler:
         number of evaluation run for all selectors (for every dataset and feature configuration)
     n_datasets: int
         number of datasets contained in the DataHandler
+    reg_data: pandas.DataFrame
+        data frame holding regression data
+    stab_data: pandas.DataFrame
+        data frame holding the stability data
+    measurement_data: pandas.DataFrame
+        data frame holding the execution time measurement data
+    selecton_data: pandas.DataFrame
+        data frame holding the feature selection data
     """
 
     def __init__(self,
@@ -95,73 +104,41 @@ class DataHandler:
         self.n_runs = n_runs
         self.n_datasets = len(datasets)
 
-        # setup indices
-        reg_index = pd.MultiIndex.from_product([datasets, features, reg_metrics,
-                                                [i for i in range(n_runs)]],
-                                               names=['dataset', 'n_features', 'regression_metric', 'run'])
-        reg_index, _ = reg_index.sortlevel(level=0)
+        # set up the multiindex dataframes
+        self.reg_data = self._build_indices(levels=[datasets, features, reg_metrics,
+                                                    [i for i in range(n_runs)]],
+                                            level_names=['dataset', 'n_features', 'regression_metric', 'run'],
+                                            index=methods)
 
-        stab_index = pd.MultiIndex.from_product([datasets, features, stab_metrics],
-                                                names=['dataset', 'n_features', 'stability_metric'])
-        stab_index, _ = stab_index.sortlevel(level=0)
+        self.stab_data = self._build_indices(levels=[datasets, features, stab_metrics],
+                                             level_names=['dataset', 'n_features', 'stability_metric'],
+                                             index=methods)
 
-        selection_index = pd.MultiIndex.from_product([datasets, features, [i for i in range(n_runs)]],
-                                                     names=['dataset', 'n_features', 'run'])
-        selection_index, _ = selection_index.sortlevel(level=0)
+        self.measurement_data = self._build_indices(levels=[datasets, features, [i for i in range(n_runs)]],
+                                                    level_names=['dataset', 'n_features', 'run'],
+                                                    index=methods)
 
-        measurement_index = pd.MultiIndex.from_product([datasets, features, [i for i in range(n_runs)]],
-                                                       names=['dataset', 'n_features', 'run'])
-        measurement_index, _ = measurement_index.sortlevel(level=0)
+        self.selection_data = self._build_indices(levels=[datasets, features, [i for i in range(n_runs)]],
+                                                  level_names=['dataset', 'n_features', 'run'],
+                                                  index=methods,
+                                                  initer=lambda ind, col: [[Selection() for _ in range(col.shape[0])] for _ in ind])
 
-        # setup dataframes
-        self.selection_data = pd.DataFrame([[Selection() for _ in range(selection_index.shape[0])] for _ in methods],
-                                           index=self.methods,
-                                           columns=selection_index)
-        self.stab_data = pd.DataFrame(np.NaN * np.zeros((len(methods), stab_index.shape[0]), dtype='float'),
-                                      index=self.methods,
-                                      columns=stab_index)
-        self.reg_data = pd.DataFrame(np.NaN * np.zeros((len(methods), reg_index.shape[0]), dtype='float'),
-                                     index=self.methods,
-                                     columns=reg_index)
-
-        self.measurement_data = pd.DataFrame(
-            np.NaN * np.zeros((len(methods), measurement_index.shape[0]), dtype='float'),
-            index=self.methods,
-            columns=measurement_index)
-
-        # store, if interval descriptors should be resolved
+        # store, if interval descriptors passed to the member functions of this class should be resolved
         self.resolve_tuples = features[0].resolve_tuples
         self.meta = dict()
 
-    def register_meta(self, dataset_meta: List[Tuple[np.array, np.array, str, float]]):
-        if not isinstance(dataset_meta, list):
-            dataset_meta = [dataset_meta]
-        for x, y, name, _ in dataset_meta:
-            self.meta[name] = {'x': x, 'y': y, 'n_samples': x.shape[0], 'n_features': x.shape[1]}
-
-    def get_meta(self, dataset):
-        """Provides meta information for each dataset.
-
-        Parameters
-        ----------
-        dataset: str
-            Name of the dataset, whose meta information is requested.
-
-        Returns
-        -------
-        dict containing information about the dataset
-            ``x``
-                The spectral data of the dataset: np.ndarray of shape (n_samples, n_wavelengths)
-            ``y``
-                The target quantity of the dataset: np.ndarray of shape (n_samples, )
-            ``n_samples``
-                Direct access to the number of samples in the dataset
-            ``n_features``
-                Direct access to the number of wavelengths, that is features, in the dataset
-        """
-        return self.meta[dataset]
+    def _build_indices(self, levels, level_names, index,
+                       initer=lambda ind, col: np.NaN * np.zeros((len(ind), col.shape[0]), dtype='float')):
+        cols = pd.MultiIndex.from_product(levels,
+                                          names=level_names)
+        cols, _ = cols.sortlevel(level=0)
+        data = pd.DataFrame(initer(index, cols),
+                            index=index,
+                            columns=cols)
+        return data
 
     def _feature_descriptor_conversion(self, features):
+        return list(map(prtl(FeatureDescriptor, resolve_intervals=self.resolve_tuples), features))
         return [FeatureDescriptor(feature, resolve_intervals=self.resolve_tuples) for feature in features]
 
     def _make_key(self,
@@ -238,6 +215,43 @@ class DataHandler:
                               n_features: FeatureDescriptor = None,
                               sample: int = None):
         self.measurement_data.loc[(method, (dataset, n_features, sample))] = value
+
+    def register_meta(self, dataset_meta: List[Tuple[np.array, np.array, str, float]]):
+        """Register dataset information into the DataHandler
+
+        Parameters
+        ----------
+        dataset_meta: List[Tuple[np.array, np.array, str, float]]
+            List of tuples specifying the spectral data of data set, its target values,
+            its name and its training data ratio
+
+        """
+        if not isinstance(dataset_meta, list):
+            dataset_meta = [dataset_meta]
+        for x, y, name, _ in dataset_meta:
+            self.meta[name] = {'x': x, 'y': y, 'n_samples': x.shape[0], 'n_features': x.shape[1]}
+
+    def get_meta(self, dataset):
+        """Provides meta information for each dataset.
+
+        Parameters
+        ----------
+        dataset: str
+            Name of the dataset, whose meta information is requested.
+
+        Returns
+        -------
+        dict containing information about the dataset
+            ``x``
+                The spectral data of the dataset: np.ndarray of shape (n_samples, n_wavelengths)
+            ``y``
+                The target quantity of the dataset: np.ndarray of shape (n_samples, )
+            ``n_samples``
+                Direct access to the number of samples in the dataset
+            ``n_features``
+                Direct access to the number of wavelengths, that is features, in the dataset
+        """
+        return self.meta[dataset]
 
     @_protected
     def get_regression_data(self,

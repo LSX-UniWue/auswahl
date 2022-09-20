@@ -204,7 +204,7 @@ to the superclass :class:`~benchmarking.util.metrics.PairwiseStabilityScore`.
 See more information regarding the validation :ref:`here <selection>`.
 
 Completely custom metrics also require to handle the storing of the stability in the :class:`~benchmarking.DataHandler`
-passed to :meth:`~benchmarking.util.metrics.StabilityScore.__call__` of :class:`~benchmarking.util.metrics.StabilityScore`.
+passed to :meth:`~benchmarking.util.metrics.StabilityScore.evaluate_stability` of :class:`~benchmarking.util.metrics.StabilityScore`.
 To that end refer to the documentation of :meth:`~benchmarking.DataHandler.register_stability`.
 
 Using Metrics
