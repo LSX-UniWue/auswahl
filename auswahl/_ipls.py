@@ -94,10 +94,6 @@ class IPLS(IntervalSelector):
         self.support_[start:start + interval_width] = True
         self.best_model_ = best_model
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
-
     def reparameterize(self, feature_descriptor: FeatureDescriptor):
         n_intervals_to_select, interval_width = feature_descriptor.get_configuration_for(self)
         self.interval_width = n_intervals_to_select * interval_width

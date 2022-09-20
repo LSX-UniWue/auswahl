@@ -8,4 +8,5 @@
 
     point_selection.rst
     interval_selection.rst
+    adding_selectors.rst
     benchmarking.rst

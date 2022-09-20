@@ -212,8 +212,4 @@ class VISSA(PointSelector):
         self.support_ = np.zeros((X.shape[1],)).astype('bool')
         self.support_[selected_variables[np.argsort(-selected_variables_weight)][:n_features_to_select]] = True
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
-
 

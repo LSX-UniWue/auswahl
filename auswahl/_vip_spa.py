@@ -42,10 +42,6 @@ class VIP_SPA(PointSelector):
         self.support_[self.spa.get_support(indices=True)] = True
         self.best_model_ = self.spa.best_model_
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
-
     def reparameterize(self, feature_descriptor: FeatureDescriptor):
         self.n_features_to_select = feature_descriptor.get_configuration_for(self)
         self.vip.reparameterize(feature_descriptor)

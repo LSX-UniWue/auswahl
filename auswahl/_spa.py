@@ -102,6 +102,3 @@ class SPA(PointSelector):
         self.support_[opt_set] = True
         self.best_model_ = model
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_

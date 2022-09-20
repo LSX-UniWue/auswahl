@@ -101,7 +101,3 @@ class BiPLS(IntervalSelector):
         self.support_ = selection
         self.rank_ = rank
         return self
-
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_

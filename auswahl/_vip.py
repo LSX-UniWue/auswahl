@@ -84,10 +84,6 @@ class VIP(PointSelector, Convertible):
 
         return vips.flatten()
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
-
     def get_support_for_threshold(self, threshold: float = 1, indices: bool = False):
         """Select a set of features whose VIP values are above a given threshold.
 

@@ -177,10 +177,6 @@ class CARS(PointSelector):
         self.support_[opt_wavelengths] = True
         self.best_model_ = best_model
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
-
     def _check_fit_samples_ratio(self):
         if self.fit_samples_ratio < 0:
             raise ValueError('fit_sample_ratio is required to be in [0,1]. ' 

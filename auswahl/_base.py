@@ -340,6 +340,10 @@ class SpectralSelector(SelectorMixin, BaseEstimator, metaclass=ABCMeta):
         """
         self.n_jobs = n_jobs
 
+    def _get_support_mask(self):
+        check_is_fitted(self)
+        return self.support_
+
     @abstractmethod
     def _dispatch_fit(self, X, y):
         ...

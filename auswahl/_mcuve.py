@@ -105,10 +105,6 @@ class MCUVE(PointSelector):
 
         return self
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
-
     def _check_n_subsets(self):
         check_scalar(x=self.n_subsets, name='n_subsets', target_type=int, min_val=2)
 

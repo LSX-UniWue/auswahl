@@ -49,10 +49,6 @@ class PseudoIntervalSelector(IntervalSelector):
         self.support_[intervals.flatten()] = 1
         self.best_model_ = self.selector.get_best_estimator()
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
-
     def reparameterize(self, feature_descriptor: FeatureDescriptor):
         self.n_intervals_to_select, self.interval_width = feature_descriptor.get_configuration_for(self)
         self.selector.reparameterize(feature_descriptor)

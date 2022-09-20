@@ -267,9 +267,6 @@ class RandomFrog(PointSelector, _RandomFrog):
     def _get_feature_score_from_model(self, pls, feature_idx):
         return abs(get_coef_from_pls(pls).squeeze())
 
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
 
 
 class IntervalRandomFrog(IntervalSelector, _RandomFrog):
@@ -415,7 +412,3 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
         scores[self._idx_to_mask(feature_idx)] = abs(get_coef_from_pls(pls).squeeze())
         scores = [sum(scores[idx:idx + self.interval_width_]) for idx in feature_idx]
         return scores
-
-    def _get_support_mask(self):
-        check_is_fitted(self)
-        return self.support_
