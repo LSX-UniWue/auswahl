@@ -10,10 +10,6 @@ from .data_handling import DataHandler
 from ..._base import FeatureDescriptor
 
 
-def _to_string(items: list):
-    return [str(i) for i in items]
-
-
 # go
 def _check_specified_or_singleton(pool, argument, identifier):
     if argument is None:
@@ -22,7 +18,21 @@ def _check_specified_or_singleton(pool, argument, identifier):
         elif len(pool) == 0:
             raise ValueError(f'No {identifier} specified during configuration of the benchmarking.')
         return pool[0]
-    return argument  # argument if isinstance(argument, str) else argument.__name__
+    elif isinstance(argument, list):
+        if len(argument) == 1:
+            return argument[0]
+        raise ValueError(f'A single specifier is required for {identifier}')
+    return argument
+
+
+def _check_n_features(pod: DataHandler, n_features):
+    if n_features is not None:
+        if n_features is not isinstance(n_features, list):
+            n_features = [n_features]
+        n_features = [FeatureDescriptor(feature, pod.resolve_tuples) for feature in n_features]
+    else:
+        n_features = pod.feature_descriptors
+    return n_features
 
 
 # go
@@ -117,6 +127,7 @@ def _errorbar_plot(title: str,
                    legend: List[str],
                    plot_lines: bool = True,
                    save_path: str = None):
+
     colors = plt.cm.get_cmap('Accent', y_data.shape[0] + 1)
     markers = [c for c in ".ov^<>12348sp*hH+xDd|"]
 
@@ -292,9 +303,7 @@ def plot_exec_time(pod: DataHandler,
         Path at which the plot has to be saved.
     """
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
-
-    if n_features is not None and not isinstance(n_features, list):
-        n_features = [n_features]
+    n_features = _check_n_features(pod, n_features)
 
     if methods is None:
         methods = pod.methods
@@ -324,7 +333,7 @@ def plot_exec_time(pod: DataHandler,
                    exec_max,
                    exec_mins,
                    x_coords,
-                   n_features if n_features is not None else _to_string(pod.feature_descriptors),
+                   list(map(str, n_features)),
                    ticks,
                    methods if methods is not None else pod.methods,
                    plot_lines=False,
@@ -341,14 +350,10 @@ def _plot_score_box(pod: DataHandler,
     regression_metric = _check_specified_or_singleton(pod.reg_metrics, regression_metric,
                                                       identifier='regression metric')
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
+    n_features = _check_n_features(pod, n_features)
 
     if methods is None:
         methods = pod.methods
-
-    if n_features is not None:
-        if not isinstance(n_features, list):
-            n_features = [n_features]
-        n_features = [FeatureDescriptor(feature, pod.resolve_tuples) for feature in n_features]
 
     reg_scores = pod.get_regression_data(method=methods,
                                          n_features=n_features,
@@ -365,7 +370,7 @@ def _plot_score_box(pod: DataHandler,
               reg_scores,
               x_coords,
               methods if methods is not None else pod.methods,
-              _to_string(n_features) if n_features is not None else _to_string(pod.feature_descriptors),
+              list(map(str, n_features)),
               ticks,
               save_path=save_path)
 
@@ -498,7 +503,7 @@ def plot_stability(pod: DataHandler,
     stability_metric = _check_specified_or_singleton(pod.stab_metrics, stability_metric, identifier='stability metric')
 
     y_data = pod.get_stability_data(method=methods, dataset=dataset, stab_metric=stability_metric).to_numpy().tolist()
-    x_data = _to_string(pod.feature_descriptors)
+    x_data = list(map(str, pod.feature_descriptors))
 
     _line_plot(f'Stability across n_features to select: Dataset {dataset}',
                "n_features",
@@ -515,8 +520,6 @@ def _plot_selection_bar(pod: DataHandler,
                         n_features: Union[int, Tuple[int]],
                         methods: Union[str, List[str]] = None,
                         save_path: str = None):
-    if methods is None:
-        methods = pod.methods
 
     colors = plt.cm.get_cmap('Accent', len(methods) + 1)
 
@@ -583,7 +586,10 @@ def plot_selection(pod: DataHandler,
     pod: DataHandler
        :class:`~auswahl.benchmarking.DataHandler` object containing the benchmarking data.
 
-   dataset: str, default=None
+    n_features: Union[int, Tuple[int, int]]
+        feature configuration for which to plot the selection probability
+
+    dataset: str, default=None
         Identifier of the dataset of which to plot the execution time. If there is data for only one dataset
         in the :class:`~auswahl.benchmarking.DataHandler` object, the argument does not have to be specified.
 
@@ -598,6 +604,7 @@ def plot_selection(pod: DataHandler,
         Path on which to store the plot. If None, the plot is simply displayed.
     """
     dataset = _check_specified_or_singleton(pod.datasets, dataset, identifier='dataset')
+    n_features = _check_specified_or_singleton(pod.feature_descriptors, n_features, identifier='n_features')
 
     if methods is None:
         methods = pod.methods
