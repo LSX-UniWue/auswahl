@@ -177,7 +177,8 @@ Adding Stability Metrics
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to add custom stability metrics to the benchmarking system, the inheritance from :class:`~benchmarking.util.metrics.StabilityScore`
-is mandatory. For stability metrics defined symmetrically on pairs of sets of selected features,
+and the implementation of :meth:`~auswahl.benchmarking.util.metrics.StabilityScore.evaluate_stability` is mandatory.
+For stability metrics defined as average over symmetric stabilities between pairs of sets of selected features,
 consider extending the class :class:`~benchmarking.util.metrics.PairwiseStabilityScore`::
 
     class MyScore(PairwiseStabilityScore):
@@ -199,13 +200,9 @@ The user is only required to overwrite the method :meth:`~benchmarking.util.metr
 the stability between a pair of sets of selected features. If the stability calculation requires information about the dataset (such as correlation information), the
 data can be accessed via the provided ``meta_data``. See :class:`~benchmarking.DataHandler.get_meta` for an overview over the returned data.
 
-Note, that the validity of selections needs to be verified expressly by the user, if there is no recourse
-to the superclass :class:`~benchmarking.util.metrics.PairwiseStabilityScore`.
-See more information regarding the validation :ref:`here <selection>`.
-
-Completely custom metrics also require to handle the storing of the stability in the :class:`~benchmarking.DataHandler`
-passed to :meth:`~benchmarking.util.metrics.StabilityScore.evaluate_stability` of :class:`~benchmarking.util.metrics.StabilityScore`.
-To that end refer to the documentation of :meth:`~benchmarking.DataHandler.register_stability`.
+If there is no recourse to the superclass :class:`~benchmarking.util.metrics.PairwiseStabilityScore`, the
+method :meth:`~auswahl.benchmarking.util.metrics.StabilityScore.evaluate_stability` provides the user
+with an array of all selections.
 
 Using Metrics
 ^^^^^^^^^^^^^

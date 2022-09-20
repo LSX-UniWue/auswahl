@@ -24,7 +24,7 @@ from functools import wraps
 
 class FeatureDescriptor:
     """ The class FeatureDescriptor abstracts the configuration of features the selection methods are to retrieve from
-    the spectral data. The FeatureDescriptor wraps either a number of arbitrarily features to be selected or a specific
+    the spectral data. The FeatureDescriptor wraps either a number of arbitrary features to be selected or a specific
     number of intervals of features of a fix length.
 
     Parameters
