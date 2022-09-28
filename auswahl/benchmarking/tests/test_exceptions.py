@@ -3,7 +3,7 @@ import pytest
 from sklearn.metrics import mean_squared_error
 
 from auswahl import VIP, IPLS
-from auswahl.benchmarking import deng_score, benchmark
+from auswahl.benchmarking import DengScore, benchmark
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def _benchmark_interface_reduced_dof(data,
                                      stab_metrics=None,
                                      methods=None):
     reg_metrics = [mean_squared_error] if reg_metrics is None else reg_metrics
-    stab_metrics = [deng_score] if stab_metrics is None else stab_metrics
+    stab_metrics = [DengScore] if stab_metrics is None else stab_metrics
     features = [1] if features is None else features
     methods = [VIP(n_features_to_select=10)] if methods is None else methods
 
@@ -79,7 +79,7 @@ def test_dataset_exceptions(data):
 def test_metrics(data):
     params = [
         {'reg_metrics': [mean_squared_error, mean_squared_error]},  # names not unique
-        {'stab_metrics': [deng_score, deng_score]},  # names not unique
+        {'stab_metrics': [DengScore, DengScore]},  # names not unique
         {'reg_metrics': []},  # no regression metric specified
     ]
 
