@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from numpy.testing import assert_array_equal, assert_array_almost_equal
+from numpy.testing import assert_array_almost_equal
 
 from auswahl import SPA
 
@@ -10,6 +10,7 @@ def data():
     X = np.random.rand(15, 100)
     y = 15 * X[:, 10] - 2 * X[:, 20]
     return X, y
+
 
 @pytest.fixture
 def ortho_data():
@@ -33,7 +34,7 @@ def test_spa(data):
 
 def test_orthogonality(ortho_data):
     X, y = ortho_data
-    spa = SPA(n_features_to_select=3,n_cv_folds=2)
+    spa = SPA(n_features_to_select=3, n_cv_folds=2)
 
     spa.fit(X, y)
     assert len(spa.support_) == X.shape[1]
