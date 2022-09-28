@@ -13,7 +13,7 @@ from ._vip_spa import VIP_SPA
 from ._vissa import VISSA
 from .util import optimize_intervals
 
-__version__ = '0.0.1'
+__version__ = '0.9.0'
 
 __all__ = [
     'PointSelector',
