@@ -8,6 +8,6 @@ Right now, you can install it from source:
 
 .. code:: bash
 
-    git clone https://github.com/mcfloskel/auswahl.git
+    git clone https://github.com/LSX-UniWue/auswahl.git
     cd auswahl
     pip install .
