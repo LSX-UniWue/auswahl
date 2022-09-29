@@ -50,8 +50,7 @@ class SPA(PointSelector):
     >>> X = np.random.randn(100, 15)
     >>> y = 5 * X[:, -2] - 2 * X[:, -1]  # y only depends on two features
     >>> selector = SPA(n_features_to_select=2)
-    >>> selector.fit(X, y)
-    >>> selector.get_support()
+    >>> selector.fit(X, y).get_support()
     array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
     """
     
@@ -91,7 +90,6 @@ class SPA(PointSelector):
         return score, model, wavelengths
 
     def _fit(self, X, y, n_features_to_select):
-        print(f'to be selected {n_features_to_select}')
         candidates = Parallel(n_jobs=self.n_jobs)(delayed(self._fit_spa)(X,
                                                   y,
                                                   n_features_to_select,
