@@ -57,8 +57,7 @@ class VISSA(PointSelector):
     >>> X = np.random.randn(100, 10)
     >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
     >>> selector = VISSA(n_features_to_select=2, n_jobs=2, n_submodels=200)
-    >>> selector.fit(X, y)
-    >>> selector.get_support()
+    >>> selector.fit(X, y).get_support()
     array([True, False, False, False, False, True, False, False, False, False])
     """
 

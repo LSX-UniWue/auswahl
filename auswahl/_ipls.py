@@ -51,8 +51,7 @@ class IPLS(IntervalSelector):
     >>> X = np.random.randn(100, 10)
     >>> y = 5 * X[:, 3] - 2 * X[:, 4]  # y only depends on two features
     >>> selector = IPLS(interval_width=2)
-    >>> selector.fit(X, y)
-    >>> selector.get_support()
+    >>> selector.fit(X, y).get_support()
     array([False, False, False, True, True, False, False, False, False, False])
     """
 
