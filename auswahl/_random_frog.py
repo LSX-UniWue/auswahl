@@ -210,11 +210,12 @@ class RandomFrog(PointSelector, _RandomFrog):
     --------
     >>> import numpy as np
     >>> from auswahl import RandomFrog
+    >>> np.random.seed(1337)
     >>> X = np.random.randn(100, 10)
     >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
-    >>> selector = RandomFrog(n_features_to_select=2)
+    >>> selector = RandomFrog(n_features_to_select=2, n_iterations=1000)
     >>> selector.fit(X, y).get_support()
-    array([True, False, False, False, False, True, False, False, False, False])
+    array([ True, False, False, False, False, True, False, False, False, False])
     """
 
     def __init__(self,
@@ -265,7 +266,6 @@ class RandomFrog(PointSelector, _RandomFrog):
 
     def _get_feature_score_from_model(self, pls, feature_idx):
         return abs(get_coef_from_pls(pls).squeeze())
-
 
 
 class IntervalRandomFrog(IntervalSelector, _RandomFrog):
@@ -345,11 +345,12 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
     --------
     >>> import numpy as np
     >>> from auswahl import IntervalRandomFrog
+    >>> np.random.seed(1337)
     >>> X = np.random.randn(100, 10)
     >>> y = 5 * X[:, 0] - 3 * X[:, 1] + 2 * X[:, 5] - 3 * X[:, 6]  # y only depends on two intervals
-    >>> selector = IntervalRandomFrog(n_intervals_to_select=2, interval_width=2)
+    >>> selector = IntervalRandomFrog(n_intervals_to_select=2, interval_width=2, n_iterations=1000, random_state=7331)
     >>> selector.fit(X, y).get_support()
-    array([True, True, False, False, False, True, True, False, False, False])
+    array([ True, True, False, False, False, True, True, False, False, False])
     """
 
     def __init__(self,
@@ -402,7 +403,9 @@ class IntervalRandomFrog(IntervalSelector, _RandomFrog):
         for i in range(n_features_to_select):
             best_idx = np.argmax(scores)
             mask[best_idx:best_idx + self.interval_width_] = True
-            scores[best_idx - self.interval_width_ + 1:best_idx + self.interval_width_] = -1
+            start = np.clip(best_idx - self.interval_width_ + 1, 0, np.inf).astype(int)
+            end = best_idx + self.interval_width_
+            scores[start:end] = -1
         return mask
 
     def _get_feature_score_from_model(self, pls, feature_idx):

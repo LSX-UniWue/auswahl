@@ -67,7 +67,7 @@ class CARS(PointSelector):
     >>> y = 5 * X[:, -2] - 2 * X[:, -1]  # y only depends on two features
     >>> selector = CARS(n_features_to_select=2,n_sample_runs = 100)
     >>> selector.fit(X, y).get_support()
-    array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
+    array([False, False, False, False, False, False, False, False, False, False, False, False, False, True, True])
     """
 
     def __init__(self,

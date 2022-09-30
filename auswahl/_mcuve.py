@@ -63,7 +63,7 @@ class MCUVE(PointSelector):
     >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
     >>> selector = MCUVE(n_features_to_select=2)
     >>> selector.fit(X, y).get_support()
-    array([True, False, False, False, False, True, False, False, False, False])
+    array([ True, False, False, False, False, True, False, False, False, False])
     """
 
     def __init__(self,

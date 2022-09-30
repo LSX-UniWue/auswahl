@@ -47,11 +47,12 @@ class SPA(PointSelector):
     --------
     >>> import numpy as np
     >>> from auswahl import SPA
-    >>> X = np.random.randn(100, 15)
-    >>> y = 5 * X[:, -2] - 2 * X[:, -1]  # y only depends on two features
+    >>> np.random.seed(1337)
+    >>> X = np.random.randn(1000, 10)
+    >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
     >>> selector = SPA(n_features_to_select=2)
     >>> selector.fit(X, y).get_support()
-    array([False, False, False, False, False, False, False, False, False, False, False, False, False,  True,  True])
+    array([ True, False, False, False, False, True, False, False, False, False])
     """
     
     def __init__(self, 

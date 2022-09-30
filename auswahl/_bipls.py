@@ -56,11 +56,12 @@ class BiPLS(IntervalSelector):
     --------
     >>> import numpy as np
     >>> from auswahl import BiPLS
+    >>> np.random.seed(1337)
     >>> X = np.random.randn(100, 10)
-    >>> y = 5 * X[:, 0] - 4 * X[:,1] - 2 * X[:, 5] + 3 * X[:,6]  # y depends on two intervals
+    >>> y = 5 * X[:, 0] - 4 * X[:,1] - 2 * X[:, 4] + 3 * X[:, 5]  # y depends on two intervals
     >>> selector = BiPLS(n_intervals_to_select=2, interval_width=2)
     >>> selector.fit(X, y).get_support()
-    array([True, True, False, False, False, True, True, False, False, False])
+    array([ True, True, False, False, True, True, False, False, False, False])
     """
 
     def __init__(self,
