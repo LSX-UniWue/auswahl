@@ -2,6 +2,16 @@
 
 AUSWAHL
 ============================================================
+|test| |docs|
+
+.. |test| image:: https://github.com/LSX-UniWue/auswahl/actions/workflows/python-package.yml/badge.svg
+  :target: https://github.com/LSX-UniWue/auswahl/actions/workflows/python-package.yml
+  :alt: Test Status
+
+.. |docs| image:: https://readthedocs.org/projects/auswahl/badge/?version=latest
+    :target: https://auswahl.readthedocs.io/en/latest/?badge=latest
+    :alt: Documentation Status
+
 
 AUSWAHL (**AU**\tomatic **S**\election of **WA**\velengt\ **H** **L**\ibrary) is a python module
 that provides a collection of Feature Selection Methods for Near-Infrared Spectroscopy.
