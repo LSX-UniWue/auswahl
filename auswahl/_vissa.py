@@ -121,11 +121,12 @@ class VISSA(PointSelector):
                 new_frequency = (sampling_mask[best_models].mean(axis=0) * self.n_submodels).astype(int)
                 best_score = np.mean(scores[best_models])
 
-                if np.isclose(last_best_score, best_score) or (np.sum(new_frequency > 0) < self.n_features_to_select):
+                if np.isclose(last_best_score, best_score) or (np.sum(new_frequency > 0) < n_features_to_select):
                     break
                 last_best_score = best_score
                 selection_frequency = new_frequency
 
+        self.n_iter_ = i
         self.frequency_ = selection_frequency
         self.support_ = np.zeros(X.shape[1], dtype=bool)
         self.support_[np.argsort(selection_frequency)[-n_features_to_select:]] = 1
