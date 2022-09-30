@@ -3,8 +3,10 @@ import pytest
 
 from auswahl import BiPLS
 
+
 @pytest.fixture
 def data():
+    np.random.seed(1337)
     X = np.random.randn(100, 50)
     y = X[:, 20:25] * np.array([[-1, 0, 5, 0, -4]]) + X[:, 45:50] * np.array([[3, 0, 1, 0, -4]])
     y = np.sum(y, axis=1)

@@ -1,22 +1,21 @@
 import numpy as np
 import pytest
 from numpy.testing import assert_array_equal, assert_array_almost_equal
-
 from sklearn.cross_decomposition import PLSRegression
-
 
 from auswahl import CARS
 
 
 @pytest.fixture
 def data():
+    np.random.seed(1337)
     # high sample count to avoid random correlation for testing purposes
     X = np.random.randn(200, 10)
     y = 10 * X[:, 1] - 10 * X[:, 5]
     return X, y
-    
+
+
 def test_cars(data):
-    
     X, y = data
     selector = CARS(n_features_to_select=2, n_jobs=2, n_cars_runs=20, pls=PLSRegression(n_components=1))
 

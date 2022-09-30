@@ -6,6 +6,7 @@ from auswahl import IPLS
 
 @pytest.fixture
 def data():
+    np.random.seed(1337)
     X = np.random.randn(100, 50)
     y = 5 * X[:, 20] - 2 * X[:, 21] + 8 * X[:, 23]
     return X, y

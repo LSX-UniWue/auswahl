@@ -7,6 +7,7 @@ from auswahl import RandomFrog, IntervalRandomFrog
 
 @pytest.fixture
 def data():
+    np.random.seed(1337)
     rs = np.random.RandomState(1337)
     X = rs.randn(100, 10)
     y = 5 * X[:, 0] - 2 * X[:, 5]

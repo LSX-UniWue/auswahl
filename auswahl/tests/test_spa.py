@@ -7,6 +7,7 @@ from auswahl import SPA
 
 @pytest.fixture
 def data():
+    np.random.seed(1337)
     X = np.random.rand(15, 100)
     y = 15 * X[:, 10] - 2 * X[:, 20]
     return X, y
@@ -14,6 +15,7 @@ def data():
 
 @pytest.fixture
 def ortho_data():
+    np.random.seed(1337)
     X = np.array([[1, 0, 0, 1, 0],
                   [0, 1, 0, 1, 0],
                   [0, 1, 1, 0, 0],
