@@ -1,11 +1,9 @@
-import warnings
 from typing import Union, Dict, List
 
 import numpy as np
 from joblib import Parallel, delayed
 from sklearn.cross_decomposition import PLSRegression
-from sklearn.utils import check_random_state
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils import check_random_state, check_scalar
 
 from ._base import PointSelector
 
@@ -22,22 +20,31 @@ class VISSA(PointSelector):
     n_features_to_select : int or float, default=None
         Number of features to select.
 
-    n_jobs : int, default=1
-        Number of parallel threads to calculate VISSA
-
     n_submodels : int, default=1000
-        Number of submodels fitted in each VISSA iteration
+        Number of submodels fitted in each VISSA iteration.
 
-    n_cv_folds : int, default=5
-        Number of cross validation folds used in the evaluation of feature sets.
+    ratio_submodel_selection : float, default=0.05
+        Ratio of submodels that are used to compute the weights for selecting a feature in the next iteration.
+
+    max_iter : int, default=100
+        Maximum number of iterations.
 
     pls : PLSRegression, default=None
         Estimator instance of the :py:class:`PLSRegression <sklearn.cross_decomposition.PLSRegression>` class. Use this
         to adjust the hyperparameters of the PLS method.
 
+    n_cv_folds : int, default=5
+        Number of cross validation folds used in the evaluation of feature sets.
+
+    random_state : int or numpy.random.RandomState, default=None
+        Seed for the random subset sampling. Pass an int for reproducible output across function calls.
+
+    n_jobs : int, default=1
+        Number of parallel threads to calculate VISSA
+
     Attributes
     ----------
-    weights_ : ndarray of shape (n_features,)
+    frequency_ : ndarray of shape (n_features,)
         VISSA importance scores for variables.
 
     support_ : ndarray of shape (n_features,)
@@ -54,161 +61,88 @@ class VISSA(PointSelector):
     --------
     >>> import numpy as np
     >>> from auswahl import VISSA
+    >>> np.random.seed(1337)
     >>> X = np.random.randn(100, 10)
     >>> y = 5 * X[:, 0] - 2 * X[:, 5]  # y only depends on two features
-    >>> selector = VISSA(n_features_to_select=2, n_jobs=2, n_submodels=200)
+    >>> selector = VISSA(n_features_to_select=2, n_submodels=100)
     >>> selector.fit(X, y).get_support()
-    array([True, False, False, False, False, True, False, False, False, False])
+    array([ True, False, False, False, False, True, False, False, False, False])
     """
 
     def __init__(self,
                  n_features_to_select: int = None,
                  n_submodels: int = 1000,
-                 n_jobs: int = 1,
-                 n_cv_folds: int = 5,
+                 ratio_submodel_selection: float = 0.05,
+                 max_iter: int = 100,
                  pls: PLSRegression = None,
                  model_hyperparams: Union[Dict, List[Dict]] = None,
-                 random_state: Union[int, np.random.RandomState] = None):
-
-        super().__init__(n_features_to_select, model_hyperparams=model_hyperparams, n_cv_folds=n_cv_folds,
-                         random_state=random_state, n_jobs=n_jobs)
-
+                 n_cv_folds: int = 5,
+                 random_state: Union[int, np.random.RandomState] = None,
+                 n_jobs: int = 1):
+        super().__init__(n_features_to_select,
+                         model_hyperparams=model_hyperparams,
+                         n_cv_folds=n_cv_folds,
+                         random_state=random_state,
+                         n_jobs=n_jobs)
         self.pls = pls
         self.n_submodels = n_submodels
+        self.ratio_submodel_selection = ratio_submodel_selection
+        self.max_iter = max_iter
 
-    def _evaluate_submodels(self, X, y, bsm):
-        submodels = Parallel(n_jobs=self.n_jobs)(delayed(self.evaluate)(X[:, bsm[:, i]],
-                                                                        y,
-                                                                        self.pls,
-                                                                        True,
-                                                                        i) for i in range(self.n_submodels))
-        return submodels
-
-    def _produce_submodels_adapted(self, var_weights: np.array, n_features_to_select, n_submodels, random_state):
-
-        """
-            Produces an adapted binary sampling matrix generating submodels containing always at least
-            self.n_features_to_select features. For large numbers of submodels (>= 1000) the deviation
-            from the statistical properties of the sampling matrices as described by Deng et al. is negligible.
-        """
-        random_mask = random_state.rand(n_submodels, var_weights.size)
-        var_weights = var_weights.reshape(1, -1)
-        # certainly selected features have a score <= 0
-        selection_scores = random_mask - var_weights
-
-        sorted_score_indices = np.argsort(selection_scores,
-                                          axis=-1) + 1  # shift the feature indices to [1...n_features]
-
-        # retrieve for each submodel the number of selected features
-        cut_off = np.sum(selection_scores <= 0, axis=-1)
-        # ensure, that at least n_features_to_select features are selected
-        selected_cut_off = np.max(np.stack([cut_off, n_features_to_select * np.ones_like(cut_off)],
-                                           axis=-1),
-                                  axis=-1)
-        # mask non-selected features
-        retrieval_mask = np.tile(np.arange(var_weights.size).reshape(1, -1), reps=(n_submodels, 1))
-        retrieval_mask = retrieval_mask < np.expand_dims(selected_cut_off, axis=-1)
-        selection = sorted_score_indices * retrieval_mask
-
-        # construct binary sampling matrix
-        selection = np.nonzero(selection)  # get the positions of the non-masked features
-        features = sorted_score_indices[selection]  # translate the non-masked positions to actual feature indices
-
-        bsm = np.zeros((var_weights.size, n_submodels), dtype='int')
-        # complement the feature indices with their respective submodel index
-        selection = (features - 1, selection[0])  # Undo the shift of the feature indices
-        bsm[selection] = 1
-        return bsm
-
-    def _produce_submodels_org(self, var_weights: np.array, n_submodels, random_state):
-
-        """
-            Returns a binary sampling matrix as described by Deng et al.
-        """
-        n_feats = var_weights.shape[0]
-        appearances = np.reshape(np.round(var_weights * n_submodels), (-1, 1))
-
-        # populate Binary Sampling Matrix according to weights
-        bsm = np.tile(np.arange(1, n_submodels + 1).reshape((1, -1)), [n_feats, 1])
-        bsm = (bsm <= appearances)
-
-        # create permutation for each a row of the Binary Sampling Matrix
-        p = np.arange(n_submodels * n_feats)
-        random_state.shuffle(p)
-        p = np.reshape(p, (n_feats, n_submodels))
-        p = np.reshape(np.argsort(p, axis=1), (-1,))
-        row_selector = np.repeat(np.arange(n_feats), n_submodels)
-
-        # permute the Binary Sampling Matrix
-        bsm = np.reshape(bsm[(row_selector, p)], (n_feats, n_submodels))
-
-        # count variables per submodel and drop submodels with less than the required number of features
-        valid_submodels = np.sum(bsm, axis=0) >= self.n_features_to_select
-        return bsm[:, valid_submodels]
-
-    def _yield_best_weights(self, X, y, n_features_to_select, n_submodels, random_state, selection_quantile):
-        best_score = -10000000
-        best_model = None
-        best_variables = None
-        # initialize with an equal distribution across all features
-        var_weights = 0.5*np.ones(X.shape[1])
-        for _ in range(100):
-            # produce weighted binary sampling matrix
-            bsm = self._produce_submodels_adapted(var_weights, n_features_to_select, n_submodels, random_state)
-
-            # score submodels
-            submodels = self._evaluate_submodels(X, y, bsm)
-            submodels_sorted = sorted(submodels, key=lambda x: -x[0])
-
-            # get submodel indices and scores of best submodels
-            top_scores, top_models, top_submodels = list(zip(*(submodels_sorted[: selection_quantile])))
-            # get average score of best submodels
-            avg_top_scores = np.mean(top_scores)
-
-            if avg_top_scores > best_score:
-                best_score = avg_top_scores
-                best_model = top_models[0]
-                best_variables = np.nonzero(bsm[:, top_submodels[0]])[0]
-                var_weights = np.sum(bsm[:, top_submodels], axis=1) / selection_quantile
-            else:
-                break
-
-        return best_score, best_model, best_variables, var_weights[best_variables]
+    def _fit_model_on_subset(self, X, y, mask, model):
+        if mask.sum() < 1:
+            return -np.inf
+        else:
+            return self.evaluate(X[:, mask], y, model)[0]
 
     def _fit(self, X, y, n_features_to_select):
+        self._check_n_submodels()
+        self._check_ratio_submodel_selection()
+        self._check_max_iter()
         random_state = check_random_state(self.random_state)
 
-        # number of top models to used to update the weights of features
-        selection_quantile = int(0.05 * self.n_submodels)
-        n_subs = self.n_submodels
+        n_best_models = int(self.ratio_submodel_selection * self.n_submodels)
+        n_best_models = np.clip(n_best_models, 2, self.n_submodels)
+        n_features = X.shape[1]
 
-        top_score = -10000000
-        selected_variables = np.arange(X.shape[1])
-        selected_variables_weight = np.zeros(X.shape[1])
-        for _ in range(100):
-            score, best_model, selection, weights = self._yield_best_weights(X[:, selected_variables],
-                                                                 y,
-                                                                 n_features_to_select,
-                                                                 n_subs,
-                                                                 random_state,
-                                                                 selection_quantile)
+        selection_frequency = [self.n_submodels // 2] * n_features
 
-            if score > top_score:
-                top_score = score
-                selected_variables = selected_variables[selection]
-                selected_variables_weight = weights
-                self.best_model_ = best_model
-            else:
-                break
+        with Parallel(n_jobs=self.n_jobs) as parallel:
+            last_best_score = -np.inf
+            for i in range(self.max_iter):
+                sampling_mask = np.stack([random_state.permutation([True] * p + [False] * (self.n_submodels - p))
+                                          for p in selection_frequency], axis=1)
 
-            # required number of features selected
-            if selected_variables.size == n_features_to_select:
-                break
+                scores = parallel(delayed(self._fit_model_on_subset)(X, y, mask, self.pls)
+                                  for mask in sampling_mask)
+                scores = np.array(scores)
 
-        self.weights_ = np.zeros(X.shape[1])
-        self.weights_[selected_variables] = selected_variables_weight
+                best_models = np.argsort(scores)[-n_best_models:]
+                new_frequency = (sampling_mask[best_models].mean(axis=0) * self.n_submodels).astype(int)
+                best_score = np.mean(scores[best_models])
 
-        self.support_ = np.zeros((X.shape[1],)).astype('bool')
-        self.support_[selected_variables[np.argsort(-selected_variables_weight)][:n_features_to_select]] = True
+                if np.isclose(last_best_score, best_score) or (np.sum(new_frequency > 0) < self.n_features_to_select):
+                    break
+                last_best_score = best_score
+                selection_frequency = new_frequency
 
+        self.frequency_ = selection_frequency
+        self.support_ = np.zeros(X.shape[1], dtype=bool)
+        self.support_[np.argsort(selection_frequency)[-n_features_to_select:]] = 1
 
+        _, self.best_model_ = self.evaluate(X[:, self.support_], y, self.pls, do_cv=False)
+        return self
+
+    def _check_n_submodels(self):
+        check_scalar(self.n_submodels, 'n_submodels', target_type=int, min_val=2)
+
+    def _check_ratio_submodel_selection(self):
+        check_scalar(self.ratio_submodel_selection,
+                     name='ratio_submodel_selection',
+                     target_type=float,
+                     min_val=0,
+                     max_val=1,
+                     include_boundaries='right')
+
+    def _check_max_iter(self):
+        check_scalar(self.max_iter, 'max_iter', target_type=int, min_val=1)
